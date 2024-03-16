@@ -1,0 +1,16 @@
+{
+  "name": "esi-fetch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.ts",
+  "keywords": [],
+  "author": "Raphaël Guyader (in-game name Raph Toulouse)",
+  "license": "ISC",
+  "dependencies": {
+    "utils": "workspace:^"
+  },
+  "devDependencies": {
+    "@remix-run/node": "^2.8.1",
+    "vite": "^5.1.0"
+  }
+}

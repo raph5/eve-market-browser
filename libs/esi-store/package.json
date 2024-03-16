@@ -1,0 +1,18 @@
+{
+  "name": "esi-store",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.ts",
+  "author": "Raphaël Guyader",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@remix-run/node": "^2.8.1",
+    "@types/node": "^20.11.26",
+    "typescript": "^5.1.6",
+    "vite": "^5.1.6"
+  },
+  "dependencies": {
+    "esi-fetch": "workspace:^"
+  }
+}

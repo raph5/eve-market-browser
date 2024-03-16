@@ -1,0 +1,13 @@
+{
+  "name": "eve-market-browser",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "keywords": [],
+  "author": "Raphaël Guyader (in-game name : Raph Toulouse)",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.16.1"
+  },
+  "type": "module"
+}
