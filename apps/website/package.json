@@ -16,8 +16,8 @@
     "@remix-run/react": "^2.8.1",
     "compression": "^1.7.4",
     "dotenv": "^16.4.5",
-    "esi-fetch": "workspace:^",
     "esi-client-store": "workspace:^",
+    "esi-fetch": "workspace:^",
     "esi-server-store": "workspace:^",
     "express": "^4.18.2",
     "isbot": "^4.1.0",
@@ -41,6 +41,7 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "sass": "^1.72.0",
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1"

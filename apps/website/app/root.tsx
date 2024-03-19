@@ -1,3 +1,4 @@
+import "../scss/global.scss"
 import {
   Links,
   Meta,
@@ -16,6 +17,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        root
         {children}
         <ScrollRestoration />
         <Scripts />

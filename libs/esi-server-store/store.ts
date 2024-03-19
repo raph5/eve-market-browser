@@ -1,6 +1,6 @@
 import { readCacheFile, writeCacheFile } from "./cache"
 import { fetchMarketGroups, fetchRegions, fetchType } from "./fetching"
-import type { Type } from "./types"
+import type { MarketGroup, Region, Type } from "./types"
 
 const REGION_CACHE = 'regions'
 const MARKET_GROUP_CACHE = 'market-group'
@@ -19,19 +19,18 @@ class EsiStore {
    * fetch regions from esi
    * @return regions as unparsed json string
    */
-  async updateRegions(): Promise<string> {
+  async updateRegions(): Promise<Record<string, Region>> {
     try {
       console.log("fetching regions")
       const regions = await fetchRegions()
-      const jsonRegions = JSON.stringify(regions)
-      await writeCacheFile(this.cacheFolder, REGION_CACHE, jsonRegions)
-      return jsonRegions
+      await writeCacheFile(this.cacheFolder, REGION_CACHE, JSON.stringify(regions))
+      return regions
     }
     catch {
       console.warn("cant update region data cache")
       const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
       if(cachedRegions == null) throw new Error("cant get regions")
-      return cachedRegions
+      return JSON.parse(cachedRegions)
     }
   }
 
@@ -39,29 +38,28 @@ class EsiStore {
    * try to find regions in cache and fetch it otherwise
    * @return regions as unparsed json string
    */
-  async getRegions(): Promise<string> {
+  async getRegions(): Promise<Record<string, Region>> {
     const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
     if(cachedRegions == null) return this.updateRegions()
-    return cachedRegions
+    return JSON.parse(cachedRegions)
   }
 
   /**
    * fetch market group from esi
    * @return market group as unparsed json string
    */
-  async updateMarketGroups(): Promise<string> {
+  async updateMarketGroups(): Promise<Record<string, MarketGroup>> {
     try {
       console.log("fetching groups")
       const groups = await fetchMarketGroups()
-      const jsonGroups = JSON.stringify(groups)
-      await writeCacheFile(this.cacheFolder, MARKET_GROUP_CACHE, jsonGroups)
-      return jsonGroups
+      await writeCacheFile(this.cacheFolder, MARKET_GROUP_CACHE, JSON.stringify(groups))
+      return groups
     }
     catch {
       console.warn("cant update market group data cache")
       const cachedRegions = await readCacheFile(this.cacheFolder, MARKET_GROUP_CACHE)
       if(cachedRegions == null) throw new Error("cant get market groups")
-      return cachedRegions
+      return JSON.parse(cachedRegions)
     }
   }
 
@@ -69,10 +67,10 @@ class EsiStore {
    * try to find market groups in cache and fetch it otherwise
    * @return market groups as unparsed json string
    */
-  async getMarketGroups(): Promise<string> {
+  async getMarketGroups(): Promise<Record<string, MarketGroup>> {
     const cachedRegions = await readCacheFile(this.cacheFolder, MARKET_GROUP_CACHE)
     if(cachedRegions == null) return this.updateMarketGroups()
-    return cachedRegions
+    return JSON.parse(cachedRegions)
   }
 
   /**
