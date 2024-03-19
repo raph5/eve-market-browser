@@ -1,5 +1,5 @@
 {
-  "name": "esi-store",
+  "name": "esi-server-store",
   "version": "1.0.0",
   "description": "",
   "main": "main.ts",

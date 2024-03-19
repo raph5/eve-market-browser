@@ -1,4 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { getOrders } from "esi-client-store";
+import { History } from "libs/esi-client-store/types";
 
 export const meta: MetaFunction = () => {
   return [
@@ -7,7 +10,13 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+export async function clientLoader() {
+  return await getOrders(3995, 10000002)
+}
+
 export default function Index() {
+  const history = useLoaderData() as History
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
       <h1>Welcome to Remix</h1>
@@ -36,6 +45,8 @@ export default function Index() {
           </a>
         </li>
       </ul>
+
+      <p>{JSON.stringify(history)}</p>
     </div>
   );
 }
