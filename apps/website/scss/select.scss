@@ -1,0 +1,111 @@
+@import './var.scss';
+
+.select {
+  position: relative;
+  min-width: 150px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 8px;
+  height: 32px;
+  background-color: $background-1;
+  border: solid 1px $border-1;
+  color: $font-color;
+  outline: none;
+  font-family: $font;
+  font-size: 14px;
+
+  &[data-state=closed] {
+    @include sharp-border-radius(1px, 10px, $border-1);
+  }
+  &[data-state=open] {
+    border-bottom-color: transparent;
+
+    &::after {
+      position: absolute;
+      top: 32px;
+      left: 8px;
+      right: 8px;
+      content: "";
+      height: 1px;
+      background-color: $border-1;
+    }
+  }
+  &:hover &__icon::before, &:focus &__icon::before {
+    opacity: 1;
+  }
+
+  &__icon {
+    margin-left: auto;
+    position: relative;
+    z-index: 1;
+
+    svg {
+      position: relative;
+      top: 2px;
+    }
+    &::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      background: radial-gradient(#fff6, #fff1 50%, transparent 70%);
+      opacity: 0;
+      transition: opacity 200ms;
+    }
+  }
+  &__content {
+    max-height: 300px;
+    width: var(--radix-select-trigger-width);
+    top: 0px;
+    background-color: $background-1;
+    border: solid 1px $border-1;
+    border-top: none;
+    @include sharp-border-radius(1px, 10px, $border-1);
+    max-width: 300px;
+    font-size: 14px;
+  }
+  &__item {
+    margin: 1px 0;
+    padding: 0 8px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    outline: none;
+    transition: background-color 200ms;
+
+    &[data-highlighted][data-state=unchecked] {
+      @include light-glow;
+      transition: background-color 100ms;
+    }
+    &[data-highlighted][data-state=checked] {
+      @include glow;
+    }
+    &[data-state=checked] {
+      position: relative;
+      z-index: 1;
+      background-color: darken($accent, 30);
+    }
+  }
+  &__scroll-button {
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    background-color: $background-1;
+    
+    &--top {
+      top: 0;
+    }
+    &--bottom {
+      bottom: 0;
+      @include sharp-border-radius(1px, 10px, transparent);
+    }
+  }
+}

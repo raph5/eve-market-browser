@@ -19,7 +19,7 @@ class EsiStore {
    * fetch regions from esi
    * @return regions as unparsed json string
    */
-  async updateRegions(): Promise<Record<string, Region>> {
+  async updateRegions(): Promise<Region[]> {
     try {
       console.log("fetching regions")
       const regions = await fetchRegions()
@@ -38,7 +38,7 @@ class EsiStore {
    * try to find regions in cache and fetch it otherwise
    * @return regions as unparsed json string
    */
-  async getRegions(): Promise<Record<string, Region>> {
+  async getRegions(): Promise<Region[]> {
     const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
     if(cachedRegions == null) return this.updateRegions()
     return JSON.parse(cachedRegions)

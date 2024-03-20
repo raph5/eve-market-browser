@@ -1,25 +1,34 @@
 import type { Region, MarketGroup, Type } from "./types";
 import esiFetch from "esi-fetch";
 
+const HUB_REGION = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
+
 export async function fetchType(id: number): Promise<Type> {
   const type = await esiFetch(`/universe/types/${id}`)
   if(type.error) throw new Error("type fetching error")
   return { id: type.type_id, name: type.name }
 }
 
-export async function fetchRegions(): Promise<Record<string, Region>> {
+export async function fetchRegions(): Promise<Region[]> {
   const regions = await esiFetch('/universe/regions')
   if(regions.error) throw new Error("region id fetching error")
 
   const regionNames = await esiFetch('/universe/names', {}, regions, 'POST')
   if(regionNames.error) throw new Error("region name fetching error")
 
-  const regionRecord: Record<string, Region> = {}
-  for(const { id, name } of regionNames) {
-    regionRecord[id] = { id, name }
-  }
+  // filters out jovian and wormhole regions 
+  const minorRegionList = regionNames
+    .map(({ id, name }: Region) => ({ id, name }))
+    .filter(({ id }: Region) => id != 10000004 && id != 10000017 && id != 10000019 && id < 11000000 && !HUB_REGION.includes(id))
+    .sort()
 
-  return regionRecord
+  const hubList = HUB_REGION
+    .map(hubId => {
+      const { id, name } = regionNames.find(({ id }: Region) => id == hubId)
+      return { id, name }
+    })
+  
+  return hubList.concat(minorRegionList)
 }
 
 export async function fetchMarketGroups(): Promise<Record<string, MarketGroup>> {

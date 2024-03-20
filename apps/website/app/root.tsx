@@ -1,4 +1,4 @@
-import "../scss/global.scss"
+import "@scss/global.scss"
 import {
   Links,
   Meta,
@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import SvgFilters from "@components/svgFilters";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,10 +18,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        root
         {children}
         <ScrollRestoration />
         <Scripts />
+        <SvgFilters />
       </body>
     </html>
   );

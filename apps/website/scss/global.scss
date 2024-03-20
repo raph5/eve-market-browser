@@ -1,4 +1,13 @@
+@import './var.scss';
 
-h1 {
-  background: blue;
+body {
+  margin: 0;
+  padding: 0;
+  background-color: $background-0;
+  color: $font-color;
+  font-family: $font;
+}
+
+button {
+  all: unset;
 }

@@ -1,3 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json"
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@scss/*": ["./apps/website/scss/*"],
+      "@components/*": ["./apps/website/components/*"],
+      "@app/*": ["./apps/website/app/*"],
+      "@assets/*": ["./apps/website/assets/*"]
+    }
+  }
 }
