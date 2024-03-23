@@ -1,13 +1,25 @@
 @import './var.scss';
 
 body {
+  $header-height: 48px;
+
   margin: 0;
   padding: 0;
   background-color: $background-0;
   color: $font-color;
   font-family: $font;
+
+  display: grid;
+  grid-template-rows: $header-height calc(100vh - $header-height);
+  grid-template-columns: min-content auto;
+  grid-template-areas: "header header"
+                       "nav main";
+
+  header { grid-area: header; }
+  nav { grid-area: nav; }
+  main { grid-area: main; }
 }
 
-button {
+button, input {
   all: unset;
 }

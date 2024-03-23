@@ -1,17 +1,17 @@
 import "@scss/header.scss"
 import logo from "@assets/logo.png"
-import { Select } from "@components/small/Select";
+import { Select } from "@components/small/select";
 import { type Region } from "libs/esi-server-store/types";
 import { useState } from "react";
 import { useNavigate, useParams } from "@remix-run/react";
-import Label from "@components/small/Label";
+import Label from "@components/small/label";
 
 export interface HeaderProps {
-  regionData: Region[]
+  regions: Region[]
   regionId: number
 }
 
-export default function Header({ regionData, regionId }: HeaderProps) {
+export default function Header({ regions, regionId }: HeaderProps) {
   const navigate = useNavigate()
   const params = useParams()
 
@@ -19,7 +19,7 @@ export default function Header({ regionData, regionId }: HeaderProps) {
 
   function setRegion(region: string) {
     setSelectValue(region)
-    navigate(params.type ? `region/${region}/type/${params.type}` : `/region/${region}`)
+    navigate(params.type ? `/region/${region}/type/${params.type}` : `/region/${region}`)
   }
 
   return (
@@ -27,11 +27,12 @@ export default function Header({ regionData, regionId }: HeaderProps) {
       <img className="header__logo" src={logo} alt="eve market browser logo" />
       <h1 className="header__title">EVE Market Browser</h1>
 
-      <Label value="Region :" className="header__region-label" />
+      <Label value="Region :" className="header__region-label" htmlFor="regionSelect" />
       <Select
+        id="htmlFor"
         className="header__region"
         placeholder="Select a region"
-        items={regionData.map(({ id, name }) => ({ key: id.toString(), name }))}
+        items={regions.map(({ id, name }) => ({ key: id.toString(), name }))}
         value={selectValue}
         onValueChange={setRegion} />
     </header>

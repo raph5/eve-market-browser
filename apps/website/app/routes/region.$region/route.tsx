@@ -11,7 +11,7 @@ export const meta: MetaFunction = () => {
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const regionData = await esiStore.getRegions()
+  const regions = await esiStore.getRegions()
     .catch(() => {
       throw json("Can't Find Regions Data", { status: 500 })
     });
@@ -20,28 +20,26 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Region Not Found", { status: 404 })
   }
 
-  
-  
-  const currentRegion = regionData.find(r => r.id.toString() == params.region)
+  const currentRegion = regions.find(r => r.id.toString() == params.region)
   
   if(!currentRegion) {
     throw json("Region Not Found", { status: 404 })
   }
   
   return json({
-    regionData,
+    regions,
     regionId: currentRegion.id,
     regionName: currentRegion.name
   })
 }
 
 export default function Region() {
-  const { regionData, regionId, regionName } = useLoaderData<typeof loader>()
+  const { regions, regionId, regionName } = useLoaderData<typeof loader>()
 
   return (
     <>
       <Header
-        regionData={Object.values(regionData)}
+        regions={regions}
         regionId={regionId} />
       <main>
         <p>{regionName}</p>

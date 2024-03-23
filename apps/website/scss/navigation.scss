@@ -1,0 +1,12 @@
+@import './var.scss';
+
+.nav {
+  width: 250px;
+  height: 100%;
+  background-color: $background-2;
+
+  &__market-groups {
+    height: 100%;
+    overflow-y: auto;
+  }
+}

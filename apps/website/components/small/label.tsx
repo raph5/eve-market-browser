@@ -4,12 +4,13 @@ import "@scss/label.scss"
 
 export interface LabelProps {
   value: string
+  htmlFor: string
   className?: string
 }
 
-export default function Label({ value, className }: LabelProps) {
+export default function Label({ value, className, htmlFor }: LabelProps) {
   return (
-    <RadixLabel.Root className={classNames('label', className)}>
+    <RadixLabel.Root className={classNames('label', className)} htmlFor={htmlFor}>
       {value}
     </RadixLabel.Root>
   )

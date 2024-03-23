@@ -9,6 +9,7 @@ interface Item {
 }
 
 export interface SelectProps {
+  id?: string,
   items: Item[]
   placeholder: string,
   className?: string,
@@ -16,10 +17,10 @@ export interface SelectProps {
   onValueChange?: (value: string) => void
 }
 
-export function Select({ placeholder, items, className, value, onValueChange }: SelectProps) {
+export function Select({ id, placeholder, items, className, value, onValueChange }: SelectProps) {
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange}>
-      <RadixSelect.Trigger className={classNames('select', className)}>
+      <RadixSelect.Trigger className={classNames('select', className)} id={id}>
         <RadixSelect.Value placeholder={placeholder} />
         <RadixSelect.Icon className="select__icon">
           <TriangleDownIcon />

@@ -1,6 +1,9 @@
 import { esiStore } from "@app/.server/esiServerStore";
 import { json, type MetaFunction } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import Navigation from "./navigation";
+import { useMemo } from "react";
+import { createRecord } from "utils";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,13 +18,22 @@ export async function loader() {
       throw json("Can't Find Market Groups", { status: 500 })
     });
 
-  return json({ marketGroups })
+  const types = await esiStore.getTypes()
+    .catch(() => {
+      throw json("Can't Find Types Names", { status: 500 })
+    })
+
+  return json({ types, marketGroups })
 }
 
 export default function Layout() {
+  const { types, marketGroups } = useLoaderData<typeof loader>();
+
+  const marketGroupsRecord = useMemo(() => createRecord(marketGroups, 'id'), [marketGroups])
+
   return (
     <>
-      <nav></nav>
+      <Navigation types={types} marketGroups={marketGroups} marketGroupsRecord={marketGroupsRecord} />
       <Outlet />
     </>
   );

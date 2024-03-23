@@ -6,7 +6,6 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import SvgFilters from "@components/svgFilters";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +20,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
-        <SvgFilters />
       </body>
     </html>
   );

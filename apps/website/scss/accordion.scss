@@ -1,0 +1,12 @@
+@import './var.scss';
+
+.accordion-li {
+  height: 24px;
+  font-family: $font;
+  font-size: 14px;
+  font-weight: normal;
+
+  button {
+    font-weight: inherit;
+  }
+}
