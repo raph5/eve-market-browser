@@ -11,9 +11,11 @@ export interface Region {
 
 export interface MarketGroup {
   id: number
-  parentId?: number
+  parentId: number | null
   childsId: number[]
   name: string
   description: string
   types: number[]
+  iconFile: string
+  iconAlt: string
 }

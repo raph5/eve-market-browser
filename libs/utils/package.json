@@ -8,6 +8,10 @@
   "license": "ISC",
   "devDependencies": {
     "@remix-run/node": "^2.8.1",
+    "@types/async-csv": "^2.1.4",
     "vite": "^5.1.6"
+  },
+  "dependencies": {
+    "async-csv": "^2.1.3"
   }
 }

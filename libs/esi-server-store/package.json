@@ -13,6 +13,7 @@
     "vite": "^5.1.6"
   },
   "dependencies": {
-    "esi-fetch": "workspace:^"
+    "esi-fetch": "workspace:^",
+    "utils": "workspace:^"
   }
 }
