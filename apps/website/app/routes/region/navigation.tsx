@@ -1,36 +1,30 @@
 import type { MarketGroup } from "esi-server-store/types"
 import "@scss/navigation.scss"
-import { AccordionUl, AccordionLi } from "@components/small/accordion"
+import { Accordion } from "@components/small/accordion"
+import { NavContext } from "./navContext"
+import NavGroup from "./navGroups"
 
 export interface NavigationProps {
-  types: Record<string, string>
+  typeRecord: Record<string, string>
   marketGroups: MarketGroup[]
-  marketGroupsRecord: Record<string, MarketGroup>
+  marketGroupRecord: Record<string, MarketGroup>
 }
 
-export default function Navigation({ types, marketGroups, marketGroupsRecord }: NavigationProps) {
-  
-  function getGroupUl(groups: MarketGroup[]) {
-    if(groups.length > 1) {
-      return (
-        <AccordionUl type="multiple">
-          {groups.map((g) => (
-            <AccordionLi value={g.id.toString()} label={g.name} key={g.id}>
-              { getGroupUl(g.childsId.map(id => marketGroupsRecord[id])) }
-            </AccordionLi>
-          ))}
-        </AccordionUl>
-      )
-    }
-  }
-  
+export default function Navigation({ typeRecord, marketGroups, marketGroupRecord }: NavigationProps) {
   return (
-    <nav className="nav">
-      <div className="nav__market-groups">
-        {
-          getGroupUl( marketGroups.filter(g => !g.parentId) )
-        }
-      </div>
-    </nav>
+    <NavContext.Provider value={{ typeRecord, marketGroupRecord }}>
+      <nav className="nav">
+        <div className="nav__market-groups">
+          <Accordion>
+            {marketGroups.filter(group => group.parentId == null).map(group => (
+              <NavGroup
+                depth={0}
+                marketGroup={group}
+                key={group.id} />
+            ))}
+          </Accordion>
+        </div>
+      </nav>
+    </NavContext.Provider>
   )
 }

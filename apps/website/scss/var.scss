@@ -41,15 +41,15 @@ $border-0: #1c1f20;
 $border-1: #343638;
 $border-2: #515355;
 
-$font-color: #e1e0e2;
+$font-color: #c8c9ca;
 $font-color-light: #c6c4c7;
 
 
 @mixin light-glow($color: $accent) {
   background-color: darken($color, 40);
-  box-shadow:
-    inset 0 0 12px darken($color, 43),
-    0 0 4px darken($color, 50);
+  // box-shadow:
+  //   inset 0 0 12px darken($color, 43),
+    // 0 0 4px transparentize($color, 1);
 }
 
 @mixin glow($color: $accent) {
@@ -57,14 +57,15 @@ $font-color-light: #c6c4c7;
   box-shadow:
     inset 0 0 12px darken($color, 30),
     0 0 4px darken($color, 30);
-  }
+}
   
-// @mixin border-glow($color: $accent) {
-//   border-color: $color;
-//   box-shadow:
-//     inset 0 0 8px darken($color, 20),
-//     0 0 8px darken($color, 20);
-// }
+@mixin handle-data-depth($step: 16px, $offset: 0px) {
+  @for $depth from 0 to 10 {
+    &[data-depth="#{$depth}"] {
+      padding-left: #{$step * $depth + $offset};
+    }
+  }
+}
 
 @mixin sharp-border-radius(
   $border_width: 1px,

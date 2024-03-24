@@ -10,3 +10,31 @@
     overflow-y: auto;
   }
 }
+
+.nav-item {
+  text-decoration: none;
+  font-size: 14px;
+  font-family: $font;
+  font-weight: normal;
+  color: $font-color;
+  height: 20px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  outline: none;
+  @include handle-data-depth(12px, 12px);
+
+  &:hover, &:focus {
+    @include light-glow;
+  }
+}
+
+.nav-group {
+
+  &__icon {
+    width: 18px;
+    height: 18px;
+  }
+}

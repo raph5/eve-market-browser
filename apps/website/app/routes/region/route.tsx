@@ -33,7 +33,7 @@ export default function Layout() {
 
   return (
     <>
-      <Navigation types={types} marketGroups={marketGroups} marketGroupsRecord={marketGroupsRecord} />
+      <Navigation typeRecord={types} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
       <Outlet />
     </>
   );
