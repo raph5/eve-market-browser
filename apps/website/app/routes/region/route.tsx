@@ -16,20 +16,20 @@ export async function loader() {
   const marketGroups = await esiStore.getMarketGroups()
     .catch(() => {
       throw json("Can't Find Market Groups", { status: 500 })
-    });
+    })
+
+  const marketGroupsRecord = createRecord(marketGroups, 'id')
 
   const types = await esiStore.getTypes()
     .catch(() => {
       throw json("Can't Find Types Names", { status: 500 })
     })
 
-  return json({ types, marketGroups })
+  return json({ types, marketGroups, marketGroupsRecord })
 }
 
 export default function Layout() {
-  const { types, marketGroups } = useLoaderData<typeof loader>();
-
-  const marketGroupsRecord = useMemo(() => createRecord(marketGroups, 'id'), [marketGroups])
+  const { types, marketGroups, marketGroupsRecord } = useLoaderData<typeof loader>();
 
   return (
     <>

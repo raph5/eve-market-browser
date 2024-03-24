@@ -1,10 +1,10 @@
 import "@scss/header.scss"
 import logo from "@assets/logo.png"
-import { Select } from "@components/small/select";
+import { Select } from "@components/select";
 import { type Region } from "libs/esi-server-store/types";
 import { useState } from "react";
 import { useNavigate, useParams } from "@remix-run/react";
-import Label from "@components/small/label";
+import Label from "@components/label";
 
 export interface HeaderProps {
   regions: Region[]

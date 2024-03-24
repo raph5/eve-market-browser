@@ -1,6 +1,6 @@
 import type { MarketGroup } from "esi-server-store/types"
 import "@scss/navigation.scss"
-import { Accordion } from "@components/small/accordion"
+import { Accordion } from "@components/accordion"
 import { NavContext } from "./navContext"
 import NavGroup from "./navGroups"
 
@@ -16,7 +16,7 @@ export default function Navigation({ typeRecord, marketGroups, marketGroupRecord
       <nav className="nav">
         <div className="nav__market-groups">
           <Accordion>
-            {marketGroups.filter(group => group.parentId == null).map(group => (
+            {marketGroups.filter(group => group.parentId == null).sort((a, b) => a.name.localeCompare(b.name)).map(group => (
               <NavGroup
                 depth={0}
                 marketGroup={group}

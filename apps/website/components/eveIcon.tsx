@@ -1,19 +1,20 @@
 import fallback from "@assets/fallback.png"
 
 export interface EveIconProps {
-  iconFile: string
-  iconAlt: string
+  src: string
+  alt: string
   className?: string
 }
 
-const IMAGE_SERVER = "https://evetycoon.com/images/icons/"
+export const iconSrc = (file: string) => `https://evetycoon.com/images/icons/${file}`
+export const typeIconSrc = (type: string|number) => `https://images.evetech.net/types/${type}/icon`
 
-export default function EveIcon({ iconFile, iconAlt, className }: EveIconProps) {
+export default function EveIcon({ src, alt, className }: EveIconProps) {
   return (
     <img
       className={className}
-      src={IMAGE_SERVER + iconFile}
-      alt={iconAlt}
+      src={src}
+      alt={alt}
       onError={({ currentTarget }) => {
         currentTarget.onerror = null
         currentTarget.src = fallback

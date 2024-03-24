@@ -2,6 +2,7 @@
 
 body {
   $header-height: 48px;
+  $nav-width: 250px;
 
   margin: 0;
   padding: 0;
@@ -11,13 +12,18 @@ body {
 
   display: grid;
   grid-template-rows: $header-height calc(100vh - $header-height);
-  grid-template-columns: min-content auto;
+  grid-template-columns: $nav-width auto;
   grid-template-areas: "header header"
                        "nav main";
 
   header { grid-area: header; }
   nav { grid-area: nav; }
   main { grid-area: main; }
+}
+
+main {
+  margin: 0;
+  padding: 0;
 }
 
 button, input {

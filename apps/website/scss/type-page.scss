@@ -1,0 +1,77 @@
+@import './var.scss';
+
+.type-page {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.type-header {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  gap: 8px;
+
+  &__icon {
+    width: 64px;
+    height: 64px;
+  }
+  &__breadcrumbs {
+    font-size: 14px;
+    color: $font-color-light;
+  }
+  &__name {
+    margin: 0;
+    font-size: 20px;
+  }
+}
+
+.type-body {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  &__tabs {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  &__tab {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+
+.market-data {
+  width: 100%;
+  min-height: 500px;
+
+  &__heading {
+    margin: 0;
+    font-size: 18px;
+  }
+  &__separator {
+    width: 100%;
+    height: 1px;
+    background-color: $border-1;
+    margin: 8px 0;
+  }
+}
+
+.price-history {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $background-2;
+  border-radius: 4px;
+  border: solid 1px $border-1;
+  font-size: 18px;
+}

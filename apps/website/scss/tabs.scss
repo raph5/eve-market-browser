@@ -1,0 +1,35 @@
+@import './var.scss';
+
+.tabs {
+  width: 100%;
+
+  &__list {
+    width: max-content;
+    display: flex;
+    gap: 24px;
+    margin-bottom: 8px;
+    border-bottom: solid 1px $border-1;
+
+    > * {
+      margin-bottom: -1px;
+    }
+  }
+  &__trigger {
+    height: 24px;
+    font-size: 14px;
+    color: $font-color-light;
+    border-bottom: solid 1px transparent;
+
+    &[data-state=active] {
+      color: $font-color;
+      border-bottom-color: $accent;
+    }
+    &:focus, &:hover {
+      color: $font-color;
+    }
+  }
+  &__content {
+    outline: none;
+    width: 100%;
+  }
+}

@@ -42,7 +42,6 @@ export default function Region() {
         regions={regions}
         regionId={regionId} />
       <main>
-        <p>{regionName}</p>
         <Outlet />
       </main>
     </>

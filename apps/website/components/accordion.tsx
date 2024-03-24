@@ -14,7 +14,6 @@ export interface AccordionProps {
 
 export interface AccordionItemProps {
   value: string
-  parent: string
   label: string
   className?: string
   children?: React.ReactNode
@@ -75,7 +74,7 @@ export function Accordion({ children, className }: AccordionProps) {
   )
 }
 
-export function AccordionItem({ parent, className, children, value, label, startContent, depth }: AccordionItemProps) {
+export function AccordionItem({ className, children, value, label, startContent, depth }: AccordionItemProps) {
   return (
     <RadixAccordion.Item value={value} className={classNames('accordion-li', className)}>
       <RadixAccordion.Trigger className="accordion-li__trigger" data-depth={depth ?? 0} data-value={value}>
