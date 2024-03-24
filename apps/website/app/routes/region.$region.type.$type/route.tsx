@@ -3,9 +3,11 @@ import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { MarketGroup } from "libs/esi-server-store/types";
 import { createRecord } from "utils";
-import "@scss/type-page.scss"
+import "@scss/item-page.scss"
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { Tab, TabsRoot } from "@components/tabs";
+import { ItemContext } from "./itemContext";
+import MarketData from "./marketData";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const regionArray = await esiStore.getRegions()
@@ -75,34 +77,28 @@ export default function Type() {
   ]
 
   return (
-    <div className="type-page">
-      <div className="type-header">
-        <EveIcon className="type-header__icon" alt={`${typeRecord[type]} icon`} src={typeIconSrc(type)} />
-        <div className="type-header__info">
-          <span className="type-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
-          <h2 className="type-header__name">{typeRecord[type]}</h2>
+    <ItemContext.Provider value={{ type, region }}>
+      <div className="item-page">
+        <div className="item-header">
+          <EveIcon className="item-header__icon" alt={`${typeRecord[type]} icon`} src={typeIconSrc(type)} />
+          <div className="item-header__info">
+            <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
+            <h2 className="item-header__name">{typeRecord[type]}</h2>
+          </div>
+        </div>
+        <div className="item-body">
+          <TabsRoot className="item-body__tabs" tabs={tabs} defaultValue="marketData">
+            <Tab className="item-body__tab" value="marketData">
+              <MarketData />
+            </Tab>
+            <Tab className="item-body__tab" value="priceHistory">
+              <div className="price-history">
+                Coming soon 🏗️
+              </div>
+            </Tab>
+          </TabsRoot>
         </div>
       </div>
-      <div className="type-body">
-        <TabsRoot className="type-body__tabs" tabs={tabs} defaultValue="marketData">
-          <Tab className="type-body__tab" value="marketData">
-            <div className="market-data">
-              <div className="market-data__section">
-                <h3 className="market-data__heading">Sellers</h3>
-              </div>
-              <div className="market-data__separator" role="separator"></div>
-              <div className="market-data__section">
-                <h3 className="market-data__heading">Buyers</h3>
-              </div>
-            </div>
-          </Tab>
-          <Tab className="type-body__tab" value="priceHistory">
-            <div className="price-history">
-              Coming soon 🏗️
-            </div>
-          </Tab>
-        </TabsRoot>
-      </div>
-    </div>
+    </ItemContext.Provider>
   );
 }
