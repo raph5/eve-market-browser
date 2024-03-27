@@ -36,3 +36,15 @@ export async function getOrders(type: number, region: number): Promise<Order[]> 
 
   return orders
 }
+
+export async function getNames(types: number[]): Promise<Record<string, string>> {
+  const nameRecord: Record<string, string> = {}
+  for(let i=0; i<types.length; i+=1000) {
+    const namesChunk = await esiFetch('/universe/names', {}, types.slice(i, i+1000), 'POST')
+    if(namesChunk.error) throw Error("Names fetching error : " + namesChunk.error)
+    for(const { id, name } of namesChunk) {
+      nameRecord[id] = name
+    }
+  }
+  return nameRecord
+}

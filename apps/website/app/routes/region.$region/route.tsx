@@ -1,7 +1,8 @@
 import { type LoaderFunctionArgs, json, type MetaFunction } from "@remix-run/node";
 import { esiStore } from "@app/.server/esiServerStore";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Header from "./header";
+import { ErrorMessage } from "@components/errorMessage";
 
 export const meta: MetaFunction = () => {
   return [
@@ -46,4 +47,9 @@ export default function Region() {
       </main>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()  
+  return <ErrorMessage error={error} />
 }

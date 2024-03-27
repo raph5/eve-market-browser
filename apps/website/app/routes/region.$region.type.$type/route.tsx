@@ -1,13 +1,14 @@
 import { esiStore } from "@app/.server/esiServerStore";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { ClientLoaderFunctionArgs, useLoaderData, useRouteError } from "@remix-run/react";
 import { MarketGroup } from "libs/esi-server-store/types";
-import { createRecord } from "utils";
+import { createRecord, removeDuplicates, timeout } from "utils";
 import "@scss/item-page.scss"
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { Tab, TabsRoot } from "@components/tabs";
-import { ItemContext } from "./itemContext";
 import MarketData from "./marketData";
+import { getNames, getOrders } from "esi-client-store/main";
+import { ErrorMessage } from "@components/errorMessage";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const regionArray = await esiStore.getRegions()
@@ -68,8 +69,22 @@ export async function loader({ params }: LoaderFunctionArgs) {
   })
 }
 
+export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
+  const serverData = await serverLoader<typeof loader>()
+
+  const orders = await getOrders(serverData.type, serverData.region)
+  const locationRecord = await getNames(removeDuplicates(orders.map(o => o.location_id).filter(l => 60000000 < l && l < 64000000)))
+
+  return {
+    ...serverData,
+    orders,
+    locationRecord
+  }
+}
+clientLoader.hydrate = true
+
 export default function Type() {
-  const { type, region, regionArray, typeRecord, marketGroups, marketGroupRecord, breadcrumbs } = useLoaderData<typeof loader>()
+  const { type, typeRecord, breadcrumbs, orders, locationRecord } = useLoaderData<typeof clientLoader>()
 
   const tabs = [
     { value: 'marketData', label: 'Market Data' },
@@ -77,28 +92,45 @@ export default function Type() {
   ]
 
   return (
-    <ItemContext.Provider value={{ type, region }}>
-      <div className="item-page">
-        <div className="item-header">
-          <EveIcon className="item-header__icon" alt={`${typeRecord[type]} icon`} src={typeIconSrc(type)} />
-          <div className="item-header__info">
-            <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
-            <h2 className="item-header__name">{typeRecord[type]}</h2>
-          </div>
-        </div>
-        <div className="item-body">
-          <TabsRoot className="item-body__tabs" tabs={tabs} defaultValue="marketData">
-            <Tab className="item-body__tab" value="marketData">
-              <MarketData />
-            </Tab>
-            <Tab className="item-body__tab" value="priceHistory">
-              <div className="price-history">
-                Coming soon 🏗️
-              </div>
-            </Tab>
-          </TabsRoot>
+    <div className="item-page">
+      <div className="item-header">
+        <EveIcon className="item-header__icon" alt={`${typeRecord[type]} icon`} src={typeIconSrc(type)} />
+        <div className="item-header__info">
+          <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
+          <h2 className="item-header__name">{typeRecord[type]}</h2>
         </div>
       </div>
-    </ItemContext.Provider>
+      <div className="item-body">
+        <TabsRoot className="item-body__tabs" tabs={tabs} defaultValue="marketData">
+          <Tab className="item-body__tab" value="marketData">
+            <MarketData orders={orders} locationRecord={locationRecord} />
+          </Tab>
+          <Tab className="item-body__tab" value="priceHistory">
+            <div className="price-history">
+              Coming soon 🏗️
+            </div>
+          </Tab>
+        </TabsRoot>
+      </div>
+    </div>
   );
+}
+
+export function HydrateFallback() {
+  return (
+    <div className="item-skeleton">
+      <div className="item-skeleton__header">
+        <div className="item-skeleton__icon"></div>
+        <div className="item-skeleton__info">
+          <div className="item-skeleton__breadcrumbs"></div>
+          <div className="item-skeleton__name"></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()  
+  return <ErrorMessage error={error} />
 }

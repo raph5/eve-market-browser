@@ -1,9 +1,10 @@
 import { esiStore } from "@app/.server/esiServerStore";
 import { json, type MetaFunction } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Navigation from "./navigation";
 import { useMemo } from "react";
 import { createRecord } from "utils";
+import { ErrorMessage } from "@components/errorMessage";
 
 export const meta: MetaFunction = () => {
   return [
@@ -37,4 +38,9 @@ export default function Layout() {
       <Outlet />
     </>
   );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()  
+  return <ErrorMessage error={error} />
 }

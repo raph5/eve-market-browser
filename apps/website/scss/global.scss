@@ -12,7 +12,7 @@ body {
 
   display: grid;
   grid-template-rows: $header-height calc(100vh - $header-height);
-  grid-template-columns: $nav-width auto;
+  grid-template-columns: $nav-width calc(100vw - $nav-width);
   grid-template-areas: "header header"
                        "nav main";
 
