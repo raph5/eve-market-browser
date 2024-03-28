@@ -1,5 +1,10 @@
 @import './var.scss';
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: $border-1 $background-0;
+}
+
 body {
   $header-height: 48px;
   $nav-width: 250px;

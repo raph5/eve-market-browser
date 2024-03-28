@@ -2,11 +2,11 @@
 
 .table {
   width: 100%;
+  position: relative;
   display: grid;
   column-gap: 16px;
-  position: relative;
   background-color: $background-0;
-  overflow-y: auto;
+  overflow: auto;
 
   &__cell {
     display: block;

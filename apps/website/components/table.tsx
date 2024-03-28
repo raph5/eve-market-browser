@@ -39,7 +39,6 @@ export default function Table({ columns, data, columnTemplate, className, defaul
     const highlight = highlightRef.current
     if(table == null || highlight == null) return
 
-    
     if(event.pageY - table.offsetTop < 22) {
       highlight.style.opacity = '0'
     }
@@ -81,6 +80,7 @@ export default function Table({ columns, data, columnTemplate, className, defaul
           abbr={col.label}
           scope="col"
           onClick={() => handleHeaderClick(col.value)}
+          key={col.value}
         >
           {col.label}
           {sorting && sorting.column == col.value && 
@@ -91,8 +91,9 @@ export default function Table({ columns, data, columnTemplate, className, defaul
         </th>
       ))}
 
-      {sort(data).map((row) => columns.map(col => (
+      {sort(data).map((row, index) => columns.map(col => (
         <td
+          key={`${tableId}-${col.value}-${index}`}
           className="table__cell"
           headers={`${tableId}-${col.value}`}
           data-type={typeof row[col.value][1]}
