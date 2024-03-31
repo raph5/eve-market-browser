@@ -5,6 +5,7 @@
       "@scss/*": ["./apps/website/scss/*"],
       "@components/*": ["./apps/website/components/*"],
       "@app/*": ["./apps/website/app/*"],
+      "@utils/*": ["./apps/website/utils/*"],
       "@assets/*": ["./apps/website/assets/*"]
     }
   }

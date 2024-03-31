@@ -61,7 +61,8 @@ export default function Table({ columns, data, columnTemplate, className, defaul
   }
 
   return (
-    <table
+    <div
+      role="table"
       className={classNames('table', className)}
       style={{ gridTemplateColumns: columnTemplate }}
       id={tableId}
@@ -74,11 +75,9 @@ export default function Table({ columns, data, columnTemplate, className, defaul
       <div className="table__highlight" ref={highlightRef}></div>
       
       {columns.map(col => (
-        <th
+        <span
           id={`${tableId}-${col.value}`}
           className="table__cell table__cell--header"
-          abbr={col.label}
-          scope="col"
           onClick={() => handleHeaderClick(col.value)}
           key={col.value}
         >
@@ -88,20 +87,19 @@ export default function Table({ columns, data, columnTemplate, className, defaul
               {sorting.direction == 'ascending' ? <TriangleUpIcon /> : <TriangleDownIcon />}
             </div>
           }
-        </th>
+        </span>
       ))}
 
       {sort(data).map((row, index) => columns.map(col => (
-        <td
+        <span
           key={`${tableId}-${col.value}-${index}`}
           className="table__cell"
-          headers={`${tableId}-${col.value}`}
           data-type={typeof row[col.value][1]}
         >
           {row[col.value][1]}
-        </td>
+        </span>
       )))}
 
-    </table>
+    </div>
   )
 }

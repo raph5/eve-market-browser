@@ -1,0 +1,43 @@
+@import './var.scss';
+
+.tree, .tree-node-group, .tree-branch-wrapper {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  outline: none;
+}
+
+.tree-node {
+  padding-left: calc(var(--depth) * 20px);
+  height: 22px;
+  display: flex;
+  align-items: center;
+  list-style: none;
+  overflow: hidden;
+  white-space: nowrap;
+  gap: 4px;
+  font: $font;
+  font-size: 14px;
+  font-weight: normal;
+  color: $font-color;
+  outline: none;
+
+  &--focused {
+    @include light-glow;
+  }
+}
+
+.tree-node__leaf {
+  height: 20px !important;
+  padding-left: calc(var(--depth) * 16px);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  color: $font-color;
+  text-decoration: none;
+}
+
+.tree-node-icon {
+  width: 16px;
+  height: 16px;
+}

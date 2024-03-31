@@ -24,6 +24,11 @@ body {
   header { grid-area: header; }
   nav { grid-area: nav; }
   main { grid-area: main; }
+
+  &:has(> .error-message) {
+    display: block;
+    height: 100vh;
+  }
 }
 
 main {

@@ -62,7 +62,7 @@ export default function MarketData({ orders, locationRecord }: MarketDataProps) 
           columns={sellColumns}
           data={sellData}
           columnTemplate="max-content max-content max-content max-content"
-          defaultSorting={{ column: 'price', direction: 'descending' }}
+          defaultSorting={{ column: 'price', direction: 'ascending' }}
         />
       </div>
       <div className="market-data__separator" role="separator"></div>
@@ -73,7 +73,7 @@ export default function MarketData({ orders, locationRecord }: MarketDataProps) 
           columns={buyColumns}
           data={buyData}
           columnTemplate="max-content max-content max-content max-content max-content max-content"
-          defaultSorting={{ column: 'price', direction: 'ascending' }}
+          defaultSorting={{ column: 'price', direction: 'descending' }}
         />
       </div>
     </div>
