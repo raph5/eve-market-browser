@@ -2,7 +2,7 @@ import classNames from "classnames"
 import React, { useId, useRef } from "react"
 import { TriangleDownIcon, TriangleUpIcon } from "@radix-ui/react-icons"
 import "@scss/table.scss"
-import { Sorting, useTableSort } from "../hooks/useTableSort"
+import { Sorting, useTableSort } from "@hooks/useTableSort"
 
 export interface Column {
   value: string
@@ -49,8 +49,13 @@ export default function Table({ columns, data, columnTemplate, className, defaul
     }
     else {
       const row = Math.floor((event.pageY - table.offsetTop + table.scrollTop) / 22)
-      highlight.style.opacity = `1`
-      highlight.style.transform = `translateY(${22*row}px)`
+      if(row > data.length) {
+        highlight.style.opacity = '0'
+      }
+      else {
+        highlight.style.opacity = `1`
+        highlight.style.transform = `translateY(${22*row}px)`
+      }
     }
   }
 

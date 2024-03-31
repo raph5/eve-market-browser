@@ -1,14 +1,15 @@
 import { TriangleDownIcon, TriangleRightIcon } from '@radix-ui/react-icons';
-import React, { AnchorHTMLAttributes, useMemo } from 'react';
+import React from 'react';
 import AccessibleTreeView from "@utils/accessibleTreeView";
 import "@scss/tree-view.scss"
 import type { IBranchProps, INodeRendererProps, LeafProps, INode } from 'react-accessible-treeview';
 import { Link, useParams } from '@remix-run/react';
-import { MarketGroup } from 'libs/esi-server-store/types';
+import { MarketGroup, Type } from 'esi-server-store/types';
 import EveIcon, { iconSrc } from './eveIcon';
+import { useTreeViewNodes } from '@hooks/useTreeViewNodes';
 
 export interface TreeViewProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'|'onBlur'> {
-  typeRecord: Record<string, string>
+  typeRecord: Record<string, Type>
   marketGroups: MarketGroup[]
   marketGroupRecord: Record<string, MarketGroup>
 }
@@ -20,7 +21,7 @@ export interface GroupNodeProps {
   isExpanded: boolean
   getNodeProps: () => IBranchProps|LeafProps
   iconAlt: string
-  iconFile: string
+  iconSrc: string
 }
 
 export interface ItemNodeProps {
@@ -31,43 +32,11 @@ export interface ItemNodeProps {
 }
 
 export default function TreeView({ typeRecord, marketGroups, marketGroupRecord, ...props }: TreeViewProps) {
-  
-  const [nodes, rootNodes] = useMemo(() => {
-    const nodes: INode[] = []
-    const rootNodes: string[] = []
-    for(const g of marketGroups) {
-      if(g.parentId == null) rootNodes.push(`group:${g.id}`)
-      
-      const sortedTypes = g.types.sort((a: number, b: number) => typeRecord[a].localeCompare(typeRecord[b]))
-      const sortedGroups = g.childsId.sort((a: number, b: number) => marketGroupRecord[a].name.localeCompare(marketGroupRecord[b].name))
-      nodes.push({
-        id: `group:${g.id}`,
-        name: g.name,
-        parent: g.parentId ? `group:${g.parentId}` : 'root',
-        children: sortedGroups.map(g => `group:${g}`).concat(sortedTypes.map(t => `type:${t}`)),
-        metadata: { type: 'group', iconFile: g.iconFile, iconAlt: g.iconAlt }
-      })
-  
-      for(const t of sortedTypes) {
-        nodes.push({
-          id: `type:${t}`,
-          name: typeRecord[t],
-          parent: `group:${g.id}`,
-          children: [],
-          metadata: { type: 'item' }
-        })
-      }
-    }
-    return [nodes, rootNodes]
-  }, [typeRecord, marketGroups, marketGroupRecord])
-  
+  const nodes = useTreeViewNodes(typeRecord, marketGroups, marketGroupRecord)
 
   return (
     <AccessibleTreeView
-      data={[
-        { id: 'root', name: '', parent: null, children: rootNodes },
-        ...nodes
-      ]}
+      data={nodes}
       nodeRenderer={Node}
       {...props}
     />
@@ -85,7 +54,7 @@ function Node({ element, level, isExpanded, getNodeProps }: INodeRendererProps) 
         isExpanded={isExpanded}
         getNodeProps={getNodeProps}
         iconAlt={element.metadata.iconAlt as string ?? ''}
-        iconFile={element.metadata.iconFile as string ?? ''} />
+        iconSrc={element.metadata.iconSrc as string ?? ''} />
     )
   }
   if(element.metadata.type == 'item') {
@@ -99,7 +68,7 @@ function Node({ element, level, isExpanded, getNodeProps }: INodeRendererProps) 
   }
 }
 
-function GroupNode({ id, name, depth, isExpanded, getNodeProps, iconAlt, iconFile }: GroupNodeProps) {
+function GroupNode({ id, name, depth, isExpanded, getNodeProps, iconAlt, iconSrc }: GroupNodeProps) {
   return (
     <div {...getNodeProps()} style={{ '--depth': depth-1 } as React.CSSProperties}>
       {isExpanded ? (
@@ -107,8 +76,8 @@ function GroupNode({ id, name, depth, isExpanded, getNodeProps, iconAlt, iconFil
         ) : (
         <TriangleRightIcon className="tree-node-triangle" />
       )}
-      <EveIcon alt={iconAlt} src={iconSrc(iconFile)} className="tree-node-icon" />
-      {name}
+      <EveIcon alt={iconAlt} src={iconSrc} className="tree-node-icon" />
+      <span>{name}</span>
     </div>
   )
 }
@@ -129,7 +98,7 @@ function ItemNode({ id, name, depth, getNodeProps }: ItemNodeProps) {
       to={`/region/${region ?? 10000002}/type/${id.substring(5)}`}
       {...getNodeProps() as React.HTMLAttributes<HTMLAnchorElement>}
     >
-      {name}
+      <span>{name}</span>
     </Link>
   )
 }

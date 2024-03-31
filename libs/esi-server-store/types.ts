@@ -2,6 +2,7 @@
 export interface Type {
   id: number
   name: string
+  metaLevel: number
 }
 
 export interface Region {

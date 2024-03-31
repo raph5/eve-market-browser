@@ -4,6 +4,7 @@
   width: 100%;
   position: relative;
   display: grid;
+  grid-template-rows: repeat(auto-fit, 22px);
   column-gap: 16px;
   background-color: $background-0;
   overflow: auto;

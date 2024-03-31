@@ -8,7 +8,7 @@
 }
 
 .tree-node {
-  padding-left: calc(var(--depth) * 20px);
+  padding-left: calc(var(--depth) * 16px);
   height: 22px;
   display: flex;
   align-items: center;
@@ -21,15 +21,21 @@
   font-weight: normal;
   color: $font-color;
   outline: none;
+  user-select: none;
 
   &--focused {
     @include light-glow;
   }
+
+  > span {
+    min-width: 0;
+  }
 }
 
+// TODO: bind this styles to a specific group class because groups in some rare cases can be leafs
 .tree-node__leaf {
   height: 20px !important;
-  padding-left: calc(var(--depth) * 16px);
+  padding-left: calc(var(--depth) * 16px + 4px);
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -40,4 +46,11 @@
 .tree-node-icon {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
+}
+
+.tree-node-triangle {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }

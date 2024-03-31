@@ -22,3 +22,8 @@ export interface Order {
   volume_remain: number,
   volume_total: number
 }
+
+export interface Meta {
+  name: string
+  iconSrc: string
+}

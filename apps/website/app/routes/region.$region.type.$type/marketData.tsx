@@ -1,5 +1,5 @@
 import Table, { Cell, Column } from "@components/table"
-import { useTableSort } from "apps/website/hooks/useTableSort"
+import { useTableSort } from "@hooks/useTableSort"
 import { Order } from "esi-client-store/types"
 import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "utils"
 
@@ -12,18 +12,18 @@ const time = Date.now()
 
 export default function MarketData({ orders, locationRecord }: MarketDataProps) {
   const sellColumns: Column[] = [
-    { value: 'quantity', label: 'Quantity', sorting: numberSort },
-    { value: 'price', label: 'Price', sorting: numberSort },
-    { value: 'location', label: 'Location', sorting: stringSort },
-    { value: 'expires', label: 'Expires in', sorting: numberSort },
+    { value: 'quantity', label: 'Quantity', sorting: numberSort() },
+    { value: 'price', label: 'Price', sorting: numberSort() },
+    { value: 'location', label: 'Location', sorting: stringSort() },
+    { value: 'expires', label: 'Expires in', sorting: numberSort() },
   ]
   const buyColumns: Column[] = [
-    { value: 'quantity', label: 'Quantity', sorting: numberSort },
-    { value: 'price', label: 'Price', sorting: numberSort },
-    { value: 'range', label: 'Range', sorting: stringSort },
-    { value: 'location', label: 'Location', sorting: stringSort },
-    { value: 'minVolume', label: 'Min Volume', sorting: numberSort },
-    { value: 'expires', label: 'Expires in', sorting: numberSort },
+    { value: 'quantity', label: 'Quantity', sorting: numberSort() },
+    { value: 'price', label: 'Price', sorting: numberSort() },
+    { value: 'range', label: 'Range', sorting: stringSort() },
+    { value: 'location', label: 'Location', sorting: stringSort() },
+    { value: 'minVolume', label: 'Min Volume', sorting: numberSort() },
+    { value: 'expires', label: 'Expires in', sorting: numberSort() },
   ]
 
   const sellData: Record<string, Cell>[] = orders.filter(order => order.order_type == 'sell').map(order => ({

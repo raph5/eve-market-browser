@@ -63,5 +63,9 @@ export function expiresIn(issued: string, duration: number) {
   return `${days}d ${hours}h ${minutes}m ${seconds}s`
 }
 
-export const stringSort = (a: string, b: string) => a.localeCompare(b)
-export const numberSort = (a: number, b: number) => a - b
+export function stringSort<T=any>(getValue: ((v: T) => string) = (v => v as string)) {
+  return (a: T, b: T) => getValue(a).localeCompare(getValue(b))
+}
+export function numberSort<T=any>(getValue: ((v: T) => number) = (v => v as number)) {
+  return (a: T, b: T) => getValue(a) - getValue(b)
+}

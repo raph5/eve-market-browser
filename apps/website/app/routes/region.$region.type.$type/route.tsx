@@ -1,7 +1,7 @@
 import { esiStore } from "@app/.server/esiServerStore";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { ClientLoaderFunctionArgs, useLoaderData, useRouteError } from "@remix-run/react";
-import { MarketGroup } from "libs/esi-server-store/types";
+import { MarketGroup } from "esi-server-store/types";
 import { createRecord, removeDuplicates, timeout } from "utils";
 import "@scss/item-page.scss"
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
@@ -97,7 +97,7 @@ export default function Type() {
         <EveIcon className="item-header__icon" alt={`${typeRecord[type]} icon`} src={typeIconSrc(type)} />
         <div className="item-header__info">
           <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
-          <h2 className="item-header__name">{typeRecord[type]}</h2>
+          <h2 className="item-header__name">{typeRecord[type].name}</h2>
         </div>
       </div>
       <div className="item-body">

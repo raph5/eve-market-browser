@@ -1,9 +1,9 @@
-import type { MarketGroup } from "esi-server-store/types"
+import type { MarketGroup, Type } from "esi-server-store/types"
 import "@scss/navigation.scss"
-import TreeView from "@components/maketTreeView"
+import TreeView from "@components/treeView"
 
 export interface NavigationProps {
-  typeRecord: Record<string, string>
+  typeRecord: Record<string, Type>
   marketGroups: MarketGroup[]
   marketGroupRecord: Record<string, MarketGroup>
 }

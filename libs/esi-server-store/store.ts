@@ -1,5 +1,5 @@
 import { readCacheFile, writeCacheFile } from "./cache"
-import { fetchMarketGroups, fetchRegions, fetchType, fetchTypes } from "./fetching"
+import { fetchMarketGroups, fetchRegions, fetchTypes } from "./fetching"
 import type { MarketGroup, Region, Type } from "./types"
 
 const REGION_CACHE = 'regions'
@@ -46,7 +46,7 @@ class EsiStore {
     return JSON.parse(cachedRegions)
   }
 
-  async updateTypes(): Promise<Record<string, string>> {
+  async updateTypes(): Promise<Record<string, Type>> {
     console.log("⚙️ fetching types")
     const marketGroups = await this.getMarketGroups()
     const types = await fetchTypes(Object.values(marketGroups))
@@ -54,20 +54,10 @@ class EsiStore {
     return types
   }
 
-  async getTypes(): Promise<Record<string, string>> {
+  async getTypes(): Promise<Record<string, Type>> {
     const jsonTypes = await readCacheFile(this.cacheFolder, TYPE_CACHE)
     if(jsonTypes == null) return this.updateTypes()
     return JSON.parse(jsonTypes)
-  }
-
-  async getTypeName(id: number): Promise<string> {
-    const jsonTypes = await readCacheFile(this.cacheFolder, TYPE_CACHE)
-    const types = jsonTypes ? JSON.parse(jsonTypes) : null
-    if(!types || !types[id]) {
-      const type = await fetchType(id)
-      return type.name
-    }
-    return types[id]
   }
 
 }

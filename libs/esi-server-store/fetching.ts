@@ -1,15 +1,8 @@
 import type { Region, MarketGroup, Type } from "./types";
-import esiFetch from "esi-fetch";
 import { createRecord } from "utils";
 import { parseCsv } from "utils/server";
 
 const HUB_REGION = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
-
-export async function fetchType(id: number): Promise<Type> {
-  const type = await esiFetch(`/universe/types/${id}`)
-  if(type.error) throw new Error("type fetching error")
-  return { id: type.type_id, name: type.name }
-}
 
 export async function fetchRegions(): Promise<Region[]> {
   const regionDumpResponse = await fetch('https://www.fuzzwork.co.uk/dump/latest/mapRegions.csv')
@@ -89,21 +82,30 @@ export async function fetchMarketGroups(): Promise<MarketGroup[]> {
   return Object.values(groupRecord)
 }
 
-export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Record<string, string>> {
+export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Record<string, Type>> {
   const typeDumpResponse = await fetch('https://www.fuzzwork.co.uk/dump/latest/invTypes.csv')
+  const metaTypeDumpResponse = await fetch('https://www.fuzzwork.co.uk/dump/latest/invMetaTypes.csv')
 
-  if(!typeDumpResponse.ok) throw new Error("cant fetch fuzzwork dumps")
+  if(!typeDumpResponse.ok || !metaTypeDumpResponse.ok) throw new Error("cant fetch fuzzwork dumps")
 
   const typeDump = await typeDumpResponse.text()
     .then(t => parseCsv(t))
+  const metaTypeDump = await metaTypeDumpResponse.text()
+    .then(t => parseCsv(t))
 
-  const typeDumpRecord: Record<string, string> = {}
-  typeDump.forEach((t: any) => typeDumpRecord[t.typeID] = t.typeName)
+  const nameRecord: Record<string, string> = {}
+  const metaRecord: Record<string, number> = {}
+  typeDump.forEach((t: any) => nameRecord[t.typeID] = t.typeName)
+  metaTypeDump.forEach((t: any) => metaRecord[t.typeID] = t.metaGroupID)
 
-  const types: Record<string, string> = {}
+  const types: Record<string, Type> = {}
   for(const group of marketGroups) {
     for(const typeId of group.types) {
-      types[typeId] = typeDumpRecord[typeId]
+      types[typeId] = {
+        id: typeId,
+        name: nameRecord[typeId] ?? 'Unknown',
+        metaLevel: metaRecord[typeId] ?? 1
+      }
     }
   }
 

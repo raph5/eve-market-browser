@@ -100,6 +100,9 @@
     background-color: $border-1;
     margin: 8px 0;
   }
+  &__table {
+    height: 100%;
+  }
 }
 
 .price-history {

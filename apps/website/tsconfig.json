@@ -6,6 +6,7 @@
       "@components/*": ["./apps/website/components/*"],
       "@app/*": ["./apps/website/app/*"],
       "@utils/*": ["./apps/website/utils/*"],
+      "@hooks/*": ["./apps/website/hooks/*"],
       "@assets/*": ["./apps/website/assets/*"]
     }
   }
