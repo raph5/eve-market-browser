@@ -39,7 +39,7 @@ export default function Table({ columns, data, columnTemplate, className, defaul
     const highlight = highlightRef.current
     if(table == null || highlight == null) return
 
-    if(event.pageY - table.offsetTop < 22) {
+    if(event.pageY - table.offsetTop < 22 || data.length == 0) {
       highlight.style.opacity = '0'
     }
     else if(event.pageY - table.offsetTop < 44) {

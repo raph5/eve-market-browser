@@ -22,4 +22,12 @@
   &__region-label {
     margin-left: auto;
   }
+  &__version {
+    margin-left: 8px;
+    color: $alert;
+    font-family: $font-fancy;
+    font-size: 20px;
+    position: relative;
+    bottom: 3px;
+  }
 }

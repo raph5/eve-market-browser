@@ -1,0 +1,19 @@
+@import './var.scss';
+
+.search-bar {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  background-color: $background-1;
+  border: solid 1px $border-1;
+  color: $font-color;
+  outline: none;
+  font-family: $font;
+  font-size: 14px;
+  box-sizing: border-box;
+
+  &__icon {
+    color: $font-color-light;
+    margin: 0 6px;
+  }
+}

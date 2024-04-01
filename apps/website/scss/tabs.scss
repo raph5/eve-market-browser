@@ -9,20 +9,32 @@
     gap: 24px;
     margin-bottom: 8px;
     border-bottom: solid 1px $border-1;
-
-    > * {
-      margin-bottom: -1px;
-    }
   }
   &__trigger {
     height: 24px;
     font-size: 14px;
     color: $font-color-light;
-    border-bottom: solid 1px transparent;
-
+    position: relative;
+    
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 1px;
+      background-color: $accent;
+      box-shadow: 0 0 4px $accent;
+      opacity: 0;
+    }
+    
     &[data-state=active] {
       color: $font-color;
-      border-bottom-color: $accent;
+      
+      &::after {
+        opacity: 1;
+      }
     }
     &:focus, &:hover {
       color: $font-color;

@@ -4,9 +4,72 @@
   width: 100%;
   height: 100%;
   background-color: $background-2;
+  padding: 4px;
+  box-sizing: border-box;
 
-  &__market-groups {
+  &__tabs {
     height: 100%;
-    overflow-x: hidden;
+    width: 100%;
+    display: grid;
+    grid-template-rows: max-content auto;
+  }
+  &__tab {
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-rows: max-content auto;
+  }
+}
+
+.borwse {
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  &__header {
+    padding-right: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  &__body {
+    overflow-y: auto;
+    height: 100%;
+    min-height: 0;
+  }
+  &__search-bar {
+    width: 100%;
+  }
+  &__button {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    
+    img {
+      width: 16px;
+      height: 16px;
+    }
+  }
+  &__item {
+    height: 20px;
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+    color: $font-color;
+    text-decoration: none;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: $font;
+    font-size: 14px;
+    font-weight: normal;
+    color: $font-color;
+    outline: none;
+    user-select: none;
+    transition: background-color 100ms;
+      
+    &:hover {
+      transition: none;
+      @include light-glow;
+    }
   }
 }
