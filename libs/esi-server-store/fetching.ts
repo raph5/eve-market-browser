@@ -96,7 +96,13 @@ export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Record<st
   const nameRecord: Record<string, string> = {}
   const metaRecord: Record<string, number> = {}
   typeDump.forEach((t: any) => nameRecord[t.typeID] = t.typeName)
-  metaTypeDump.forEach((t: any) => metaRecord[t.typeID] = t.metaGroupID)
+  metaTypeDump.forEach((t: any) => {
+    const metaGroup = parseInt(t.metaGroupID)
+    if(metaGroup == 14) metaRecord[t.typeID] = 2
+    else if(metaGroup > 6) metaRecord[t.typeID] = 1
+    else metaRecord[t.typeID] = metaGroup
+  })
+
 
   const types: Record<string, Type> = {}
   for(const group of marketGroups) {

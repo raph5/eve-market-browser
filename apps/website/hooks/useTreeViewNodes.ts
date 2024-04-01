@@ -23,11 +23,55 @@ export function useTreeViewNodes(
       const sortedTypes = g.types.sort(stringSort(t => typeRecord[t].name))
       const sortedGroups = g.childsId.sort(stringSort(g => marketGroupRecord[g].name))
       
-      const items: string[] = []
-      const metaRecord: Record<string, string[]> = {}
+      const metaRecord: Record<string, number[]> = {}
       for(const t of sortedTypes) {
         const metaLevel = typeRecord[t].metaLevel
-        if(metaLevel == 1) {
+        if(!metaRecord[metaLevel]) metaRecord[metaLevel] = [t]
+        else metaRecord[metaLevel].push(t)
+      }
+
+      const items: string[] = []
+      const metaGroups: string[] = []
+      const metas = Object.keys(metaRecord).sort(numberSort(parseInt))
+      if(metas.length > 1) {
+        for(const metaLevel of metas) {
+          if(metaLevel == '1') {
+            for(const t of metaRecord[metaLevel]) {
+              items.push(`type:${t}`)
+              nodes.push({
+                id: `type:${t}`,
+                name: typeRecord[t].name,
+                parent: `group:${g.id}`,
+                children: [],
+                metadata: { type: 'item' }
+              })
+            }
+          }
+          else {
+            metaGroups.push(`group:${g.id}:tech:${metaLevel}`)
+            const meta = getMeta(parseInt(metaLevel))
+            nodes.push({
+              id: `group:${g.id}:tech:${metaLevel}`,
+              name: meta.name,
+              parent: `group:${g.id}`,
+              children: metaRecord[metaLevel].map(t => `type:${t}`),
+              metadata: { type: 'group', iconSrc: meta.iconSrc, iconAlt: `${meta.name} icon` }
+            })
+  
+            for(const t of metaRecord[metaLevel]) {
+              nodes.push({
+                id: `type:${t}`,
+                name: typeRecord[t].name,
+                parent: `group:${g.id}:tech:${metaLevel}`,
+                children: [],
+                metadata: { type: 'item' }
+              })
+            }
+          }
+        }
+      }
+      else {
+        for(const t of sortedTypes) {
           items.push(`type:${t}`)
           nodes.push({
             id: `type:${t}`,
@@ -37,30 +81,6 @@ export function useTreeViewNodes(
             metadata: { type: 'item' }
           })
         }
-        else {
-          if(!metaRecord[metaLevel]) metaRecord[metaLevel] = [`type:${t}`]
-          else metaRecord[metaLevel].push(`type:${t}`)
-
-          nodes.push({
-            id: `type:${t}`,
-            name: typeRecord[t].name,
-            parent: `group:${g.id}:tech:${metaLevel}`,
-            children: [],
-            metadata: { type: 'item' }
-          })
-        }
-      }
-
-      const metaGroups = Object.keys(metaRecord).sort(numberSort(parseInt))
-      for(const metaLevel of metaGroups) {
-        const meta = getMeta(parseInt(metaLevel))
-        nodes.push({
-          id: `group:${g.id}:tech:${metaLevel}`,
-          name: meta.name,
-          parent: `group:${g.id}`,
-          children: metaRecord[metaLevel],
-          metadata: { type: 'group', iconSrc: meta.iconSrc, iconAlt: `${meta.name} icon` }
-        })
       }
 
       nodes.push({
@@ -70,7 +90,7 @@ export function useTreeViewNodes(
         children: [
           ...sortedGroups.map(g => `group:${g}`),
           ...items,
-          ...metaGroups.map(t => `group:${g.id}:tech:${t}`)
+          ...metaGroups
         ],
         metadata: { type: 'group', iconSrc: iconSrc(g.iconFile), iconAlt: g.iconAlt }
       })

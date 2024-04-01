@@ -23,7 +23,7 @@ export async function loader() {
 
   const types = await esiStore.getTypes()
     .catch(() => {
-      throw json("Can't Find Types Names", { status: 500 })
+      throw json("Can't Find Types", { status: 500 })
     })
 
   return json({ types, marketGroups, marketGroupsRecord })
