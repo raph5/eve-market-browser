@@ -22,8 +22,18 @@
   color: $font-color;
   outline: none;
   user-select: none;
+  transition: background-color 100ms;
 
   &--focused {
+    @include light-glow;
+    transition: none;
+    
+    &:has(> .selected) {
+      @include glow;
+    }
+  }
+  &:hover {
+    transition: none;
     @include light-glow;
   }
 
@@ -32,7 +42,6 @@
   }
 }
 
-// TODO: bind this styles to a specific group class because groups in some rare cases can be leafs
 .tree-node__leaf {
   height: 20px !important;
   padding-left: calc(var(--depth) * 16px + 4px);
@@ -41,6 +50,10 @@
   box-sizing: border-box;
   color: $font-color;
   text-decoration: none;
+
+  &:has(> .selected) {
+    background-color: darken($accent, 33);
+  }
 }
 
 .tree-node-icon {

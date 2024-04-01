@@ -83,7 +83,8 @@ function GroupNode({ id, name, depth, isExpanded, getNodeProps, iconAlt, iconSrc
 }
 
 function ItemNode({ id, name, depth, getNodeProps }: ItemNodeProps) {
-  const { region } = useParams()
+  const params = useParams()
+  const type = id.substring(5)
 
   function onKeyDownHandler(event: React.KeyboardEvent) {
     if(event.key != 'Enter') return
@@ -95,10 +96,10 @@ function ItemNode({ id, name, depth, getNodeProps }: ItemNodeProps) {
     <Link
       onKeyDown={onKeyDownHandler}
       style={{ '--depth': depth-1 } as React.CSSProperties}
-      to={`/region/${region ?? 10000002}/type/${id.substring(5)}`}
+      to={`/region/${params.region ?? 10000002}/type/${type}`}
       {...getNodeProps() as React.HTMLAttributes<HTMLAnchorElement>}
     >
-      <span>{name}</span>
+      <span className={type == params.type ? 'selected' : ''}>{name}</span>
     </Link>
   )
 }

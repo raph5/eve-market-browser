@@ -63,15 +63,13 @@ $error-0: #842626;
   border-radius: 4px;
 }
 
-@mixin light-glow($color: $accent) {
-  background-color: darken($color, 40);
-  // box-shadow:
-  //   inset 0 0 12px darken($color, 43),
-    // 0 0 4px transparentize($color, 1);
+@mixin light-glow($color: desaturate(darken($accent, 38), 15)) {
+  background-color: $color;
+  box-shadow: 0 0 4px transparentize($color, .5);
 }
 
 @mixin glow($color: $accent) {
-  background-color: darken($color, 22);
+  background-color: darken($accent, 25) !important;
   box-shadow:
     inset 0 0 12px darken($color, 30),
     0 0 4px darken($color, 30);
