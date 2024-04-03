@@ -4,6 +4,10 @@
   "description": "",
   "scripts": {},
   "keywords": [],
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
   "author": "Raphaël Guyader (in-game name : Raph Toulouse)",
   "license": "ISC",
   "engines": {
