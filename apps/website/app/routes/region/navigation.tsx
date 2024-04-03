@@ -43,19 +43,19 @@ export default function Navigation({ typeRecord, marketGroups, marketGroupRecord
             <SearchBar className="borwse__search-bar" value={searchValue} onValueChange={setSearchValue} placeholder="Search" />
           </div>
           <div className="borwse__body">
-            <TreeView
-              style={searchValue.length >= 3 ? { display: 'none' } : {}}
-              typeRecord={typeRecord}
-              marketGroups={marketGroups}
-              marketGroupRecord={marketGroupRecord} />
+              <TreeView
+                style={searchValue.length >= 3 ? { display: 'none' } : {}}
+                typeRecord={typeRecord}
+                marketGroups={marketGroups}
+                marketGroupRecord={marketGroupRecord} />
 
-            {searchValue.length >= 3 &&
-              searchResults(searchValue).map(t => (
-                <Link className="borwse__item" to={`/region/${params.region ?? 10000002}/type/${t.id}`}>
-                  <span>{t.name}</span>
-                </Link>
-              ))
-            }
+              {searchValue.length >= 3 &&
+                searchResults(searchValue).map(t => (
+                  <Link className="borwse__item" to={`/region/${params.region ?? 10000002}/type/${t.id}`}>
+                    <span>{t.name}</span>
+                  </Link>
+                ))
+              }
           </div>
         </Tab>
         <Tab className="nav__tab" value="quickbar">

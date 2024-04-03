@@ -23,8 +23,6 @@ export const meta: MetaFunction = () => {
 }
 
 export async function loader() {
-  console.time('layout loader')
-
   const marketGroups = await esiStore.getMarketGroups()
     .catch(() => {
       throw json("Can't Find Market Groups", { status: 500 })
@@ -55,8 +53,6 @@ export async function loader() {
     { headers: { "Cache-Control": `public, s-maxage=${60*60*24*7}` } }
   )
 
-  console.timeEnd('layout loader')
-    
   return jsonData
 }
 

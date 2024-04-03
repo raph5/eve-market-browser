@@ -6,7 +6,7 @@ let TreeView: typeof module.default
 let flattenTree: typeof module.flattenTree
 let CLICK_ACTIONS: typeof module.CLICK_ACTIONS
 
-if(typeof document == "undefined") {
+if(typeof document == "undefined" && !process.versions.bun) {
   TreeView = module.default.default
   flattenTree = module.default.flattenTree
   CLICK_ACTIONS = module.default.CLICK_ACTIONS

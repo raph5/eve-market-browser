@@ -36,8 +36,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  console.time('item loader')
-
   if(types.findIndex(t => t.id == typeId) == -1 || regions.findIndex(r => r.id == regionId) == -1) {
     throw json("Type or Region Not Found", { status: 404 })
   }
@@ -46,8 +44,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const locationRecord = await getNames(removeDuplicates(orders.map(o => o.location_id).filter(l => 60000000 < l && l < 64000000)))
 
   const time = Date.now()
-
-  console.timeEnd('item loader')
 
   return json({
     typeId,

@@ -25,18 +25,10 @@ class EsiStore {
   }
 
   async updateRegions(): Promise<Region[]> {
-    try {
-      console.log("⚙️ fetching regions")
-      const regions = await fetchRegions()
-      await writeCacheFile(this.cacheFolder, REGION_CACHE, JSON.stringify(regions))
-      return regions
-    }
-    catch {
-      console.warn("cant update region data cache")
-      const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
-      if(cachedRegions == null) throw new Error("cant get regions")
-      return JSON.parse(cachedRegions)
-    }
+    console.log("⚙️ fetching regions")
+    const regions = await fetchRegions()
+    await writeCacheFile(this.cacheFolder, REGION_CACHE, JSON.stringify(regions))
+    return regions
   }
 
   async getRegions(): Promise<Region[]> {
