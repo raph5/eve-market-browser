@@ -59,6 +59,7 @@
     }
   }
   &__content {
+    z-index: 10;
     max-height: 300px;
     width: var(--radix-select-trigger-width);
     top: 0px;

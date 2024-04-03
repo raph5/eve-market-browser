@@ -44,10 +44,9 @@ export function formatIsk(isk: number) {
   return `${formater.format(isk)} ISK`
 }
 
-export function expiresIn(issued: string, duration: number) {
+export function expiresIn(issued: string, duration: number, time: number) {
   const creationTime = (new Date(issued)).valueOf()
   const endTime = creationTime + duration * DAY
-  const time = Date.now()
   
   let diffTime = endTime - time
   if(diffTime < 0) return 'expired'

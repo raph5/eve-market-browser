@@ -1,16 +1,14 @@
 import Table, { Cell, Column } from "@components/table"
-import { useTableSort } from "@hooks/useTableSort"
 import { Order } from "esi-client-store/types"
 import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "utils"
 
 export interface MarketDataProps {
   orders: Order[]
   locationRecord: Record<string, string>
+  time: number
 }
 
-const time = Date.now()
-
-export default function MarketData({ orders, locationRecord }: MarketDataProps) {
+export default function MarketData({ orders, locationRecord, time }: MarketDataProps) {
   const sellColumns: Column[] = [
     { value: 'quantity', label: 'Quantity', sorting: numberSort() },
     { value: 'price', label: 'Price', sorting: numberSort() },
@@ -35,7 +33,7 @@ export default function MarketData({ orders, locationRecord }: MarketDataProps) 
     ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
-      expiresIn(order.issued, order.duration)
+      expiresIn(order.issued, order.duration, time)
     ]
   }))
   const buyData: Record<string, Cell>[] = orders.filter(order => order.order_type == 'buy').map(order => ({
@@ -47,7 +45,7 @@ export default function MarketData({ orders, locationRecord }: MarketDataProps) 
     ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
-      expiresIn(order.issued, order.duration)
+      expiresIn(order.issued, order.duration, time)
     ],
     range: [ order.range, order.range ],
     minVolume: [ order.min_volume, order.min_volume ]

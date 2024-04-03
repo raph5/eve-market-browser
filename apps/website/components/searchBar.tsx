@@ -15,14 +15,16 @@ export function SearchBar({ placeholder, value, onValueChange, className }: Sear
     onValueChange(target.value)
   }
   
-  return <div className={classNames('search-bar', className)}>
-    <MagnifyingGlassIcon className="search-bar__icon" />
-    <input
-      type="text"
-      className="search-bar__input"
-      placeholder={placeholder ?? ''}
-      value={value}
-      onChange={handleChange}
-    />
-  </div>
+  return (
+    <div className={classNames('search-bar', className)}>
+      <MagnifyingGlassIcon className="search-bar__icon" />
+      <input
+        type="text"
+        className="search-bar__input"
+        placeholder={placeholder ?? ''}
+        value={value}
+        onChange={handleChange}
+      />
+    </div>
+  )
 }

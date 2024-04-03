@@ -1,3 +1,4 @@
+import { createRecord } from "utils"
 import { readCacheFile, writeCacheFile } from "./cache"
 import { fetchMarketGroups, fetchRegions, fetchTypes } from "./fetching"
 import type { MarketGroup, Region, Type } from "./types"
@@ -8,22 +9,25 @@ const TYPE_CACHE = 'types'
 
 class EsiStore {
 
-  private typesPromise: null|Promise<Record<string, Type>> = null
-  private regionsPromise: null|Promise<Region[]> = null
-  private marketGroupsPromise: null|Promise<MarketGroup[]> = null
+  public regions: null|Region[] = null
+  public marketGroups: null|MarketGroup[] = null
+  public types: null|Type[] = null
+
+  public marketGroupRecord: null|Record<string, MarketGroup> = null
+  public typeRecord: null|Record<string, Type> = null
 
   constructor(
     private cacheFolder: string
-  ) {}
+  ) {
+    this.getRegions()
+    this.getMarketGroups()
+    this.getTypes()
+  }
 
   async updateRegions(): Promise<Region[]> {
     try {
-      if(this.regionsPromise == null) {
-        console.log("⚙️ fetching regions")
-        this.regionsPromise = fetchRegions()
-      }
-      const regions = await this.regionsPromise
-      this.regionsPromise = null
+      console.log("⚙️ fetching regions")
+      const regions = await fetchRegions()
       await writeCacheFile(this.cacheFolder, REGION_CACHE, JSON.stringify(regions))
       return regions
     }
@@ -36,44 +40,59 @@ class EsiStore {
   }
 
   async getRegions(): Promise<Region[]> {
-    const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
-    if(cachedRegions == null) return this.updateRegions()
-    return JSON.parse(cachedRegions)
+    if(this.regions == null) {
+      const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
+      if(cachedRegions == null) return this.updateRegions()
+      this.regions = JSON.parse(cachedRegions) as Region[]
+    }
+    return this.regions
   }
 
   async updateMarketGroups(): Promise<MarketGroup[]> {
-    if(this.marketGroupsPromise == null) {
-      console.log("⚙️ fetching groups")
-      this.marketGroupsPromise = fetchMarketGroups()
-    }
-    const groups = await this.marketGroupsPromise
-    this.marketGroupsPromise = null
+    console.log("⚙️ fetching groups")
+    const groups = await fetchMarketGroups()
     await writeCacheFile(this.cacheFolder, MARKET_GROUP_CACHE, JSON.stringify(groups))
     return groups
   }
 
   async getMarketGroups(): Promise<MarketGroup[]> {
-    const cachedRegions = await readCacheFile(this.cacheFolder, MARKET_GROUP_CACHE)
-    if(cachedRegions == null) return this.updateMarketGroups()
-    return JSON.parse(cachedRegions)
+    if(this.marketGroups == null) {
+      const cachedRegions = await readCacheFile(this.cacheFolder, MARKET_GROUP_CACHE)
+      if(cachedRegions == null) return this.updateMarketGroups()
+      this.marketGroups = JSON.parse(cachedRegions) as MarketGroup[]
+    }
+    return this.marketGroups
   }
 
-  async updateTypes(): Promise<Record<string, Type>> {
+  async updateTypes(): Promise<Type[]> {
+    console.log("⚙️ fetching types")
     const marketGroups = await this.getMarketGroups()
-    if(this.typesPromise == null) {
-      console.log("⚙️ fetching types")
-      this.typesPromise = fetchTypes(Object.values(marketGroups))
-    }
-    const types = await this.typesPromise
-    this.typesPromise = null 
+    const types = await fetchTypes(Object.values(marketGroups))
     await writeCacheFile(this.cacheFolder, TYPE_CACHE, JSON.stringify(types))
     return types
   }
 
-  async getTypes(): Promise<Record<string, Type>> {
-    const jsonTypes = await readCacheFile(this.cacheFolder, TYPE_CACHE)
-    if(jsonTypes == null) return this.updateTypes()
-    return JSON.parse(jsonTypes)
+  async getTypes(): Promise<Type[]> {
+    if(this.types == null) {
+      const jsonTypes = await readCacheFile(this.cacheFolder, TYPE_CACHE)
+      if(jsonTypes == null) return this.updateTypes()
+      this.types = JSON.parse(jsonTypes) as Type[]
+    }
+    return this.types
+  }
+
+  async getMarketGroupRecord(): Promise<Record<string, MarketGroup>> {
+    if(this.marketGroupRecord == null) {
+      this.marketGroupRecord = createRecord(await this.getMarketGroups(), 'id')
+    }
+    return this.marketGroupRecord
+  }
+
+  async getTypeRecord(): Promise<Record<string, Type>> {
+    if(this.typeRecord == null) {
+      this.typeRecord = createRecord(await this.getTypes(), 'id')
+    }
+    return this.typeRecord
   }
 
 }

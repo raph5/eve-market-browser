@@ -1,41 +1,75 @@
 import { esiStore } from "@app/.server/esiServerStore";
-import { json, type MetaFunction } from "@remix-run/node";
-import { Outlet, useLoaderData, useRouteError } from "@remix-run/react";
+import { json } from "@remix-run/node";
+import { MetaFunction, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Navigation from "./navigation";
-import { useMemo } from "react";
 import { createRecord } from "utils";
 import { ErrorMessage } from "@components/errorMessage";
+import { MarketGroup, Region, Type } from "esi-server-store/types";
+import Header from "./header";
+
+export interface RegionContext {
+  types: Type[]
+  typeRecord: Record<string, Type>
+  marketGroups: MarketGroup[]
+  marketGroupsRecord: Record<string, MarketGroup>
+  regions: Region[]
+}
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "EVE Market Browser" },
+    { name: "description", content: "Welcome to EVE Market Browser!" },
   ];
 }
 
 export async function loader() {
+  console.time('layout loader')
+
   const marketGroups = await esiStore.getMarketGroups()
     .catch(() => {
       throw json("Can't Find Market Groups", { status: 500 })
     })
-
-  const marketGroupsRecord = createRecord(marketGroups, 'id')
 
   const types = await esiStore.getTypes()
     .catch(() => {
       throw json("Can't Find Types", { status: 500 })
     })
 
-  return json({ types, marketGroups, marketGroupsRecord })
+  const regions = await esiStore.getRegions()
+    .catch(() => {
+      throw json("Can't Find Regions", { status: 500 })
+    })
+    
+  const marketGroupsRecord = await esiStore.getMarketGroupRecord()
+    .catch(() => {
+      throw json("Can't Find Market Groups Record", { status: 500 })
+    })
+
+  const typeRecord = await esiStore.getTypeRecord()
+    .catch(() => {
+      throw json("Can't Find Type Record", { status: 500 })
+    })
+  
+  const jsonData = json(
+    { types, typeRecord, marketGroups, marketGroupsRecord, regions },
+    { headers: { "Cache-Control": `public, s-maxage=${60*60*24*7}` } }
+  )
+
+  console.timeEnd('layout loader')
+    
+  return jsonData
 }
 
 export default function Layout() {
-  const { types, marketGroups, marketGroupsRecord } = useLoaderData<typeof loader>();
+  const { types, typeRecord, marketGroups, marketGroupsRecord, regions } = useLoaderData<typeof loader>();
 
   return (
     <>
-      <Navigation typeRecord={types} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
-      <Outlet />
+      <Header regions={regions} />
+      <Navigation typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
+      <main>
+        <Outlet context={{ types, typeRecord, marketGroups, marketGroupsRecord, regions }} />
+      </main>
     </>
   );
 }

@@ -8,14 +8,13 @@ import Label from "@components/label";
 
 export interface HeaderProps {
   regions: Region[]
-  regionId: number
 }
 
-export default function Header({ regions, regionId }: HeaderProps) {
+export default function Header({ regions }: HeaderProps) {
   const navigate = useNavigate()
   const params = useParams()
 
-  const [selectValue, setSelectValue] = useState(regionId.toString())
+  const [selectValue, setSelectValue] = useState(params.region)
 
   function setRegion(region: string) {
     setSelectValue(region)

@@ -82,7 +82,7 @@ export async function fetchMarketGroups(): Promise<MarketGroup[]> {
   return Object.values(groupRecord)
 }
 
-export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Record<string, Type>> {
+export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Type[]> {
   const typeDumpResponse = await fetch('https://www.fuzzwork.co.uk/dump/latest/invTypes.csv')
   const metaTypeDumpResponse = await fetch('https://www.fuzzwork.co.uk/dump/latest/invMetaTypes.csv')
 
@@ -103,15 +103,14 @@ export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Record<st
     else metaRecord[t.typeID] = metaGroup
   })
 
-
-  const types: Record<string, Type> = {}
+  const types: Type[] = []
   for(const group of marketGroups) {
     for(const typeId of group.types) {
-      types[typeId] = {
+      types.push({
         id: typeId,
         name: nameRecord[typeId] ?? 'Unknown',
         metaLevel: metaRecord[typeId] ?? 1
-      }
+      })
     }
   }
 
