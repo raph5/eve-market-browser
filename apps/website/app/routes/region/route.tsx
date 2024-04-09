@@ -62,7 +62,7 @@ export default function Layout() {
   return (
     <>
       <Header regions={regions} />
-      <Navigation typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
+      <Navigation types={types} typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
       <main>
         <Outlet context={{ types, typeRecord, marketGroups, marketGroupsRecord, regions }} />
       </main>

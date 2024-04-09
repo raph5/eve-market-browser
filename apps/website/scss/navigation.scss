@@ -53,7 +53,8 @@
   &__item {
     height: 20px;
     width: 100%;
-    display: block;
+    display: flex;
+    align-items: center;
     box-sizing: border-box;
     color: $font-color;
     text-decoration: none;
