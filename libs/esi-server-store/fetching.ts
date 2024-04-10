@@ -1,5 +1,5 @@
 import type { Region, MarketGroup, Type } from "./types";
-import { createRecord } from "utils";
+import { createRecord, stringSort } from "utils";
 import { parseCsv } from "utils/server";
 
 const HUB_REGION = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
@@ -114,5 +114,7 @@ export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Type[]> {
     }
   }
 
-  return types
+  const sortedTypes = types.sort(stringSort(t => t.name))
+
+  return sortedTypes
 }

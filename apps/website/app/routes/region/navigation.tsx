@@ -3,10 +3,16 @@ import "@scss/navigation.scss"
 import TreeView from "@components/treeView"
 import { Tab, TabsRoot } from "@components/tabs"
 import { SearchBar } from "@components/searchBar"
-import { useMemo, useState } from "react"
 import { Link, useParams } from "@remix-run/react"
-import { stringSort } from "utils"
 import { useTypeSearch } from "@hooks/useTypeSearch"
+import { useLocalStorage } from "@hooks/useLocalStorage"
+import { useMemo } from "react"
+
+export interface QuickItem {
+  type: number
+  name: string
+  folder: string
+}
 
 export interface NavigationProps {
   types: Type[]
@@ -16,8 +22,8 @@ export interface NavigationProps {
 }
 
 export default function Navigation({ types, typeRecord, marketGroups, marketGroupRecord }: NavigationProps) {
-  // const marketTypes 
   const [search, setSearch, results] = useTypeSearch(types)
+  const [quickItems, setQuickItems] = useLocalStorage<QuickItem[]>('quickItems', [])
   const params = useParams()
 
   const tabs = [
