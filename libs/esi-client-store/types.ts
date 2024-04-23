@@ -26,4 +26,5 @@ export interface Order {
 export interface Meta {
   name: string
   iconSrc: string
+  rarity: number
 }

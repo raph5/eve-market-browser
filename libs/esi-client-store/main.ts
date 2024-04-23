@@ -1,12 +1,39 @@
 import esiFetch from "esi-fetch"
 import type { Meta, Order } from "./types"
 
-export const T1: Meta = { name: 'Tech 1', iconSrc: '' }
-export const T2: Meta = { name: 'Tech 2', iconSrc: '/meta-icon/t2.png' }
-export const STORYLINE: Meta = { name: 'Storyline', iconSrc: '/meta-icon/storyline.png' }
-export const FACTION: Meta = { name: 'Faction', iconSrc: '/meta-icon/faction.png' }
-export const DEADSPACE: Meta = { name: 'Deadspace', iconSrc: '/meta-icon/deadspace.png' }
-export const OFFICER: Meta = { name: 'Officer', iconSrc: '/meta-icon/officer.png' }
+
+export const T1: Meta = {
+  name: 'Tech 1',
+  iconSrc: '',
+  rarity: 1
+}
+export const T2: Meta = {
+  name: 'Tech 2',
+  iconSrc: '/meta-icon/t2.png',
+  rarity: 2
+}
+export const FACTION_STORYLINE: Meta = {
+  name: 'Faction & Storyline',
+  iconSrc: '/meta-icon/faction.png',
+  rarity: 3
+}
+export const DEADSPACE: Meta = {
+  name: 'Deadspace',
+  iconSrc: '/meta-icon/deadspace.png',
+  rarity: 4
+}
+export const OFFICER: Meta = {
+  name: 'Officer',
+  iconSrc: '/meta-icon/officer.png',
+  rarity: 5
+}
+export const RARITY_TO_META: Record<string, Meta> = {
+  1: T1,
+  2: T2,
+  3: FACTION_STORYLINE,
+  4: DEADSPACE,
+  5: OFFICER
+}
 
 export async function getHistory(type: number, region: number): Promise<History> {
   console.log(`⚙️ fetching type:${type} history from region:${region}`)
@@ -59,8 +86,8 @@ export function getMeta(metaType: number): Meta {
   switch(metaType) {
     case 1 : return T1
     case 2 : return T2
-    case 3 : return STORYLINE
-    case 4 : return FACTION
+    case 3 : return FACTION_STORYLINE
+    case 4 : return FACTION_STORYLINE
     case 5 : return DEADSPACE
     case 6 : return OFFICER
     default : return T1

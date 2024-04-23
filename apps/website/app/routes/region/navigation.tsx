@@ -6,7 +6,7 @@ import { SearchBar } from "@components/searchBar"
 import { Link, useParams } from "@remix-run/react"
 import { useTypeSearch } from "@hooks/useTypeSearch"
 import { useLocalStorage } from "@hooks/useLocalStorage"
-import { useMemo } from "react"
+import { MarketTree } from "./marketTree"
 
 export interface QuickItem {
   type: number
@@ -39,7 +39,7 @@ export default function Navigation({ types, typeRecord, marketGroups, marketGrou
             <SearchBar className="borwse__search-bar" value={search} onValueChange={setSearch} placeholder="Search" focusShortcut />
           </div>
           <div className="borwse__body">
-              <TreeView
+              <MarketTree
                 style={search.length > 3 ? { display: 'none' } : {}}
                 typeRecord={typeRecord}
                 marketGroups={marketGroups}

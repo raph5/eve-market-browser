@@ -1,0 +1,97 @@
+@import './var.scss';
+
+.market-tree, .market-group__content, .market-item {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  outline: none;
+}
+
+.market-item, .market-group {
+  @for $i from 1 through 20 {
+    &[data-depth="#{$i}"] {
+      --depth: #{$i};
+    }
+  }
+}
+
+.market-group {
+  font-family: $font;
+  font-size: 14px;
+  font-weight: normal;
+  color: $font-color;
+  
+  &:focus-visible {
+    outline: ridge $primary 2px;
+  }
+  &[data-state=open] > &__trigger &__triangle {
+    transform: rotate(90deg);
+  }
+
+  &__trigger {
+    height: 22px;
+    padding-left: calc(var(--depth) * 16px);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    transition: background-color 100ms;
+    white-space: nowrap;
+    overflow: hidden;
+
+    &:hover {
+      @include light-glow;
+      transition: none;
+    }
+  }
+  &__label {
+    min-width: 0;
+  }
+  &__icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  &__triangle {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+
+  &--meta &__icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.market-item {
+  height: 20px;
+  transition: background-color 100ms;
+
+  &:focus-visible {
+    outline: ridge $primary 2px;
+  }
+  &:hover {
+    @include light-glow;
+    transition: none;
+  }
+  &[aria-selected=true] {
+    background-color: darken($accent, 33);
+  }
+
+  &__link {
+    padding-left: calc(var(--depth) * 16px + 4px);
+    font-family: $font;
+    font-size: 14px;
+    font-weight: normal;
+    color: $font-color;
+    overflow: hidden;
+    white-space: nowrap;
+    user-select: none;
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
