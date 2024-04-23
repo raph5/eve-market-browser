@@ -25,7 +25,7 @@ export default function Header({ regions }: HeaderProps) {
     <header className="header">
       <img className="header__logo" src={logo} alt="eve market browser logo" />
       <h1 className="header__title">EVE Market Browser</h1>
-      <span className="header__version">alpha</span>
+      {/* <span className="header__version">alpha</span> */}
 
       <Label value="Region :" className="header__region-label" htmlFor="regionSelect" />
       <Select
