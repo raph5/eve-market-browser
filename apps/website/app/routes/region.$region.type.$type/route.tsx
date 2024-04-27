@@ -2,14 +2,16 @@ import { esiStore } from "@app/.server/esiServerStore";
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useOutletContext, useRouteError } from "@remix-run/react";
 import { removeDuplicates } from "utils";
-import "@scss/item-page.scss"
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { Tab, TabsRoot } from "@components/tabs";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "../region/route";
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { getNames, getOrders } from "esi-client-store/main";
 import MarketData from "./marketData";
+import { PlusIcon } from "@radix-ui/react-icons";
+import QuickbarContext from "@contexts/quickbarContext";
+import "@scss/item-page.scss"
 
 export async function loader({ params }: LoaderFunctionArgs) {
 
@@ -57,6 +59,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
   const { typeId, orders, locationRecord, time } = useLoaderData<typeof loader>()
+  const { addToQuickbar, removeFromQuickbar, isInQuickbar } = useContext(QuickbarContext)
 
   const breadcrumbs = useMemo(() => {
     const bc: string[] = []
@@ -82,6 +85,18 @@ export default function Type() {
         <div className="item-header__info">
           <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
           <h2 className="item-header__name">{typeRecord[typeId].name}</h2>
+        </div>
+        <div className="item-header__action">
+          {isInQuickbar(typeId) ? (
+            <button className="button button--corner-left item-header__button" onClick={() => removeFromQuickbar(typeId)}>
+              <span>Remove From Quickbar</span>
+            </button>
+          ) : (
+            <button className="button button--corner-left item-header__button" onClick={() => addToQuickbar(typeId)}>
+              <PlusIcon className="button__icon" />
+              <span>Add To Quickbar</span>
+            </button>
+          )}
         </div>
       </div>
       <div className="item-body">

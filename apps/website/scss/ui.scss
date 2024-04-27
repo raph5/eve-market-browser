@@ -1,0 +1,30 @@
+@import './var.scss';
+
+.button {
+  font-size: 14px;
+  background-color: $primary-3;
+  border: solid 1px $primary-1;
+  color: $font-color;
+  font-family: $font;
+  padding: 4px 8px;
+  cursor: pointer;
+
+  > * {
+    vertical-align: middle;
+  }
+
+  &:hover {
+    background-color: $primary-2;
+  }
+
+  &__icon {
+    margin-right: 4px;
+  }
+
+  &--corner-right {
+    @include sharp-border-radius-right(1px, 10px, darken($primary, 30));
+  }
+  &--corner-left {
+    @include sharp-border-radius-left(1px, 10px, darken($primary, 30));
+  }
+}

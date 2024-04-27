@@ -1,0 +1,115 @@
+@import './var.scss';
+
+.quickbar {
+  height: 100%;
+  display: grid;
+  grid-template-rows: max-content auto;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+    margin-bottom: 8px;
+  }
+  &__options {
+    display: flex;
+    gap: 8px;
+  }
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+  &__button {
+    height: 24px;
+    width: 18px;
+    cursor: pointer;
+
+    &:hover {
+      color: white;
+    }
+  }
+  &__empty {
+    margin: 150px auto 0 auto;
+    color: $font-color-light;
+  }
+  &__tree {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0;
+    margin: 0;
+  }
+}
+
+.quickbar-folder {
+  font-family: $font;
+  font-size: 14px;
+  font-weight: normal;
+  color: $font-color;
+  color: $font-color;
+  
+  &:focus-visible {
+    outline: ridge $primary 2px;
+  }
+  &[data-state=open] > &__trigger &__triangle {
+    transform: rotate(90deg);
+  }
+
+  &__trigger {
+    height: 22px;
+    padding-left: calc(var(--depth) * 16px);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    transition: background-color 100ms;
+    white-space: nowrap;
+    overflow: hidden;
+
+    &:hover {
+      background-color: $primary-3;
+      transition: none;
+    }
+  }
+  &__label {
+    min-width: 0;
+  }
+  &__triangle {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+}
+
+.quickbar-item {
+  height: 20px;
+  transition: background-color 100ms;
+  position: relative;
+
+  &:focus-visible {
+    outline: ridge $primary 2px;
+  }
+  &:hover {
+    background-color: $primary-3;
+    transition: none;
+  }
+  &[aria-selected=true] {
+    background-color: $primary-1;
+  }
+
+  &__link {
+    padding-left: calc(var(--depth) * 16px + 4px);
+    font-family: $font;
+    font-size: 14px;
+    font-weight: normal;
+    color: $font-color;
+    overflow: hidden;
+    white-space: nowrap;
+    user-select: none;
+    text-decoration: none;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+}

@@ -1,5 +1,11 @@
 @import './var.scss';
 
+@keyframes blink {
+  50% {
+    color: $font-color;
+  }
+}
+
 .tabs {
   width: 100%;
 
@@ -29,6 +35,9 @@
       opacity: 0;
     }
     
+    &--blink {
+      animation: blink linear 300ms;
+    }
     &[data-state=active] {
       color: $font-color;
       

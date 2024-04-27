@@ -47,6 +47,7 @@ export async function fetchMarketGroups(): Promise<MarketGroup[]> {
   const iconDump = await iconDumpResponse.text().then(t => parseCsv(t))
 
   const iconsDumpRecord = createRecord(iconDump, 'iconID')
+  const typeNameRecord: Record<string, string> = {}
 
   const groupRecord: Record<string, MarketGroup> = {}
 
@@ -66,6 +67,7 @@ export async function fetchMarketGroups(): Promise<MarketGroup[]> {
   }
 
   for(const type of typeDump) {
+    typeNameRecord[type.typeID] = type.typeName
     if(type.marketGroupID != 'None') {
       groupRecord[type.marketGroupID].types.push(parseInt(type.typeID))
     }
@@ -77,6 +79,11 @@ export async function fetchMarketGroups(): Promise<MarketGroup[]> {
     if(parentId != null) {
       groupRecord[parentId].childsId.push(parseInt(groupId))
     }
+  }
+
+  for(const groupId in groupRecord) {
+    groupRecord[groupId].types = groupRecord[groupId].types.sort(stringSort(t => typeNameRecord[t]))
+    groupRecord[groupId].childsId = groupRecord[groupId].childsId.sort(stringSort(g => groupRecord[g].name))
   }
 
   return Object.values(groupRecord)

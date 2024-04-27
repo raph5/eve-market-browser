@@ -16,7 +16,7 @@
   font-size: 14px;
 
   &[data-state=closed] {
-    @include sharp-border-radius(1px, 10px, $border-1);
+    @include sharp-border-radius-right(1px, 10px, $border-1);
   }
   &[data-state=open] {
     border-bottom-color: transparent;
@@ -66,7 +66,7 @@
     background-color: $background-1;
     border: solid 1px $border-1;
     border-top: none;
-    @include sharp-border-radius(1px, 10px, $border-1);
+    @include sharp-border-radius-right(1px, 10px, $border-1);
     max-width: 300px;
     font-size: 14px;
   }
@@ -80,16 +80,16 @@
     transition: background-color 200ms;
 
     &[data-highlighted][data-state=unchecked] {
-      @include light-glow;
+      background-color: $primary-3;
       transition: background-color 100ms;
     }
     &[data-highlighted][data-state=checked] {
-      @include glow;
+      background-color: $primary-1;
     }
     &[data-state=checked] {
       position: relative;
       z-index: 1;
-      background-color: darken($accent, 30);
+      background-color: $primary-2;
     }
   }
   &__scroll-button {
@@ -106,7 +106,7 @@
     }
     &--bottom {
       bottom: 0;
-      @include sharp-border-radius(1px, 10px, transparent);
+      @include sharp-border-radius-right(1px, 10px, transparent);
     }
   }
 }

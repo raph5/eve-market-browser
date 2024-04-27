@@ -1,6 +1,6 @@
-import { useCallback, useContext, useMemo } from "react"
-import TreeView, { TreeViewRootProps } from "react-composable-treeview"
-import { TriangleRightIcon } from "@radix-ui/react-icons"
+import { useContext, useMemo, useState } from "react"
+import TreeView from "react-composable-treeview"
+import { MixerHorizontalIcon, TriangleRightIcon, DrawingPinIcon, DrawingPinFilledIcon } from "@radix-ui/react-icons"
 import EveIcon, { iconSrc } from "@components/eveIcon"
 import classNames from "classnames"
 import { Type, MarketGroup as MarketGroupType } from "esi-server-store/types"
@@ -8,9 +8,15 @@ import { createContext } from "react"
 import { Link, useNavigate, useParams } from "@remix-run/react"
 import { RARITY_TO_META, getMeta } from "esi-client-store/main"
 import { Meta } from "esi-client-store/types"
+import { useTypeSearch } from "@hooks/useTypeSearch"
+import { SearchBar } from "@components/searchBar"
+import { BsArrowsCollapse } from "react-icons/bs"
+import QuickbarContext from "@contexts/quickbarContext"
+import { stringSort } from "utils/main"
 import "@scss/market-tree.scss"
 
-export interface MarketTreeProps extends Omit<TreeViewRootProps, 'children'> {
+export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
+  types: Type[]
   typeRecord: Record<string, Type>
   marketGroups: MarketGroupType[]
   marketGroupRecord: Record<string, MarketGroupType>
@@ -36,34 +42,79 @@ interface MarketTreeContextType {
   typeRecord: Record<string, Type>
   marketGroups: MarketGroupType[]
   marketGroupRecord: Record<string, MarketGroupType>
+  quickbar: Record<string, number[]>
+  addToQuickbar: (typeId: number) => void
+  removeFromQuickbar: (typeId: number) => void
 }
 
 const MarketTreeContext = createContext<MarketTreeContextType>({
   region: '10000002',
   typeRecord: {},
   marketGroups: [],
-  marketGroupRecord: {}
+  marketGroupRecord: {},
+  quickbar: {},
+  addToQuickbar: () => {},
+  removeFromQuickbar: () => {}
 })
 
 
 export function MarketTree({
+  types,
   typeRecord,
   marketGroups,
   marketGroupRecord,
   className,
   ...props
 }: MarketTreeProps) {
-  const rootGroups = marketGroups.filter(group => group.parentId == null)
+  const { quickbar, addToQuickbar, removeFromQuickbar } = useContext(QuickbarContext)
+  const [search, setSearch, results] = useTypeSearch(types)
+  const [rootValue, setRootValue] = useState<Set<string>>(new Set())
   const params = useParams()
+  
+  const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
   const region = params.region as string
 
+  function collapseTree() {
+    setRootValue(new Set())
+  }
+
   return (
-    <MarketTreeContext.Provider value={{typeRecord, marketGroupRecord, marketGroups, region}}>
-      <TreeView.Root className={classNames(classNames, 'market-tree')} {...props}>
-        {rootGroups.map(group => (
-          <MarketGroup groupId={group.id} key={group.id} />
-        ))}
-      </TreeView.Root>
+    <MarketTreeContext.Provider value={{typeRecord, marketGroupRecord, marketGroups, region, quickbar, addToQuickbar, removeFromQuickbar}}>
+      <div className="market-tree">
+        <div className="market-tree__header">
+          <SearchBar
+            className="market-tree__search-bar"
+            value={search}
+            onValueChange={setSearch}
+            placeholder="Search"
+            focusShortcut />
+          <button onClick={collapseTree} className="market-tree__button" title="Collapse all folders">
+            <BsArrowsCollapse className="market-tree__button-icon" />
+          </button>
+          {/* <button className="market-tree__button" title="Filters">
+            <MixerHorizontalIcon className="market-tree__button-icon" />
+          </button> */}
+        </div>
+        <div className="market-tree__body">
+          <TreeView.Root
+            style={search.length > 3 ? { display: 'none' } : {}}
+            value={rootValue}
+            onValueChange={setRootValue}
+            className={classNames(classNames, 'market-tree__tree')}
+            {...props}
+          >
+            {rootGroups.map(group => (
+              <MarketGroup groupId={group.id} key={group.id} />
+            ))}
+          </TreeView.Root>
+          
+          {search.length > 3 && results.map(t => (
+            <Link className="market-tree__item" to={`/region/${params.region ?? 10000002}/type/${t.id}`} key={t.id}>
+              <span>{t.name}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
     </MarketTreeContext.Provider>
   )
 }
@@ -89,7 +140,7 @@ function MarketGroup({ groupId }: MarketGroupProps) {
       }
       else {
         metaGroups[meta.rarity].push(type.id)
-    }
+      }
     }
 
     return [metaGroups, mainMetaRarity]
@@ -146,6 +197,7 @@ function MarketMetaGroup({ meta, groupId, children }: MarketMetaGroupProps) {
 function MarketItem({ typeId }: MarketItemProps) {
   const navigate = useNavigate()
   const { typeRecord, region } = useContext(MarketTreeContext)
+  const { isInQuickbar, addToQuickbar, removeFromQuickbar } = useContext(QuickbarContext)
   const type = typeRecord[typeId]
 
   function handleKeyDown(event: React.KeyboardEvent) {
@@ -158,6 +210,15 @@ function MarketItem({ typeId }: MarketItemProps) {
       <Link to={`/region/${region}/type/${type.id}`} className="market-item__link">
         {type.name}
       </Link>
+      {isInQuickbar(typeId) ? (
+        <button onClick={e => {removeFromQuickbar(typeId); e.stopPropagation()}} className="market-item__button" title="Remove from quickbar">
+          <DrawingPinFilledIcon className="market-item__button-icon"/>
+        </button>
+      ) : (
+        <button onClick={e => {addToQuickbar(typeId); e.stopPropagation()}} className="market-item__button" title="Add to quickbar">
+          <DrawingPinIcon className="market-item__button-icon"/>
+        </button>
+      )}
     </TreeView.Item>
   )
 }

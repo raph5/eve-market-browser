@@ -2,10 +2,11 @@ import { esiStore } from "@app/.server/esiServerStore";
 import { json } from "@remix-run/node";
 import { MetaFunction, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Navigation from "./navigation";
-import { createRecord } from "utils";
 import { ErrorMessage } from "@components/errorMessage";
 import { MarketGroup, Region, Type } from "esi-server-store/types";
 import Header from "./header";
+import { useQuickbar } from "@hooks/useQuickbar";
+import QuickbarContext from "@contexts/quickbarContext";
 
 export interface RegionContext {
   types: Type[]
@@ -57,16 +58,17 @@ export async function loader() {
 }
 
 export default function Layout() {
+  const quickbarHook = useQuickbar()
   const { types, typeRecord, marketGroups, marketGroupsRecord, regions } = useLoaderData<typeof loader>();
 
   return (
-    <>
+    <QuickbarContext.Provider value={quickbarHook}>
       <Header regions={regions} />
       <Navigation types={types} typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
       <main>
         <Outlet context={{ types, typeRecord, marketGroups, marketGroupsRecord, regions }} />
       </main>
-    </>
+    </QuickbarContext.Provider>
   );
 }
 

@@ -1,6 +1,67 @@
 @import './var.scss';
 
-.market-tree, .market-group__content, .market-item {
+.market-tree {
+  height: 100%;
+  display: grid;
+  grid-template-rows: max-content auto;
+  
+  &__header {
+    padding-right: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-right: 4px;
+  }
+  &__body {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  &__search-bar {
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+  }
+  &__button {
+    width: 18px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+
+    &:hover {
+      color: white;
+    }
+  }
+  &__item {
+    height: 20px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    color: $font-color;
+    text-decoration: none;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: $font;
+    font-size: 14px;
+    font-weight: normal;
+    color: $font-color;
+    outline: none;
+    user-select: none;
+    transition: background-color 100ms;
+      
+    &:hover {
+      transition: none;
+      background-color: $primary-3;
+    }
+  }
+}
+
+.market-tree__tree, .market-group__content, .market-item {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -40,7 +101,7 @@
     overflow: hidden;
 
     &:hover {
-      @include light-glow;
+      background-color: $primary-3;
       transition: none;
     }
   }
@@ -67,16 +128,31 @@
 .market-item {
   height: 20px;
   transition: background-color 100ms;
+  position: relative;
+  overflow: hidden;
 
   &:focus-visible {
     outline: ridge $primary 2px;
   }
   &:hover {
-    @include light-glow;
+    background-color: $primary-3;
     transition: none;
+
+    .market-item__button {
+      opacity: 1;
+    }
   }
   &[aria-selected=true] {
-    background-color: darken($accent, 33);
+    background-color: $primary-1;
+
+    .market-item__button {
+      background-color: $primary-1;
+      opacity: 1;
+
+      &::after {
+        background: linear-gradient(90deg, transparent, $primary-1);
+      }
+    }
   }
 
   &__link {
@@ -93,5 +169,33 @@
     height: 100%;
     display: flex;
     align-items: center;
+  }
+  &__button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    color: $font-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    background-color: $primary-3;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: 100%;
+      top: 0;
+      height: 100%;
+      width: 10px;
+      background: linear-gradient(90deg, transparent, $primary-3);
+    }
+
+    &:hover {
+      color: white;
+    }
   }
 }
