@@ -7,6 +7,7 @@ const QuickbarContext = createContext<QuickbarContextType>({
   quickbar: {},
   addToQuickbar: () => {},
   removeFromQuickbar: () => {},
+  clearQuickbar: () => {},
   moveToFolder: () => {},
   createFolder: () => {},
   removeFolder: () => {},

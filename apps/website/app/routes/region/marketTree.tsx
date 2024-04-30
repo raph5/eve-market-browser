@@ -20,6 +20,8 @@ export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElem
   typeRecord: Record<string, Type>
   marketGroups: MarketGroupType[]
   marketGroupRecord: Record<string, MarketGroupType>
+  treeValue: Set<string>
+  onTreeValueChange: (v: Set<string>) => void
 }
 
 interface MarketGroupProps {
@@ -53,8 +55,8 @@ const MarketTreeContext = createContext<MarketTreeContextType>({
   marketGroups: [],
   marketGroupRecord: {},
   quickbar: {},
-  addToQuickbar: () => {},
-  removeFromQuickbar: () => {}
+  addToQuickbar: () => { },
+  removeFromQuickbar: () => { }
 })
 
 
@@ -64,22 +66,23 @@ export function MarketTree({
   marketGroups,
   marketGroupRecord,
   className,
+  treeValue,
+  onTreeValueChange,
   ...props
 }: MarketTreeProps) {
   const { quickbar, addToQuickbar, removeFromQuickbar } = useContext(QuickbarContext)
   const [search, setSearch, results] = useTypeSearch(types)
-  const [rootValue, setRootValue] = useState<Set<string>>(new Set())
   const params = useParams()
-  
+
   const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
   const region = params.region as string
 
   function collapseTree() {
-    setRootValue(new Set())
+    onTreeValueChange(new Set())
   }
 
   return (
-    <MarketTreeContext.Provider value={{typeRecord, marketGroupRecord, marketGroups, region, quickbar, addToQuickbar, removeFromQuickbar}}>
+    <MarketTreeContext.Provider value={{ typeRecord, marketGroupRecord, marketGroups, region, quickbar, addToQuickbar, removeFromQuickbar }}>
       <div className="market-tree">
         <div className="market-tree__header">
           <SearchBar
@@ -98,8 +101,8 @@ export function MarketTree({
         <div className="market-tree__body">
           <TreeView.Root
             style={search.length > 3 ? { display: 'none' } : {}}
-            value={rootValue}
-            onValueChange={setRootValue}
+            value={treeValue}
+            onValueChange={onTreeValueChange}
             className={classNames(classNames, 'market-tree__tree')}
             {...props}
           >
@@ -107,7 +110,7 @@ export function MarketTree({
               <MarketGroup groupId={group.id} key={group.id} />
             ))}
           </TreeView.Root>
-          
+
           {search.length > 3 && results.map(t => (
             <Link className="market-tree__item" to={`/region/${params.region ?? 10000002}/type/${t.id}`} key={t.id}>
               <span>{t.name}</span>
@@ -127,16 +130,16 @@ function MarketGroup({ groupId }: MarketGroupProps) {
     const metaGroups: Record<string, number[]> = {}  // rarity to typeId array record
     let mainMetaRarity: number = -1
 
-    for(const typeId of group.types) {
+    for (const typeId of group.types) {
       const type = typeRecord[typeId]
       const meta = getMeta(type.metaLevel)
 
-      if(mainMetaRarity == -1 || meta.rarity < mainMetaRarity) {
+      if (mainMetaRarity == -1 || meta.rarity < mainMetaRarity) {
         mainMetaRarity = meta.rarity
       }
 
-      if(!metaGroups[meta.rarity]) {
-        metaGroups[meta.rarity] = [ type.id ]
+      if (!metaGroups[meta.rarity]) {
+        metaGroups[meta.rarity] = [type.id]
       }
       else {
         metaGroups[meta.rarity].push(type.id)
@@ -145,7 +148,7 @@ function MarketGroup({ groupId }: MarketGroupProps) {
 
     return [metaGroups, mainMetaRarity]
   }, [groupId])
-  
+
   return (
     <TreeView.Group value={`group:${group.id}`} className="market-group">
       <TreeView.Trigger className="market-group__trigger">
@@ -201,7 +204,7 @@ function MarketItem({ typeId }: MarketItemProps) {
   const type = typeRecord[typeId]
 
   function handleKeyDown(event: React.KeyboardEvent) {
-    if(event.key != 'Enter') return
+    if (event.key != 'Enter') return
     navigate(`/region/${region}/type/${type.id}`)
   }
 
@@ -211,12 +214,12 @@ function MarketItem({ typeId }: MarketItemProps) {
         {type.name}
       </Link>
       {isInQuickbar(typeId) ? (
-        <button onClick={e => {removeFromQuickbar(typeId); e.stopPropagation()}} className="market-item__button" title="Remove from quickbar">
-          <DrawingPinFilledIcon className="market-item__button-icon"/>
+        <button onClick={e => { removeFromQuickbar(typeId); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
+          <DrawingPinFilledIcon className="market-item__button-icon" />
         </button>
       ) : (
-        <button onClick={e => {addToQuickbar(typeId); e.stopPropagation()}} className="market-item__button" title="Add to quickbar">
-          <DrawingPinIcon className="market-item__button-icon"/>
+        <button onClick={e => { addToQuickbar(typeId); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
+          <DrawingPinIcon className="market-item__button-icon" />
         </button>
       )}
     </TreeView.Item>

@@ -34,7 +34,7 @@ $primary: #58A7BF;
 $accent: #58A7BF;
 $alert: #F39058;
 
-$primary-1: darken($primary, 30);
+$primary-1: darken($primary, 28);
 $primary-2: darken($primary, 36);
 $primary-3: darken($primary, 42);
 
@@ -97,8 +97,8 @@ $error-0: #842626;
   clip-path: polygon(
     0 0,
     100% 0,
-    100% calc(100% - $radius + 2px),
-    calc(100% - $radius + 2px) 100%,
+    100% calc(100% - $radius + 1.5px),
+    calc(100% - $radius + 1.5px) 100%,
     0 100%,
   );
 
@@ -127,8 +127,8 @@ $error-0: #842626;
     0 0,
     100% 0,
     100% 100%,
-    calc($radius - 2px) 100%,
-    0 calc(100% - $radius + 2px),
+    calc($radius - 1.5px) 100%,
+    0 calc(100% - $radius + 1.5px),
   );
 
   #{$radius_obj}{

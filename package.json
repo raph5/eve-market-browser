@@ -16,6 +16,8 @@
   "type": "module",
   "dependencies": {
     "@radix-ui/react-context-menu": "^2.1.5",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-portal": "^1.0.4",
     "@remix-run/node": "^2.8.1",
     "bun": "^1.1.0",
     "react-composable-treeview": "^1.0.1",

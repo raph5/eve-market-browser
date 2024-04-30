@@ -9,9 +9,9 @@ const TYPE_CACHE = 'types'
 
 class EsiStore {
 
-  public regions: null|Region[] = null
-  public marketGroups: null|MarketGroup[] = null
-  public types: null|Type[] = null
+  public regions: null|Region[]|Promise<Region[]> = null
+  public marketGroups: null|MarketGroup[]|Promise<MarketGroup[]> = null
+  public types: null|Type[]|Promise<Type[]> = null
 
   public marketGroupRecord: null|Record<string, MarketGroup> = null
   public typeRecord: null|Record<string, Type> = null
@@ -34,14 +34,17 @@ class EsiStore {
   async getRegions(): Promise<Region[]> {
     if(this.regions == null) {
       const cachedRegions = await readCacheFile(this.cacheFolder, REGION_CACHE)
-      if(cachedRegions == null) return this.updateRegions()
+      if(cachedRegions == null) {
+        this.regions = this.updateRegions()
+        return this.regions
+      }
       this.regions = JSON.parse(cachedRegions) as Region[]
     }
     return this.regions
   }
 
   async updateMarketGroups(): Promise<MarketGroup[]> {
-    console.log("⚙️ fetching groups")
+    console.log("⚙️ fetching market groups")
     const groups = await fetchMarketGroups()
     await writeCacheFile(this.cacheFolder, MARKET_GROUP_CACHE, JSON.stringify(groups))
     return groups
@@ -49,9 +52,12 @@ class EsiStore {
 
   async getMarketGroups(): Promise<MarketGroup[]> {
     if(this.marketGroups == null) {
-      const cachedRegions = await readCacheFile(this.cacheFolder, MARKET_GROUP_CACHE)
-      if(cachedRegions == null) return this.updateMarketGroups()
-      this.marketGroups = JSON.parse(cachedRegions) as MarketGroup[]
+      const cachedGroups = await readCacheFile(this.cacheFolder, MARKET_GROUP_CACHE)
+      if(cachedGroups == null) {
+        this.marketGroups = this.updateMarketGroups()
+        return this.marketGroups
+      }
+      this.marketGroups = JSON.parse(cachedGroups) as MarketGroup[]
     }
     return this.marketGroups
   }
@@ -66,9 +72,12 @@ class EsiStore {
 
   async getTypes(): Promise<Type[]> {
     if(this.types == null) {
-      const jsonTypes = await readCacheFile(this.cacheFolder, TYPE_CACHE)
-      if(jsonTypes == null) return this.updateTypes()
-      this.types = JSON.parse(jsonTypes) as Type[]
+      const cachedTypes = await readCacheFile(this.cacheFolder, TYPE_CACHE)
+      if(cachedTypes == null) {
+        this.types = this.updateTypes()
+        return this.types
+      }
+      this.types = JSON.parse(cachedTypes) as Type[]
     }
     return this.types
   }

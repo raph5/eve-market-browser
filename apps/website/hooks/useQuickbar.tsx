@@ -1,10 +1,11 @@
 import { useLocalStorage } from "@hooks/useLocalStorage"
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useRef } from "react"
 
 export type useQuickbarHook = {
   quickbar: Record<string, number[]>  // { __root__: [typeId], folder: [typeId] }
   addToQuickbar: (typeId: number) => void
   removeFromQuickbar: (typeId: number) => void
+  clearQuickbar: () => void
   moveToFolder: (typeId: number, destinationFolder: string) => void
   createFolder: (folder: string) => void
   removeFolder: (folder: string) => void
@@ -28,7 +29,7 @@ export function useQuickbar(): useQuickbarHook {
       ...folders
     })
     quickbarTypes.current.add(typeId)
-  }, [quickbar])
+  }, [quickbar, setQuickbar, quickbarTypes])
 
   const removeFromQuickbar = useCallback((typeId: number) => {
     let typeFolder: string = ''
@@ -51,7 +52,11 @@ export function useQuickbar(): useQuickbarHook {
     else {
       console.error(`can't remove type ${typeId} from quickbar because it is not in quickbar`)
     }
-  }, [quickbar])
+  }, [quickbar, setQuickbar, quickbarTypes])
+
+  const clearQuickbar = useCallback(() => {
+    setQuickbar({ __root__: [] })
+  }, [setQuickbar])
 
   const moveToFolder = useCallback((typeId: number, destinationFolder: string) => {
     if(!quickbar[destinationFolder]) {
@@ -90,7 +95,7 @@ export function useQuickbar(): useQuickbarHook {
       [destinationFolder]: destinationTypes,
       ...folders
     })
-  }, [quickbar])
+  }, [quickbar, setQuickbar, quickbarTypes])
 
   const createFolder = useCallback((folder: string) => {
     if(quickbar[folder]) {
@@ -103,7 +108,7 @@ export function useQuickbar(): useQuickbarHook {
     }
 
     setQuickbar({ [folder]: [], ...quickbar })
-  }, [quickbar])
+  }, [quickbar, setQuickbar])
 
   const removeFolder = useCallback((folder: string) => {
     if(!quickbar[folder]) {
@@ -116,16 +121,17 @@ export function useQuickbar(): useQuickbarHook {
       __root__: [ ...types, ...__root__ ],
       ...folders
     })
-  }, [quickbar])
+  }, [quickbar, setQuickbar])
 
   const isInQuickbar = useCallback((typeId: number) => {
     return quickbarTypes.current.has(typeId)
-  }, [quickbar])
+  }, [quickbarTypes])
 
   return {
     quickbar,
     addToQuickbar,
     removeFromQuickbar,
+    clearQuickbar,
     moveToFolder,
     createFolder,
     removeFolder,

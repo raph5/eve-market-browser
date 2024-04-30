@@ -3,7 +3,7 @@ import "@scss/navigation.scss"
 import { Tab, TabRef, TabsRoot } from "@components/tabs"
 import { MarketTree } from "./marketTree"
 import { Quickbar } from "./quickbar"
-import { useContext, useEffect, useRef } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import QuickbarContext from "@contexts/quickbarContext"
 
 export interface QuickItem {
@@ -22,6 +22,8 @@ export interface NavigationProps {
 export default function Navigation({ types, typeRecord, marketGroups, marketGroupRecord }: NavigationProps) {
   const { quickbar } = useContext(QuickbarContext)
   const tabsRef = useRef<TabRef>(null)
+  const [marketTreeValue, setMarketTreeValue] = useState<Set<string>>(new Set())
+  const [quickbarTreeValue, setQuickbarTreeValue] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     tabsRef.current?.blink('quickbar')
@@ -40,10 +42,17 @@ export default function Navigation({ types, typeRecord, marketGroups, marketGrou
             types={types}
             typeRecord={typeRecord}
             marketGroups={marketGroups}
-            marketGroupRecord={marketGroupRecord} />
+            marketGroupRecord={marketGroupRecord}
+            treeValue={marketTreeValue}
+            onTreeValueChange={setMarketTreeValue}
+          />
         </Tab>
         <Tab className="nav__tab" value="quickbar">
-          <Quickbar typeRecord={typeRecord} />
+          <Quickbar
+            typeRecord={typeRecord}
+            treeValue={quickbarTreeValue}
+            onTreeValueChange={setQuickbarTreeValue}
+          />
         </Tab>
       </TabsRoot>
     </nav>
