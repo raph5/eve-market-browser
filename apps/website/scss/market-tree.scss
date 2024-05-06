@@ -36,28 +36,9 @@
       color: white;
     }
   }
-  &__item {
-    height: 20px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    box-sizing: border-box;
-    color: $font-color;
-    text-decoration: none;
-    overflow: hidden;
-    white-space: nowrap;
-    font-family: $font;
-    font-size: 14px;
-    font-weight: normal;
-    color: $font-color;
-    outline: none;
-    user-select: none;
-    transition: background-color 100ms;
-      
-    &:hover {
-      transition: none;
-      background-color: $primary-3;
-    }
+  &__results {
+    margin: 0;
+    padding: 0;
   }
 }
 
@@ -89,6 +70,7 @@
   }
 
   &__trigger {
+    background-color: $background-3;
     height: 22px;
     padding-left: calc(var(--depth) * 16px);
     display: flex;
@@ -101,7 +83,6 @@
 
     &:hover {
       background-color: $primary-3;
-      transition: none;
     }
   }
   &__label {
@@ -135,7 +116,6 @@
   }
   &:hover {
     background-color: $primary-3;
-    transition: none;
 
     .market-item__button {
       opacity: 1;

@@ -2,14 +2,16 @@ import { TriangleRightIcon, DownloadIcon, UploadIcon, TrashIcon, MixerHorizontal
 import { Type } from "esi-server-store/types";
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
-import { PiFolderPlusThin, PiFolderThin } from "react-icons/pi";
+import { PiFolderPlusThin } from "react-icons/pi";
 import { BsArrowsCollapse } from "react-icons/bs";
 import QuickbarContext from "@contexts/quickbarContext";
 import { stringSort } from "utils/main";
-import { Link, useParams } from "@remix-run/react";
-import * as Dialog from "@radix-ui/react-dialog";
-import "@scss/quickbar.scss";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { typeIconSrc } from "@components/eveIcon";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as ContextMenu from "@radix-ui/react-context-menu"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import "@scss/quickbar.scss";
 
 
 export interface QuickbarProps {
@@ -19,12 +21,16 @@ export interface QuickbarProps {
 }
 
 interface QuickbarFolderPorps {
-  folder: string
-  children: React.ReactNode
+  folderId: string
 }
 
 interface QuickbarItemProps {
   typeId: number
+}
+
+interface QuickbarDataTransfer {
+  type: 'folder'|'item'
+  id: string
 }
 
 
@@ -46,17 +52,36 @@ const QuickbarComponentContext = createContext<QuickbarContextType>({
 export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarProps) {
   const params = useParams()
   const region = params.region as string
-  const { quickbar, moveToFolder } = useContext(QuickbarContext)
-  const isQuickbarEmpty = Object.keys(quickbar).length == 1 && quickbar.__root__.length == 0
+  const quickbar = useContext(QuickbarContext)
+  const rootRef = useRef<HTMLUListElement>(null)
+  const isQuickbarEmpty = Object.keys(quickbar.state).length == 1
+    && quickbar.state.__root__.types.length == 0
+    && quickbar.state.__root__.childFolders.length == 0
 
   const drop = useCallback((event: React.DragEvent) => {
-    const typeId = parseInt(event.dataTransfer.getData('text'))
-    moveToFolder(typeId, '__root__')
+    const dragData: QuickbarDataTransfer = JSON.parse(
+      event.dataTransfer.getData('text')
+    )
+
+    if(dragData.type == 'item') {
+      quickbar.moveItem(parseInt(dragData.id), '__root__')
+    }
+    else if(dragData.type == 'folder') {
+      quickbar.moveFolder(dragData.id, '__root__')
+    }
+
+    rootRef.current?.classList.remove('quickbar--drop')
     event.stopPropagation()
     event.preventDefault()
-  }, [moveToFolder])
+  }, [quickbar.moveItem])
 
   const allowDrop = useCallback((event: React.DragEvent) => {
+    rootRef.current?.classList.add('quickbar--drop')
+    event.preventDefault()
+  }, [])
+
+  const preventDrop = useCallback((event: React.DragEvent) => {
+    rootRef.current?.classList.remove('quickbar--drop')
     event.preventDefault()
   }, [])
 
@@ -66,20 +91,13 @@ export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarP
         <div className="quickbar__header">
           <div className="quickbar__actions">
             <CreateFolderButton />
-            <button className="quickbar__button" title="Import quickbar">
-              <DownloadIcon className="quickbar__button-icon" />
-            </button>
-            <button className="quickbar__button" title="Export quickbar">
-              <UploadIcon className="quickbar__button-icon" />
-            </button>
+            <ImportQuickbarButton />
+            <ExportQuickbarButton />
             <ClearQuickbarButton />
           </div>
           <div className="quickbar__options">
-            <button className="quickbar__button" title="Colse all folders">
+            <button className="quickbar__button" title="Colse all folders" onClick={() => onTreeValueChange(new Set())}>
               <BsArrowsCollapse className="quickbar__button-icon" />
-            </button>
-            <button className="quickbar__button" title="---">
-              <MixerHorizontalIcon className="quickbar__button-icon" />
             </button>
           </div>
         </div>
@@ -88,29 +106,24 @@ export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarP
           <p className="quickbar__empty">Your quickbar is empty</p>
         ) : (
           <TreeView.Root
+            className="quickbar__tree"
             value={treeValue}
             onValueChange={onTreeValueChange}
             onDragEnter={allowDrop}
             onDragOver={allowDrop}
+            onDragExit={preventDrop}
+            onDragLeave={preventDrop}
             onDrop={drop}
-            className="quickbar__tree"
+            ref={rootRef}
           >
 
-            {quickbar.__root__.sort(stringSort(t => typeRecord[t].name)).map(typeId => (
-              <QuickbarItem typeId={typeId} key={typeId} />
+            {quickbar.state.__root__.childFolders.sort(stringSort()).map(folderId => (
+              <QuickbarFolder folderId={folderId} key={folderId} />
             ))}
 
-            {Object.keys(quickbar).sort(stringSort()).map(folder => {
-              if(folder == '__root__') return
-
-              return (
-                <QuickbarFolder folder={folder} key={folder}>
-                  {quickbar[folder].sort(stringSort(t => typeRecord[t].name)).map(typeId => (
-                    <QuickbarItem typeId={typeId} key={typeId} />
-                  ))}
-                </QuickbarFolder>
-              )
-            })}
+            {quickbar.state.__root__.types.sort(stringSort(t => typeRecord[t].name)).map(typeId => (
+              <QuickbarItem typeId={typeId} key={typeId} />
+            ))}
 
           </TreeView.Root>
         )}
@@ -119,36 +132,149 @@ export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarP
   )
 }
 
-function QuickbarFolder({ folder, children }: QuickbarFolderPorps) {
-  const { moveToFolder } = useContext(QuickbarContext)
+function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
+  const quickbar = useContext(QuickbarContext)
   const { treeValue, onTreeValueChange } = useContext(QuickbarComponentContext)
+  const folderName = useRef(quickbar.state[folderId].name)
+  const folderRef = useRef<HTMLLIElement>(null)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
 
   const drop = useCallback((event: React.DragEvent) => {
-    const typeId = parseInt(event.dataTransfer.getData('text'))
-    moveToFolder(typeId, folder)
-    onTreeValueChange(new Set([ `folder:${folder}`, ...treeValue ]))
+    const dragData: QuickbarDataTransfer = JSON.parse(
+      event.dataTransfer.getData('text')
+    )
+
+    if(dragData.type == 'item') {
+      quickbar.moveItem(parseInt(dragData.id), folderId)
+    }
+    else if(dragData.type == 'folder') {
+      quickbar.moveFolder(dragData.id, folderId)
+    }
+
+    onTreeValueChange(new Set([ `folder:${folderId}`, ...treeValue ]))
+    folderRef.current?.classList.remove('quickbar-folder--drop')
     event.stopPropagation()
     event.preventDefault()
-  }, [folder, moveToFolder, treeValue, onTreeValueChange])
+  }, [folderId, quickbar.moveItem, treeValue, onTreeValueChange, folderRef])
 
   const allowDrop = useCallback((event: React.DragEvent) => {
+    folderRef.current?.classList.add('quickbar-folder--drop')
+    event.stopPropagation()
     event.preventDefault()
-  }, [])
+  }, [folderRef])
+
+  const preventDrop = useCallback((event: React.DragEvent) => {
+    folderRef.current?.classList.remove('quickbar-folder--drop')
+    event.stopPropagation()
+    event.preventDefault()
+  }, [folderRef])
+
+  const dragStart = useCallback((event: React.DragEvent) => {
+    const dragData: QuickbarDataTransfer = {
+      type: 'folder',
+      id: folderId
+    }
+    event.dataTransfer.clearData()
+    event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    event.dataTransfer.dropEffect = 'move'
+    folderRef.current?.classList.add('quickbar-folder--drag')
+    event.stopPropagation()
+  }, [folderId, folderRef])
+
+  const dragEnd = useCallback((event: React.DragEvent) => {
+    folderRef.current?.classList.remove('quickbar-folder--drag')
+    event.stopPropagation()
+  }, [folderRef])
 
   return (
     <TreeView.Group
-      value={`folder:${folder}`}
+      value={`folder:${folderId}`}
       className="quickbar-folder"
+      draggable="true"
       onDrop={drop}
       onDragEnter={allowDrop}
       onDragOver={allowDrop}
+      onDragExit={preventDrop}
+      onDragLeave={preventDrop}
+      onDragStart={dragStart}
+      onDragEnd={dragEnd}
+      ref={folderRef}
     >
-      <TreeView.Trigger className="quickbar-folder__trigger">
-        <TriangleRightIcon className="quickbar-folder__triangle"/>
-        <span className="quickbar-folder__label">{folder}</span>
-      </TreeView.Trigger>
+      <Dialog.Root open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <ContextMenu.Root>
+          <ContextMenu.Trigger asChild>
+            <TreeView.Trigger className="quickbar-folder__trigger">
+              <TriangleRightIcon className="quickbar-folder__triangle"/>
+              <span className="quickbar-folder__label">
+                {quickbar.state[folderId].name}
+              </span>
+            </TreeView.Trigger>
+          </ContextMenu.Trigger>
+          <ContextMenu.Portal>
+            <ContextMenu.Content className="context-menu">
+              
+              <Dialog.Trigger asChild>
+                <ContextMenu.Item className="context-menu__item">
+                  Rename folder
+                </ContextMenu.Item>
+              </Dialog.Trigger>
+
+              <ContextMenu.Item onClick={() => quickbar.removeFolder(folderId)} className="context-menu__item">
+                Delete folder
+              </ContextMenu.Item>
+
+            </ContextMenu.Content>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
+
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog__overlay" />
+          <Dialog.Content className="dialog">
+            <div className="dialog__header">
+              <Dialog.Title className="dialog__title">Rename folder</Dialog.Title>
+              <Dialog.Description className="dialog__description">
+                Change foler name
+              </Dialog.Description>
+            </div>
+
+            <div className="dialog__body">
+              <input
+                className="dialog__text-input"
+                type="text"
+                placeholder="folder name"
+                defaultValue={folderName.current}
+                onChange={e => folderName.current = e.target.value}
+                onKeyDown={e => {
+                  if(e.key == 'Enter') {
+                    quickbar.renameFolder(folderId, folderName.current)
+                    setRenameDialogOpen(false)
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div className="dialog__footer">
+              <Dialog.Close className="button button--corner-left button--text-center">
+                Cancel
+              </Dialog.Close>
+              <Dialog.Close onClick={() => quickbar.renameFolder(folderId, folderName.current)} className="button button--primary button--corner-right button--text-center">
+                Rename folder
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
       <TreeView.Content className="quickbar-folder__content">
-        {children}
+
+        {quickbar.state[folderId].childFolders.sort(stringSort()).map(folderId => (
+          <QuickbarFolder folderId={folderId} key={folderId} />
+        ))}
+
+        {quickbar.state[folderId].types.map(typeId => (
+          <QuickbarItem typeId={typeId} key={typeId} />
+        ))}
+
       </TreeView.Content>
     </TreeView.Group>
   )
@@ -156,6 +282,8 @@ function QuickbarFolder({ folder, children }: QuickbarFolderPorps) {
 
 function QuickbarItem({ typeId }: QuickbarItemProps) {
   const { typeRecord, region } = useContext(QuickbarComponentContext)
+  const quickbar = useContext(QuickbarContext)
+  const navigate = useNavigate()
   const type = typeRecord[typeId]
   const itemRef = useRef<HTMLLIElement>(null)
 
@@ -166,44 +294,66 @@ function QuickbarItem({ typeId }: QuickbarItemProps) {
   }, [typeId])
 
   const dragStart = useCallback((event: React.DragEvent) => {
-    itemRef.current?.classList.add('quickbar-item--drag')
+    const dragData: QuickbarDataTransfer = {
+      type: 'item',
+      id: typeId.toString()
+    }
     event.dataTransfer.clearData()
-    event.dataTransfer.setData('text/plain', typeId.toString())
+    event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
     event.dataTransfer.dropEffect = 'move'
     event.dataTransfer.setDragImage(dragImage, 16, 16)
+    itemRef.current?.classList.add('quickbar-item--drag')
+    event.stopPropagation()
   }, [typeId, dragImage, itemRef])
 
   const dragEnd = useCallback(() => {
     itemRef.current?.classList.remove('quickbar-item--drag')
   }, [itemRef])
 
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if(event.key == 'Enter') {
+      navigate(`/region/${region}/type/${type.id}`)
+    }
+  }
+
   return (
-    <TreeView.Item
-      value={`item:${type.id}`}
-      className="quickbar-item"
-      draggable="true"
-      onDragStart={dragStart}
-      onDragEnd={dragEnd}
-      ref={itemRef}
-    >
-      <Link to={`/region/${region}/type/${type.id}`} className="quickbar-item__link">
-        {type.name}
-      </Link>
-    </TreeView.Item>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <TreeView.Item
+          value={`item:${type.id}`}
+          className="quickbar-item"
+          draggable="true"
+          onDragStart={dragStart}
+          onDragEnd={dragEnd}
+          onKeyDown={handleKeyDown}
+          ref={itemRef}
+        >
+          <Link to={`/region/${region}/type/${type.id}`} tabIndex={-1} className="quickbar-item__link">
+            {type.name}
+          </Link>
+        </TreeView.Item>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className="context-menu">
+
+          <ContextMenu.Item onClick={() => quickbar.removeItem(typeId)} className="context-menu__item">
+            Remove from quickbar
+          </ContextMenu.Item>
+
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   )
 }
 
 function CreateFolderButton() {
-  const { createFolder } = useContext(QuickbarContext)
+  const quickbar = useContext(QuickbarContext)
   const name = useRef('')
   const [isOpen, setIsOpen] = useState(false)
 
-  function submit() {
-    createFolder(name.current)
-  }
   function handleKeydown(event: React.KeyboardEvent) {
     if(event.key != 'Enter') return
-    submit()
+    quickbar.createFolder(name.current)
     setIsOpen(false)
     name.current = ''
   }
@@ -239,7 +389,7 @@ function CreateFolderButton() {
             <Dialog.Close className="button button--corner-left button--text-center">
               Cancel
             </Dialog.Close>
-            <Dialog.Close onClick={submit} className="button button--primary button--corner-right button--text-center">
+            <Dialog.Close onClick={() => quickbar.createFolder(name.current)} className="button button--primary button--corner-right button--text-center">
               Create folder
             </Dialog.Close>
           </div>
@@ -249,12 +399,54 @@ function CreateFolderButton() {
   )
 }
 
-function ClearQuickbarButton() {
-  const { clearQuickbar } = useContext(QuickbarContext)
+function ImportQuickbarButton() {
+  const quickbar = useContext(QuickbarContext)
 
-  function submit() {
-    clearQuickbar()
+  async function importQuickbarFromClipboard() {
+    quickbar.importQuickbar(await navigator.clipboard.readText())
   }
+
+  return (
+    <DropdownMenu.Root modal>
+      <DropdownMenu.Trigger className="quickbar__button" title="Import quickbar">
+        <DownloadIcon className="quickbar__button-icon" />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="start" className="dropdown">
+          <DropdownMenu.Item onClick={importQuickbarFromClipboard} className="dropdown__item">
+            Import quickbar from clipboard
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  )
+}
+
+function ExportQuickbarButton() {
+  const quickbar = useContext(QuickbarContext)
+
+  async function exportQuickbar() {
+    await navigator.clipboard.writeText(quickbar.exportQuickbar())
+  }
+
+  return (
+    <DropdownMenu.Root modal>
+      <DropdownMenu.Trigger className="quickbar__button" title="Export quickbar">
+        <UploadIcon className="quickbar__button-icon" />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="start" className="dropdown">
+          <DropdownMenu.Item onClick={exportQuickbar} className="dropdown__item">
+            Export quickbar to clipboard
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  )
+}
+
+function ClearQuickbarButton() {
+  const quickbar = useContext(QuickbarContext)
 
   return (
     <Dialog.Root>
@@ -275,7 +467,7 @@ function ClearQuickbarButton() {
             <Dialog.Close autoFocus className="button button--corner-left button--text-center">
               Cancel
             </Dialog.Close>
-            <Dialog.Close onClick={submit} className="button button--primary button--corner-right button--text-center">
+            <Dialog.Close onClick={() => quickbar.clear()} className="button button--primary button--corner-right button--text-center">
               Clear Quickbar
             </Dialog.Close>
           </div>

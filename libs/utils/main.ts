@@ -1,4 +1,6 @@
 
+const BASE_64 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+"
+
 export const DAY = 1000*60*60*24
 export const HOUR = 1000*60*60
 export const MINUTE = 1000*60
@@ -67,4 +69,21 @@ export function stringSort<T=any>(getValue: ((v: T) => string) = (v => v as stri
 }
 export function numberSort<T=any>(getValue: ((v: T) => number) = (v => v as number)) {
   return (a: T, b: T) => getValue(a) - getValue(b)
+}
+
+export function intToBase64(integer: number) {
+  let result = ''
+  let residual: number
+  let digit: number
+  while(integer != 0) {
+    residual = integer >> 6
+    digit = integer - (residual << 6)
+    integer = residual
+    result = BASE_64[digit] + result
+  }
+  return result
+}
+
+export function uid() {
+  return intToBase64(Math.floor(Math.random() * 1e8))
 }

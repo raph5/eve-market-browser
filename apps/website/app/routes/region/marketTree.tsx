@@ -13,7 +13,9 @@ import { SearchBar } from "@components/searchBar"
 import { BsArrowsCollapse } from "react-icons/bs"
 import QuickbarContext from "@contexts/quickbarContext"
 import { stringSort } from "utils/main"
+import * as ContextMenu from "@radix-ui/react-context-menu"
 import "@scss/market-tree.scss"
+
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
   types: Type[]
@@ -38,15 +40,16 @@ interface MarketItemProps {
   typeId: number
 }
 
+interface MarketTypeProps {
+  typeId: number
+}
+
 
 interface MarketTreeContextType {
   region: string
   typeRecord: Record<string, Type>
   marketGroups: MarketGroupType[]
   marketGroupRecord: Record<string, MarketGroupType>
-  quickbar: Record<string, number[]>
-  addToQuickbar: (typeId: number) => void
-  removeFromQuickbar: (typeId: number) => void
 }
 
 const MarketTreeContext = createContext<MarketTreeContextType>({
@@ -54,9 +57,6 @@ const MarketTreeContext = createContext<MarketTreeContextType>({
   typeRecord: {},
   marketGroups: [],
   marketGroupRecord: {},
-  quickbar: {},
-  addToQuickbar: () => { },
-  removeFromQuickbar: () => { }
 })
 
 
@@ -70,7 +70,6 @@ export function MarketTree({
   onTreeValueChange,
   ...props
 }: MarketTreeProps) {
-  const { quickbar, addToQuickbar, removeFromQuickbar } = useContext(QuickbarContext)
   const [search, setSearch, results] = useTypeSearch(types)
   const params = useParams()
 
@@ -82,7 +81,7 @@ export function MarketTree({
   }
 
   return (
-    <MarketTreeContext.Provider value={{ typeRecord, marketGroupRecord, marketGroups, region, quickbar, addToQuickbar, removeFromQuickbar }}>
+    <MarketTreeContext.Provider value={{ typeRecord, marketGroupRecord, marketGroups, region }}>
       <div className="market-tree">
         <div className="market-tree__header">
           <SearchBar
@@ -111,11 +110,13 @@ export function MarketTree({
             ))}
           </TreeView.Root>
 
-          {search.length > 3 && results.map(t => (
-            <Link className="market-tree__item" to={`/region/${params.region ?? 10000002}/type/${t.id}`} key={t.id}>
-              <span>{t.name}</span>
-            </Link>
-          ))}
+          {search.length > 3 && 
+            <ul className="market-tree__results">
+              {results.map(type => (
+                <MarketType typeId={type.id} key={type.id} />
+              ))}
+            </ul>
+          }
         </div>
       </div>
     </MarketTreeContext.Provider>
@@ -200,28 +201,99 @@ function MarketMetaGroup({ meta, groupId, children }: MarketMetaGroupProps) {
 function MarketItem({ typeId }: MarketItemProps) {
   const navigate = useNavigate()
   const { typeRecord, region } = useContext(MarketTreeContext)
-  const { isInQuickbar, addToQuickbar, removeFromQuickbar } = useContext(QuickbarContext)
   const type = typeRecord[typeId]
+  const quickbar = useContext(QuickbarContext)
+  const inQuickbar = useMemo(() => quickbar.has(typeId), [typeId, quickbar.state])
 
   function handleKeyDown(event: React.KeyboardEvent) {
-    if (event.key != 'Enter') return
-    navigate(`/region/${region}/type/${type.id}`)
+    if (event.key == 'Enter') {
+      navigate(`/region/${region}/type/${type.id}`)
+    }
   }
 
   return (
-    <TreeView.Item value={`type:${type.id}`} onKeyDown={handleKeyDown} className="market-item">
-      <Link to={`/region/${region}/type/${type.id}`} className="market-item__link">
-        {type.name}
-      </Link>
-      {isInQuickbar(typeId) ? (
-        <button onClick={e => { removeFromQuickbar(typeId); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
-          <DrawingPinFilledIcon className="market-item__button-icon" />
-        </button>
-      ) : (
-        <button onClick={e => { addToQuickbar(typeId); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
-          <DrawingPinIcon className="market-item__button-icon" />
-        </button>
-      )}
-    </TreeView.Item>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <TreeView.Item value={`type:${type.id}`} onKeyDown={handleKeyDown} className="market-item">
+          <Link to={`/region/${region}/type/${type.id}`} tabIndex={-1} className="market-item__link">
+            {type.name}
+          </Link>
+          {inQuickbar ? (
+            <button onClick={e => { quickbar.removeItem(typeId); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
+              <DrawingPinFilledIcon className="market-item__button-icon" />
+            </button>
+          ) : (
+            <button onClick={e => { quickbar.addItem(typeId); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
+              <DrawingPinIcon className="market-item__button-icon" />
+            </button>
+          )}
+        </TreeView.Item>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className="context-menu">
+
+          {inQuickbar ? (
+            <ContextMenu.Item onClick={() => quickbar.removeItem(typeId)} className="context-menu__item">
+              Remove from quickbar
+            </ContextMenu.Item>
+          ) : (
+            <ContextMenu.Item onClick={() => quickbar.addItem(typeId)} className="context-menu__item">
+              Add to quickbar
+            </ContextMenu.Item>
+          )}
+
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  )
+}
+
+function MarketType({ typeId }: MarketTypeProps) {
+  const navigate = useNavigate()
+  const { typeRecord, region } = useContext(MarketTreeContext)
+  const type = typeRecord[typeId]
+  const quickbar = useContext(QuickbarContext)
+  const inQuickbar = useMemo(() => quickbar.has(typeId), [typeId, quickbar.state])
+
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if (event.key == 'Enter') {
+      navigate(`/region/${region}/type/${type.id}`)
+    }
+  }
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <li onKeyDown={handleKeyDown} className="market-item">
+          <Link to={`/region/${region}/type/${type.id}`} tabIndex={-1} className="market-item__link">
+            {type.name}
+          </Link>
+          {inQuickbar ? (
+            <button onClick={e => { quickbar.removeItem(typeId); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
+              <DrawingPinFilledIcon className="market-item__button-icon" />
+            </button>
+          ) : (
+            <button onClick={e => { quickbar.addItem(typeId); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
+              <DrawingPinIcon className="market-item__button-icon" />
+            </button>
+          )}
+        </li>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className="context-menu">
+
+          {inQuickbar ? (
+            <ContextMenu.Item onClick={() => quickbar.removeItem(typeId)} className="context-menu__item">
+              Remove from quickbar
+            </ContextMenu.Item>
+          ) : (
+            <ContextMenu.Item onClick={() => quickbar.addItem(typeId)} className="context-menu__item">
+              Add to quickbar
+            </ContextMenu.Item>
+          )}
+
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   )
 }

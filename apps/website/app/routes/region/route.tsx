@@ -58,11 +58,11 @@ export async function loader() {
 }
 
 export default function Layout() {
-  const quickbarHook = useQuickbar()
   const { types, typeRecord, marketGroups, marketGroupsRecord, regions } = useLoaderData<typeof loader>();
+  const quickbar = useQuickbar(types, typeRecord)
 
   return (
-    <QuickbarContext.Provider value={quickbarHook}>
+    <QuickbarContext.Provider value={quickbar}>
       <Header regions={regions} />
       <Navigation types={types} typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
       <main>

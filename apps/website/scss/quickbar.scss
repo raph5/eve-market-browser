@@ -5,6 +5,10 @@
   display: grid;
   grid-template-rows: max-content auto;
 
+  &--drop {
+    outline: ridge $primary 2px;
+  }
+
   &__header {
     display: flex;
     justify-content: space-between;
@@ -49,15 +53,30 @@
   font-size: 14px;
   font-weight: normal;
   color: $font-color;
+  background-color: $background-2;
   
+  @for $i from 1 through 20 {
+    &[data-depth="#{$i}"] {
+      --depth: #{$i};
+    }
+  }
+
   &:focus-visible {
     outline: ridge $primary 2px;
   }
   &[data-state=open] > &__trigger &__triangle {
     transform: rotate(90deg);
   }
+  &--drop {
+    outline: ridge $primary 2px;
+  }
+  &--drag > &__trigger {
+    background-color: transparent !important;
+    color: $font-color-light;
+  }
 
   &__trigger {
+    background-color: $background-3;
     height: 22px;
     padding-left: calc(var(--depth) * 16px);
     display: flex;
@@ -67,10 +86,9 @@
     transition: background-color 100ms;
     white-space: nowrap;
     overflow: hidden;
-
+    
     &:hover {
       background-color: $primary-3;
-      transition: none;
     }
   }
   &__label {
@@ -104,7 +122,6 @@
   }
   &:hover {
     background-color: $primary-3;
-    transition: none;
   }
   &[aria-selected=true] {
     background-color: $primary-1;

@@ -8,6 +8,7 @@
       "@utils/*": ["./apps/website/utils/*"],
       "@hooks/*": ["./apps/website/hooks/*"],
       "@contexts/*": ["./apps/website/contexts/*"],
+      "@lib/*": ["./apps/website/lib/*"],
       "@assets/*": ["./apps/website/assets/*"]
     }
   }

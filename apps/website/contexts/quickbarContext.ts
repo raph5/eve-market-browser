@@ -4,14 +4,18 @@ import { createContext } from "react"
 interface QuickbarContextType extends useQuickbarHook {}
 
 const QuickbarContext = createContext<QuickbarContextType>({
-  quickbar: {},
-  addToQuickbar: () => {},
-  removeFromQuickbar: () => {},
-  clearQuickbar: () => {},
-  moveToFolder: () => {},
-  createFolder: () => {},
+  state: {},
+  addItem: () => {},
+  removeItem: () => {},
+  clear: () => {},
+  moveItem: () => {},
+  createFolder: () => '',
   removeFolder: () => {},
-  isInQuickbar: () => false
+  moveFolder: () => {},
+  renameFolder: () => {},
+  exportQuickbar: () => '',
+  importQuickbar: () => {},
+  has: () => false
 })
 
 export default QuickbarContext

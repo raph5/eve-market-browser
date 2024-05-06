@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-export type useLocalStorageHook<T> = [T, (v: T) => void]
+export type useLocalStorageHook<T> = [T, React.Dispatch<React.SetStateAction<T>>]
 
 export function useLocalStorage<T>(key: string, defaultValue: T): useLocalStorageHook<T> {
   const localStorageData = typeof localStorage != 'undefined' ? localStorage.getItem(key) : null

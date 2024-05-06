@@ -111,3 +111,43 @@
     background-color: transparentize(darken($primary, 60), 0.5);
   }
 }
+
+.context-menu {
+  background-color: $background-2;
+  border: solid 1px $border-1;
+  padding: 2px;
+  min-width: 120px;
+  box-shadow: 0 0 8px #aaa1;
+  z-index: 1000;
+
+  &__item {
+    font-size: 14px;
+    user-select: none;
+    padding: 2px 8px;
+
+    &:hover, &:focus {
+      outline: none;
+      background-color: $background-4;
+    }
+  }
+}
+
+.dropdown {
+  background-color: $background-2;
+  border: solid 1px $border-1;
+  padding: 2px;
+  min-width: 120px;
+  box-shadow: 0 0 8px #aaa1;
+  z-index: 1000;
+
+  &__item {
+    font-size: 14px;
+    user-select: none;
+    padding: 2px 8px;
+
+    &:hover, &:focus {
+      outline: none;
+      background-color: $background-4;
+    }
+  }
+}

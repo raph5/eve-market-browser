@@ -59,7 +59,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
   const { typeId, orders, locationRecord, time } = useLoaderData<typeof loader>()
-  const { addToQuickbar, removeFromQuickbar, isInQuickbar } = useContext(QuickbarContext)
+  const quickbar = useContext(QuickbarContext)
 
   const breadcrumbs = useMemo(() => {
     const bc: string[] = []
@@ -87,12 +87,12 @@ export default function Type() {
           <h2 className="item-header__name">{typeRecord[typeId].name}</h2>
         </div>
         <div className="item-header__action">
-          {isInQuickbar(typeId) ? (
-            <button className="button button--corner-left item-header__button" onClick={() => removeFromQuickbar(typeId)}>
+          {quickbar.has(typeId) ? (
+            <button className="button button--corner-left item-header__button" onClick={() => quickbar.removeItem(typeId)}>
               <span>Remove From Quickbar</span>
             </button>
           ) : (
-            <button className="button button--corner-left item-header__button" onClick={() => addToQuickbar(typeId)}>
+            <button className="button button--corner-left item-header__button" onClick={() => quickbar.addItem(typeId)}>
               <PlusIcon className="button__icon" />
               <span>Add To Quickbar</span>
             </button>

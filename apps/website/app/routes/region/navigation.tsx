@@ -20,14 +20,14 @@ export interface NavigationProps {
 }
 
 export default function Navigation({ types, typeRecord, marketGroups, marketGroupRecord }: NavigationProps) {
-  const { quickbar } = useContext(QuickbarContext)
+  const quickbar = useContext(QuickbarContext)
   const tabsRef = useRef<TabRef>(null)
   const [marketTreeValue, setMarketTreeValue] = useState<Set<string>>(new Set())
   const [quickbarTreeValue, setQuickbarTreeValue] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     tabsRef.current?.blink('quickbar')
-  }, [quickbar])
+  }, [quickbar.state])
 
   const tabs = [
     { value: 'borwse', label: 'Borwse' },
