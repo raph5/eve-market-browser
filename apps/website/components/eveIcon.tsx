@@ -6,7 +6,7 @@ export interface EveIconProps {
   className?: string
 }
 
-export const iconSrc = (file: string) => `https://evetycoon.com/images/icons/${file}`
+export const iconSrc = (file: string) => `/icons/${file}`
 export const typeIconSrc = (type: string|number) => `https://images.evetech.net/types/${type}/icon`
 
 export default function EveIcon({ src, alt, className }: EveIconProps) {

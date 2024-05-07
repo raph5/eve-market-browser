@@ -9,22 +9,22 @@ export const T1: Meta = {
 }
 export const T2: Meta = {
   name: 'Tech 2',
-  iconSrc: '/meta-icon/t2.png',
+  iconSrc: '/meta-icons/t2.png',
   rarity: 2
 }
 export const FACTION_STORYLINE: Meta = {
   name: 'Faction & Storyline',
-  iconSrc: '/meta-icon/faction.png',
+  iconSrc: '/meta-icons/faction.png',
   rarity: 3
 }
 export const DEADSPACE: Meta = {
   name: 'Deadspace',
-  iconSrc: '/meta-icon/deadspace.png',
+  iconSrc: '/meta-icons/deadspace.png',
   rarity: 4
 }
 export const OFFICER: Meta = {
   name: 'Officer',
-  iconSrc: '/meta-icon/officer.png',
+  iconSrc: '/meta-icons/officer.png',
   rarity: 5
 }
 export const RARITY_TO_META: Record<string, Meta> = {

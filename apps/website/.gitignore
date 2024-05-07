@@ -1,6 +1,8 @@
 node_modules
 
-/.cache
-/build
+build
+.cache
 .env
+
 esi-cache
+public/icons
