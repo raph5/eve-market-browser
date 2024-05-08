@@ -1,6 +1,9 @@
 
 # To do
 
+- Add an about page with cerdits, github page, bug reports and legal stulfs
+- SOE opitimisation
+- Add hotjar
 - Improve search experience
 - Test quickbar exports
 - Rebuild market store to add "All regions" market

@@ -1,0 +1,25 @@
+@import './var.scss';
+
+.about {
+  margin: 0;
+  padding: 40px 15%;
+
+  h2 {
+    margin: 0;
+  }
+  p {
+    margin: 8px 0;
+  }
+
+  &__github {
+    margin-top: 42px;
+  }
+  &__legal {
+    margin-top: 100px;
+
+    p {
+      font-size: 14px;
+      color: $font-color-light;
+    }
+  }
+}

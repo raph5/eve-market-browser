@@ -7,6 +7,7 @@ import { MarketGroup, Region, Type } from "esi-server-store/types";
 import Header from "./header";
 import { useQuickbar } from "@hooks/useQuickbar";
 import QuickbarContext from "@contexts/quickbarContext";
+import "@scss/app.scss"
 
 export interface RegionContext {
   types: Type[]
@@ -63,11 +64,13 @@ export default function Layout() {
 
   return (
     <QuickbarContext.Provider value={quickbar}>
-      <Header regions={regions} />
-      <Navigation types={types} typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
-      <main>
-        <Outlet context={{ types, typeRecord, marketGroups, marketGroupsRecord, regions }} />
-      </main>
+      <div className="app">
+        <Header regions={regions} />
+        <Navigation types={types} typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
+        <main>
+          <Outlet context={{ types, typeRecord, marketGroups, marketGroupsRecord, regions }} />
+        </main>
+      </div>
     </QuickbarContext.Provider>
   );
 }

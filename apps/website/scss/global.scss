@@ -6,24 +6,11 @@
 }
 
 body {
-  $header-height: 48px;
-  $nav-width: 250px;
-
   margin: 0;
   padding: 0;
   background-color: $background-0;
   color: $font-color;
   font-family: $font;
-
-  display: grid;
-  grid-template-rows: $header-height calc(100vh - $header-height);
-  grid-template-columns: $nav-width calc(100vw - $nav-width);
-  grid-template-areas: "header header"
-                       "nav main";
-
-  header { grid-area: header; }
-  nav { grid-area: nav; }
-  main { grid-area: main; }
 
   &:has(> .error-message) {
     display: block;
@@ -38,4 +25,16 @@ main {
 
 button, input {
   all: unset;
+}
+
+p {
+  color: $font-color-paragraph;
+}
+
+a {
+  color: $primary;
+
+  &:hover {
+    color: lighten($primary, 20);
+  }
 }
