@@ -18,7 +18,7 @@ export const meta: MetaFunction = () => {
     { title: "About - EVE Market Browser" },
     { name: "description", content: "Contact informations and Github repository" },
     { property: "og:type", content: "website" },
-    { property: "og:image", content: "http://evemarketbrowser.com/thumbnail.png" }
+    { property: "og:image", content: "https://evemarketbrowser.com/thumbnail.png" }
   ]
 }
 
