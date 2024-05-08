@@ -1,5 +1,5 @@
 import { esiStore } from "@app/.server/esiServerStore";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useOutletContext, useRouteError } from "@remix-run/react";
 import { removeDuplicates } from "utils";
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
@@ -13,9 +13,22 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
 
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+  if(!data || !data.regionName || !data.typeName) {
+    return []
+  }
+
+  return [
+    { title: `${data.typeName} in ${data.regionName} - EVE Market Browser` },
+    { name: "description", content: `Explore real-time market data for ${data.typeName} in ${data.regionName} region of EVE Online. Track current prices, trends, and trade opportunities for a wide range of commodities, ships, modules, and more.` },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: "http://evemarketbrowser.com/thumbnail.png" }
+  ]
+}
+
 export async function loader({ params }: LoaderFunctionArgs) {
 
-  const types = await esiStore.getTypes()
+  const typeRecord = await esiStore.getTypeRecord()
     .catch(() => {
       throw json("Can't Find Types", { status: 500 })
     })
@@ -38,7 +51,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  if(types.findIndex(t => t.id == typeId) == -1 || regions.findIndex(r => r.id == regionId) == -1) {
+  const typeName = typeRecord[typeId]?.name
+  const regionName = regions.find(r => r.id == regionId)?.name
+
+  if(!typeName || !regionName) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
@@ -49,7 +65,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   return json({
     typeId,
+    typeName,
     regionId,
+    regionName,
     orders,
     locationRecord,
     time

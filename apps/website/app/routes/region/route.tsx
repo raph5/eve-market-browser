@@ -20,7 +20,9 @@ export interface RegionContext {
 export const meta: MetaFunction = () => {
   return [
     { title: "EVE Market Browser" },
-    { name: "description", content: "Welcome to EVE Market Browser!" },
+    { name: "description", content: "Explore real-time market data from EVE Online. Track current prices, trends, and trade opportunities for a wide range of commodities, ships, modules, and more." },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: "http://evemarketbrowser.com/thumbnail.png" }
   ];
 }
 

@@ -18,6 +18,7 @@ export interface SelectProps {
 }
 
 export function Select({ id, placeholder, items, className, value, onValueChange }: SelectProps) {
+
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange}>
       <RadixSelect.Trigger className={classNames('select', className)} id={id}>

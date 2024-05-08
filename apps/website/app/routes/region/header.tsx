@@ -14,7 +14,8 @@ export default function Header({ regions }: HeaderProps) {
   const navigate = useNavigate()
   const params = useParams()
 
-  const [selectValue, setSelectValue] = useState(params.region)
+  const isValidRegion = regions.findIndex(r => r.id.toString() == params.region) != -1
+  const [selectValue, setSelectValue] = useState(isValidRegion ? params.region : '')
 
   function setRegion(region: string) {
     setSelectValue(region)

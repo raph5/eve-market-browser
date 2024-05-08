@@ -8,9 +8,19 @@
  */
 
 import { Link } from "@remix-run/react"
+import { MetaFunction } from "@remix-run/node"
 import logo from "@assets/logo.png"
 import "@scss/header.scss"
 import "@scss/about.scss"
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "About - EVE Market Browser" },
+    { name: "description", content: "Contact informations and Github repository" },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: "http://evemarketbrowser.com/thumbnail.png" }
+  ]
+}
 
 export default function About() {
   

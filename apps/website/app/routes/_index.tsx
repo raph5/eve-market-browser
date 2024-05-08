@@ -1,5 +1,15 @@
+import { MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/react";
 
+export const meta: MetaFunction = () => {
+  return [
+    { title: "EVE Market Browser" },
+    { name: "description", content: "Explore real-time market data from EVE Online. Track current prices, trends, and trade opportunities for a wide range of commodities, ships, modules, and more." },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: "http://evemarketbrowser.com/thumbnail.png" }
+  ];
+}
+
 export async function loader() {
-  return redirect("/region/10000002")
+  return redirect("/region/10000002/type/605")
 }
