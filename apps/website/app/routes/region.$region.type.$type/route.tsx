@@ -12,6 +12,7 @@ import MarketData from "./marketData";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
+import { PriceHistory } from "./priceHistory";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -123,9 +124,7 @@ export default function Type() {
             <MarketData orders={orders} locationRecord={locationRecord} time={time} />
           </Tab>
           <Tab className="item-body__tab" value="priceHistory">
-            <div className="price-history">
-              Coming soon 🏗️
-            </div>
+            <PriceHistory />
           </Tab>
         </TabsRoot>
       </div>

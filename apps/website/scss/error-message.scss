@@ -4,7 +4,6 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  color: $font-color;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,6 +21,7 @@
     margin: 0;
   }
   &__message {
+    color: $alert;
     margin: 8px 0;
     max-width: 60%;
     text-align: center;
