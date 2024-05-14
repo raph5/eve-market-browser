@@ -7,7 +7,7 @@ import { Tab, TabsRoot } from "@components/tabs";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "../region/route";
 import { useContext, useMemo } from "react";
-import { getNames, getOrders } from "esi-client-store/main";
+import { getHistory, getNames, getOrders } from "esi-client-store/main";
 import MarketData from "./marketData";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
@@ -28,7 +28,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
-
   const typeRecord = await esiStore.getTypeRecord()
     .catch(() => {
       throw json("Can't Find Types", { status: 500 })
@@ -59,8 +58,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
+  const historyPromise = getHistory(typeId, regionId)
   const orders = await getOrders(typeId, regionId)
   const locationRecord = await getNames(removeDuplicates(orders.map(o => o.location_id).filter(l => 60000000 < l && l < 64000000)))
+  const history = await historyPromise
 
   const time = Date.now()
 
@@ -71,13 +72,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
     regionName,
     orders,
     locationRecord,
+    history,
     time
   })
 }
 
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
-  const { typeId, orders, locationRecord, time } = useLoaderData<typeof loader>()
+  const { typeId, orders, locationRecord, time, history } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
 
   const breadcrumbs = useMemo(() => {
@@ -124,7 +126,7 @@ export default function Type() {
             <MarketData orders={orders} locationRecord={locationRecord} time={time} />
           </Tab>
           <Tab className="item-body__tab" value="priceHistory">
-            <PriceHistory />
+            <PriceHistory history={history} />
           </Tab>
         </TabsRoot>
       </div>

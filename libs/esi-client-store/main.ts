@@ -1,5 +1,5 @@
 import esiFetch from "esi-fetch"
-import type { Meta, Order } from "./types"
+import type { Meta, Order, HistoryDay } from "./types"
 
 
 export const T1: Meta = {
@@ -35,11 +35,35 @@ export const RARITY_TO_META: Record<string, Meta> = {
   5: OFFICER
 }
 
-export async function getHistory(type: number, region: number): Promise<History> {
+// TODO: refactor this all function
+export async function getHistory(type: number, region: number): Promise<HistoryDay[]> {
   console.log(`⚙️ fetching type:${type} history from region:${region}`)
   
   const history = await esiFetch(`/markets/${region}/history`, { type_id: type.toString() })
   if(history.error) throw new Error(`esi error : ${history.error}`)
+
+  // TODO: do the actual computations
+  for(const h of history) {
+    h.average_5d = h.average
+    h.average_20d = h.average
+    h.donchian_top = h.average
+    h.donchian_bottom = h.average
+  }
+
+  // add missing days
+  let h = history[0]
+  let d = new Date(h.date)
+  for(let i=1; i<history.length; i++) {
+    d.setDate(d.getDate() + 1)
+    const dateString = d.toISOString().split('T')[0]
+    if(history[i].date != dateString) {
+      history.splice(i+1, 0, { ...h, volume: 0, date: dateString })
+      i += 1
+      d.setDate(d.getDate() + 1)
+    }
+    h = history[i]
+  }
+
   return history
 }
 

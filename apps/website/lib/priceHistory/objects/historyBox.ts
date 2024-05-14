@@ -16,9 +16,9 @@ export class HistoryBox implements Object2d {
   }
   
   draw(canvasCtx: CanvasRenderingContext2D) {
-    const x = 0
+    const x = this.context.startDay / (this.context.history.length-1) * this.canvas.offsetWidth
     const y = this.canvas.offsetHeight - HISTORY_BOX_HEIGHT
-    const width = 400
+    const width = (this.context.endDay - this.context.startDay) / (this.context.history.length-1) * this.canvas.offsetWidth
     const height = HISTORY_BOX_HEIGHT
 
     canvasCtx.fillStyle = HISTORY_BOX_BACKGROUND

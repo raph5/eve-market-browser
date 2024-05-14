@@ -1,6 +1,7 @@
 
 # To do
 
+- Create a hook that fetch and process price history
 - Create a real error management system instead of dumping them into the console
 - Add hotjar
 - Improve search experience
@@ -14,6 +15,7 @@
 
 # Doing
 
+- Create price history graph
 
 # Done
 

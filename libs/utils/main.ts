@@ -87,3 +87,7 @@ export function intToBase64(integer: number) {
 export function uid() {
   return intToBase64(Math.floor(Math.random() * 1e8))
 }
+
+export function clamp(x: number, inf: number, sup: number) {
+  return Math.max(inf, Math.min(x, sup))
+}

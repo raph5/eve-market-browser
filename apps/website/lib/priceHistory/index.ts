@@ -1,8 +1,12 @@
+import { HistoryDay } from "libs/esi-client-store/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Square } from "./objects/square"
 import { Object2d, hitBox } from "./types"
 import { isInHitBox } from "./utils"
+import { HistoryHandle } from "./objects/historyHandle"
+import { HistoryBg } from "./objects/historyBg"
+import { Average5d } from "./objects/average5d"
 
 export class Graph {
 
@@ -21,6 +25,7 @@ export class Graph {
   private _actualCursor = 'unset'
 
   constructor(
+    history: HistoryDay[],
     private container: HTMLElement,
     autoStart: boolean = true
   ) {
@@ -35,10 +40,7 @@ export class Graph {
     // canvas size
     this.canvas.width = this.container.offsetWidth
     this.canvas.height = this.container.offsetHeight
-    this._resize = (() => {
-      this.canvas.width = this.container.offsetWidth
-      this.canvas.height = this.container.offsetHeight
-    }).bind(this)
+    this._resize = this.handleResize.bind(this)
     window.addEventListener('resize', this._resize)
 
     // canvas event listener
@@ -48,11 +50,26 @@ export class Graph {
     this.canvas.onmouseup = this.handleMouseUp.bind(this)
     this.canvas.onmousedown = this.handleMouseDown.bind(this)
 
-    // scene init
+    // context setup
     this.context = new GraphContext()
+    this.context.history = history
+    this.context.startDay = history.length-1 - 80
+    this.context.endDay = history.length-1
+    this.context.startPrice = 0
+    this.context.endPrice = history[0].highest
+    for(let i=1; i<history.length; i++) {
+      if(this.context.endPrice < history[i].highest) {
+        this.context.endPrice = history[i].highest
+      }
+    }
+
+    // scene init
     this.objectStack = [
+      new HistoryBg(this),
       new HistoryBox(this),
-      new Square(this, 100, 100, 50, 50, 'grey')
+      new HistoryHandle(this, 'start'),
+      new HistoryHandle(this, 'end'),
+      new Average5d(this),
     ]
     this._mouseIn = new Array(this.objectStack.length).fill(false)
 
@@ -187,6 +204,11 @@ export class Graph {
         this.objectStack[i].onMouseDown(event)
       }
     }
+  }
+
+  private handleResize() {
+    this.canvas.width = this.container.offsetWidth
+    this.canvas.height = this.container.offsetHeight
   }
 
 }

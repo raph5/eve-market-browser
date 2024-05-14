@@ -1,9 +1,12 @@
 import { Graph } from "@lib/priceHistory/index"
+import { HistoryDay } from "esi-client-store/types"
 import { useEffect, useMemo, useRef } from "react"
 
-export interface PriceHistoryProps {}
+export interface PriceHistoryProps {
+  history: HistoryDay[]
+}
 
-export function PriceHistory({}: PriceHistoryProps) {
+export function PriceHistory({ history }: PriceHistoryProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -12,7 +15,7 @@ export function PriceHistory({}: PriceHistoryProps) {
       return
     }
 
-    const graph = new Graph(containerRef.current)
+    const graph = new Graph(history, containerRef.current)
     return graph.destroy.bind(graph)
   }, [])
 

@@ -1,12 +1,16 @@
 
-export interface History {
-  average: number,
+export interface HistoryDay {
   date: string,
+  average: number,
+  average_5d: number,
+  average_20d: number,
   highest: number,
   lowest: number,
   order_count: number,
-  volume: number
-}[]
+  volume: number,
+  donchian_top: number,
+  donchian_bottom: number
+}
 
 export interface Order {
   duration: number,
