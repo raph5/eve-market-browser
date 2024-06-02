@@ -39,6 +39,9 @@ export default function About() {
         </ul>
       </header>
       <main className="about">
+        <section className="about__feedback">
+          <p>This site is currently under active development. If you have any feedback, please let me know.</p>
+        </section>
         <section className="about__contact">
           <h2>Contact Informations</h2>
           <p>

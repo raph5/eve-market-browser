@@ -1,6 +1,7 @@
 
 # To do
 
+- Add responsive support
 - Faire la migration de bun vers node
 - Create a hook that fetch and process price history
 - Create a real error management system instead of dumping them into the console
