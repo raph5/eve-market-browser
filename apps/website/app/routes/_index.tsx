@@ -7,7 +7,9 @@ export const meta: MetaFunction = () => {
     { name: "description", content: "Explore real-time market data from EVE Online. Track current prices, trends, and trade opportunities for a wide range of commodities, ships, modules, and more." },
     { property: "og:type", content: "website" },
     { property: "og:image", content: "https://evemarketbrowser.com/thumbnail.png" },
-    { property: "og:image:type", content: "image/png" }
+    { property: "og:image:type", content: "image/png" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:image:src", content: "https://evemarketbrowser.com/thumbnail.png" }
   ];
 }
 

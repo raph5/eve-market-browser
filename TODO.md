@@ -15,9 +15,9 @@
 
 # Doing
 
-- Add hotjar
 
 # Done
 
+- Add hotjar
 - Add an about page with cerdits, github page, bug reports and legal stulfs
 - SOE opitimisation
