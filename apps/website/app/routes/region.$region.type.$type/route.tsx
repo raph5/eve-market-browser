@@ -23,7 +23,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { title: `${data.typeName} in ${data.regionName} - EVE Market Browser` },
     { name: "description", content: `Explore real-time market data for ${data.typeName} in ${data.regionName} region of EVE Online. Track current prices, trends, and trade opportunities for a wide range of commodities, ships, modules, and more.` },
     { property: "og:type", content: "website" },
-    { property: "og:image", content: "https://evemarketbrowser.com/thumbnail.png" }
+    { property: "og:image", content: "https://evemarketbrowser.com/thumbnail.png" },
+    { property: "og:image:type", content: "image/png" }
   ]
 }
 

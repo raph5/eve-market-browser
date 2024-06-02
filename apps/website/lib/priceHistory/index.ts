@@ -1,12 +1,18 @@
 import { HistoryDay } from "libs/esi-client-store/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
-import { Square } from "./objects/square"
-import { Object2d, hitBox } from "./types"
-import { isInHitBox } from "./utils"
+import { Object2d, ObjectHtml, hitBox } from "./types"
+import { getMinMaxPrice, isInHitBox } from "./lib"
 import { HistoryHandle } from "./objects/historyHandle"
 import { HistoryBg } from "./objects/historyBg"
+import { Average } from "./objects/average"
 import { Average5d } from "./objects/average5d"
+import { Average20d } from "./objects/average20d"
+import { Donchian } from "./objects/donchian"
+import { MinMax } from "./objects/minMax"
+import { GraphBg } from "./objects/graphBg"
+import { Volume } from "./objects/volume"
+import { AverageTooltip } from "./objects/averageTooltip"
 
 export class Graph {
 
@@ -15,7 +21,8 @@ export class Graph {
   public context: GraphContext
 
   private canvasCtx: CanvasRenderingContext2D
-  private objectStack: Object2d[]
+  private object2dStack: Object2d[]
+  private objectHtmlStack: ObjectHtml[]
 
   private _isRuning = false
   private _resize: () => void
@@ -49,34 +56,50 @@ export class Graph {
     this.canvas.onclick = this.handleClick.bind(this)
     this.canvas.onmouseup = this.handleMouseUp.bind(this)
     this.canvas.onmousedown = this.handleMouseDown.bind(this)
+    this.canvas.onwheel = this.handleWheel.bind(this)
+
+    // html objects init
+    const tooltip = new AverageTooltip()
+    this.objectHtmlStack = [ tooltip ]
+    for(const o of this.objectHtmlStack) {
+      this.container.appendChild(o.el)
+    }
+
 
     // context setup
     this.context = new GraphContext()
     this.context.history = history
-    this.context.startDay = history.length-1 - 80
-    this.context.endDay = history.length-1
-    this.context.startPrice = 0
-    this.context.endPrice = history[0].highest
-    for(let i=1; i<history.length; i++) {
-      if(this.context.endPrice < history[i].highest) {
-        this.context.endPrice = history[i].highest
-      }
-    }
+    this.context.tooltip = tooltip
+    this.context.startDay = this.context.history.length-1 - 80
+    this.context.endDay = this.context.history.length-1
+    const [min, max] = getMinMaxPrice(history, this.context.startDay, this.context.endDay)
+    this.context.startPrice = min * 0.7
+    this.context.endPrice = max * 1.1
 
     // scene init
-    this.objectStack = [
+    this.object2dStack = [
+      new GraphBg(this),
       new HistoryBg(this),
       new HistoryBox(this),
       new HistoryHandle(this, 'start'),
       new HistoryHandle(this, 'end'),
+      new Volume(this),
+      new Donchian(this),
+      new Average20d(this),
       new Average5d(this),
+      new MinMax(this),
+      new Average(this),
     ]
-    this._mouseIn = new Array(this.objectStack.length).fill(false)
+    this._mouseIn = new Array(this.object2dStack.length).fill(false)
 
     // auto start
     if(autoStart) {
       this.start()
     }
+  }
+
+  setHistory(history: HistoryDay[]) {
+    this.context.history = history
   }
 
   start() {
@@ -91,7 +114,8 @@ export class Graph {
   destroy() {
     this.stop()
     this.canvas.remove()
-    this.objectStack.forEach(obj => obj.destroy?.bind(obj))
+    this.objectHtmlStack.forEach(obj => obj.el.remove())
+    this.object2dStack.forEach(obj => obj.destroy?.bind(obj))
     window.removeEventListener('resize', this._resize)
   }
 
@@ -100,15 +124,15 @@ export class Graph {
 
     let cursor: string|undefined
     
-    for(let i=0; i<this.objectStack.length; i++) {
-      this.objectStack[i].draw(this.canvasCtx, this.canvas)
+    for(let i=0; i<this.object2dStack.length; i++) {
+      this.object2dStack[i].draw(this.canvasCtx, this.canvas)
 
       if(
         this.cursor == undefined &&
-        this.objectStack[i].hitBox != undefined &&
-        isInHitBox(this._mouseX, this._mouseY, this.objectStack[i].hitBox as hitBox)
+        this.object2dStack[i].hitBox != undefined &&
+        isInHitBox(this._mouseX, this._mouseY, this.object2dStack[i].hitBox as hitBox)
       ) {
-        cursor = this.objectStack[i].cursor
+        cursor = this.object2dStack[i].cursor
       }
     }
 
@@ -143,65 +167,90 @@ export class Graph {
     this._mouseY = event.offsetY
     
     let inHitBox: boolean
-    for(let i=this.objectStack.length-1; i>=0; i--) {
-      if(this.objectStack[i].hitBox == undefined) continue
+    let runMouseOverHandler = true
+    let runMouseOutHandler = true
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
+      if(this.object2dStack[i].hitBox == undefined) continue
 
-      inHitBox = isInHitBox(event.offsetX, event.offsetY, this.objectStack[i].hitBox as hitBox)
+      inHitBox = isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
 
       if(inHitBox && this._mouseIn[i] == false) {
-        this.objectStack[i].onMouseOver?.(event)
+        if(runMouseOverHandler) {
+          const rep = this.object2dStack[i].onMouseOver?.(event)
+          if(rep == false) runMouseOverHandler = false
+        }
         this._mouseIn[i] = true
       }
       else if(!inHitBox && this._mouseIn[i] == true) {
-        this.objectStack[i].onMouseOut?.(event)
+        if(runMouseOutHandler) {
+          const rep = this.object2dStack[i].onMouseOut?.(event)
+          if(rep == false) runMouseOutHandler = false
+        }
         this._mouseIn[i] = false
       }
     }
   }
 
   private handleMouseOut(event: MouseEvent) {
-    for(let i=0; i<this.objectStack.length; i++) {
-      this.objectStack[i].onMouseOut?.(event)
-      this.objectStack[i].onMouseUp?.(event)
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
+      this.object2dStack[i].onMouseOut?.(event)
+      this.object2dStack[i].onMouseUp?.(event)
       this._mouseIn[i] = false
     }
   }
 
   private handleClick(event: MouseEvent) {
-    for(let i=0; i<this.objectStack.length; i++) {
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
       if(
-        this.objectStack[i].hitBox != undefined &&
-        this.objectStack[i].onClick != undefined &&
-        isInHitBox(event.offsetX, event.offsetY, this.objectStack[i].hitBox as hitBox)
+        this.object2dStack[i].hitBox != undefined &&
+        this.object2dStack[i].onClick != undefined &&
+        isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
       ) {
         // @ts-ignore
-        this.objectStack[i].onClick(event)
+        const rep = this.object2dStack[i].onClick(event)
+        if(rep == false) return
       }
     }
   }
 
   private handleMouseUp(event: MouseEvent) {
-    for(let i=0; i<this.objectStack.length; i++) {
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
       if(
-        this.objectStack[i].hitBox != undefined &&
-        this.objectStack[i].onMouseUp != undefined &&
-        isInHitBox(event.offsetX, event.offsetY, this.objectStack[i].hitBox as hitBox)
+        this.object2dStack[i].hitBox != undefined &&
+        this.object2dStack[i].onMouseUp != undefined &&
+        isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
       ) {
         // @ts-ignore
-        this.objectStack[i].onMouseUp(event)
+        const rep = this.object2dStack[i].onMouseUp(event)
+        if(rep == false) return
       }
     }
   }
 
   private handleMouseDown(event: MouseEvent) {
-    for(let i=0; i<this.objectStack.length; i++) {
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
       if(
-        this.objectStack[i].hitBox != undefined &&
-        this.objectStack[i].onMouseDown != undefined &&
-        isInHitBox(event.offsetX, event.offsetY, this.objectStack[i].hitBox as hitBox)
+        this.object2dStack[i].hitBox != undefined &&
+        this.object2dStack[i].onMouseDown != undefined &&
+        isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
       ) {
         // @ts-ignore
-        this.objectStack[i].onMouseDown(event)
+        const rep = this.object2dStack[i].onMouseDown(event)
+        if(rep == false) return
+      }
+    }
+  }
+
+  private handleWheel(event: WheelEvent) {
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
+      if(
+        this.object2dStack[i].hitBox != undefined &&
+        this.object2dStack[i].onWheel != undefined &&
+        isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
+      ) {
+        // @ts-ignore
+        const rep = this.object2dStack[i].onWheel(event)
+        if(rep == false) return
       }
     }
   }

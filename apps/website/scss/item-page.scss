@@ -111,5 +111,76 @@
 .price-history {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  display: grid;
+  grid-template-rows: max-content auto;
+
+  &__legend {
+    display: flex;
+    justify-self: center;
+    gap: 12px;
+  }
+  &__label {
+    font-size: 14px;
+    color: $font-color-light;
+    display: flex;
+    gap: 2px;
+  }
+  &__container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  &__tooltip {
+    background-color: $background-1;
+    border: solid 1px $border-1;
+    box-shadow: 0 0 8px #000b;
+    font-size: 14px;
+    padding: 12px;
+    width: 68px;
+    height: 34px;
+    position: absolute;
+    visibility: hidden;
+
+    &--active {
+      visibility: visible;
+    }
+  }
+
+  &__avg-icon {
+    margin: 4px;
+    width: 8px;
+    height: 8px;
+    background-color: #950;
+  }
+  &__minmax-icon {
+    margin: 2px 7px 2px 8px;
+    width: 1px;
+    height: 12px;
+    background-color: #666;
+  }
+  &__avg5d-icon {
+    margin: 7px 2px;
+    width: 12px;
+    height: 2px;
+    background-color: #256;
+  }
+  &__avg20d-icon {
+    margin: 7px 2px;
+    width: 12px;
+    height: 2px;
+    background-color: #641;
+  }
+  &__donchian-icon {
+    margin: 2px;
+    width: 12px;
+    height: 12px;
+    background-color: #bce2;
+  }
+  &__volume-icon {
+    margin: 2px;
+    width: 12px;
+    height: 12px;
+    background-color: #245;
+  }
 }

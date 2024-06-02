@@ -1,7 +1,7 @@
 import { Graph } from "..";
 import { GraphContext } from "../context";
 import { Object2d } from "../types";
-import { GRAPH_BACKGROUND, HISTORY_BOX_HEIGHT } from "../var";
+import { GRAPH_BACKGROUND, HISTORY_HEIGHT, HISTORY_PADDING_TOP } from "../var";
 
 export class HistoryBg implements Object2d {
 
@@ -17,15 +17,15 @@ export class HistoryBg implements Object2d {
     this.context = graph.context
     this.canvas = graph.canvas
 
-    this._maxAvg = this.context.history[0].average_5d
+    this._maxAvg = this.context.history[0].average
     this._separators = []
     for(let i=0; i<this.context.history.length; i++) {
       const date = new Date(this.context.history[i].date)
       if(date.getDate() == 1) {
         this._separators.push(i)
       }
-      if(this.context.history[i].average_5d > this._maxAvg) {
-        this._maxAvg = this.context.history[i].average_5d
+      if(this.context.history[i].average > this._maxAvg) {
+        this._maxAvg = this.context.history[i].average
       }
     }
   }
@@ -35,12 +35,12 @@ export class HistoryBg implements Object2d {
 
     canvasCtx.beginPath()
     canvasCtx.moveTo(0, this.canvas.offsetHeight)
-    let y, x = 0
-    for(let i=0; i<this.context.history.length; i++) {
-      y = this.canvas.offsetHeight - this.context.history[i].average_5d / this._maxAvg * HISTORY_BOX_HEIGHT
-      canvasCtx.lineTo(x, y)
-      x = (i+1) / this.context.history.length * this.canvas.offsetWidth
-      canvasCtx.lineTo(x, y)
+    canvasCtx.lineTo(0, this.canvas.offsetHeight - this.context.history[0].average / this._maxAvg * (HISTORY_HEIGHT - HISTORY_PADDING_TOP))
+    for(let i=1; i<this.context.history.length; i++) {
+      canvasCtx.lineTo(
+        (i+1) / this.context.history.length * this.canvas.offsetWidth,
+        this.canvas.offsetHeight - this.context.history[i].average / this._maxAvg * (HISTORY_HEIGHT - HISTORY_PADDING_TOP)
+      )
     }
     canvasCtx.lineTo(this.canvas.offsetWidth, this.canvas.offsetHeight)
     canvasCtx.fill()
@@ -48,9 +48,9 @@ export class HistoryBg implements Object2d {
     for(let i=0; i<this._separators.length; i++) {
       canvasCtx.fillRect(
         this._separators[i] / this.context.history.length * this.canvas.offsetWidth,
-        this.canvas.offsetHeight - HISTORY_BOX_HEIGHT,
+        this.canvas.offsetHeight - (HISTORY_HEIGHT - HISTORY_PADDING_TOP),
         1,
-        HISTORY_BOX_HEIGHT
+        HISTORY_HEIGHT - HISTORY_PADDING_TOP
       )
     }
   }

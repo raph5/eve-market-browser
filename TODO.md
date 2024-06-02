@@ -1,9 +1,9 @@
 
 # To do
 
+- Faire la migration de bun vers node
 - Create a hook that fetch and process price history
 - Create a real error management system instead of dumping them into the console
-- Add hotjar
 - Improve search experience
 - Test quickbar exports
 - Rebuild market store to add "All regions" market
@@ -15,7 +15,7 @@
 
 # Doing
 
-- Create price history graph
+- Add hotjar
 
 # Done
 

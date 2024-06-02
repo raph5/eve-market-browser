@@ -1,10 +1,10 @@
 import { Object2d } from "../types"
 import { Graph } from "../index"
 import { GraphContext } from "../context"
-import { AVERAGE5D_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
+import { DONCHIAN_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
 import { getGraphCoordinates } from "../lib"
 
-export class Average5d implements Object2d {
+export class Donchian implements Object2d {
 
   private context: GraphContext
   private canvas: HTMLCanvasElement
@@ -27,16 +27,19 @@ export class Average5d implements Object2d {
     )
     canvasCtx.clip()
 
-    canvasCtx.strokeStyle = AVERAGE5D_COLOR
-    canvasCtx.lineWidth = 2
+    canvasCtx.fillStyle = DONCHIAN_COLOR
     canvasCtx.beginPath()
-    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].average_5d)
+    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].donchian_top)
     canvasCtx.moveTo(x, y)
     for(let i=1; i<this.context.history.length; i++) {
-      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].average_5d)
+      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].donchian_top)
       canvasCtx.lineTo(x, y)
     }
-    canvasCtx.stroke()
+    for(let i=this.context.history.length-1; i>=0; i--) {
+      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].donchian_bottom)
+      canvasCtx.lineTo(x, y)
+    }
+    canvasCtx.fill()
 
     canvasCtx.restore()
   }

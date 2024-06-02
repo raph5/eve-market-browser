@@ -42,26 +42,67 @@ export async function getHistory(type: number, region: number): Promise<HistoryD
   const history = await esiFetch(`/markets/${region}/history`, { type_id: type.toString() })
   if(history.error) throw new Error(`esi error : ${history.error}`)
 
-  // TODO: do the actual computations
-  for(const h of history) {
-    h.average_5d = h.average
-    h.average_20d = h.average
-    h.donchian_top = h.average
-    h.donchian_bottom = h.average
-  }
-
   // add missing days
-  let h = history[0]
-  let d = new Date(h.date)
+  let d = new Date(history[0].date)
   for(let i=1; i<history.length; i++) {
     d.setDate(d.getDate() + 1)
     const dateString = d.toISOString().split('T')[0]
     if(history[i].date != dateString) {
-      history.splice(i+1, 0, { ...h, volume: 0, date: dateString })
-      i += 1
-      d.setDate(d.getDate() + 1)
+      history.splice(i, 0, {
+        ...history[i-1],
+        lowest: history[i-1].average,
+        highest: history[i-1].average,
+        volume: 0,
+        date: dateString
+      })
     }
-    h = history[i]
+  }
+
+  // comput rolling 5d average
+  history[0].average_5d = history[0].average
+  history[0].average_20d = history[0].average
+  history[0].donchian_top = history[0].highest
+  history[0].donchian_bottom = history[0].lowest
+  for(let i=1; i<history.length; i++) {
+    history[i].average_5d = (
+      6 * history[i-1].average_5d -
+      history[Math.max(0, i-6)].average +
+      history[i].average
+    ) / 6
+
+    history[i].average_20d = (
+      21 * history[i-1].average_20d -
+      history[Math.max(0, i-21)].average +
+      history[i].average
+    ) / 21
+
+    if(history[i-1].donchian_top == history[Math.max(0, i-6)].highest) {
+      let j = Math.max(0, i-5)
+      let top = history[j].highest
+      for(j++; j<=i; j++) {
+        if(history[j].highest > top) top = history[j].highest
+      }
+      history[i].donchian_top = top
+    } else {
+      history[i].donchian_top = Math.max(
+        history[i-1].donchian_top,
+        history[i].highest
+      )
+    }
+
+    if(history[i-1].donchian_bottom == history[Math.max(0, i-6)].lowest) {
+      let j = Math.max(0, i-5)
+      let bottom = history[j].lowest
+      for(j++; j<=i; j++) {
+        if(history[j].lowest < bottom) bottom = history[j].lowest
+      }
+      history[i].donchian_bottom = bottom
+    } else {
+      history[i].donchian_bottom = Math.min(
+        history[i-1].donchian_bottom,
+        history[i].lowest
+      )
+    }
   }
 
   return history

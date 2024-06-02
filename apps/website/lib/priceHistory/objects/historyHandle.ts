@@ -2,7 +2,7 @@ import { clamp } from 'utils/main'
 import { GraphContext } from '../context'
 import { Graph } from '../index'
 import { Object2d, hitBox } from '../types'
-import { HISTORY_BOX_BACKGROUND, HISTORY_BOX_HEIGHT, HISTORY_HANDLE_WIDTH } from '../var'
+import { HISTORY_BACKGROUND, HISTORY_HEIGHT, HISTORY_HANDLE_WIDTH, HISTORY_PADDING_TOP } from '../var'
 
 export class HistoryHandle implements Object2d {
   
@@ -24,6 +24,7 @@ export class HistoryHandle implements Object2d {
   ) {
     this.canvas = graph.canvas
     this.context = graph.context
+
     this.canvas.addEventListener('mouseup', this.dragEnd.bind(this))
     this.canvas.addEventListener('mouseout', this.dragEnd.bind(this))
     this.canvas.addEventListener('mousemove', this.dragMove.bind(this))
@@ -31,8 +32,8 @@ export class HistoryHandle implements Object2d {
 
   draw(canvasCtx: CanvasRenderingContext2D) {
     const width = HISTORY_HANDLE_WIDTH
-    const height = HISTORY_BOX_HEIGHT
-    const y = this.canvas.offsetHeight - HISTORY_BOX_HEIGHT
+    const height = HISTORY_HEIGHT - HISTORY_PADDING_TOP
+    const y = this.canvas.offsetHeight - HISTORY_HEIGHT + HISTORY_PADDING_TOP
     const x = this.side == 'start'
       ? this.context.startDay / (this.context.history.length-1) * this.canvas.offsetWidth
       : this.context.endDay / (this.context.history.length-1) * this.canvas.offsetWidth - HISTORY_HANDLE_WIDTH
@@ -59,14 +60,14 @@ export class HistoryHandle implements Object2d {
     if(this._grabbed) {
       if(this.side == 'start') {
         this.context.startDay = clamp(
-          Math.round( (event.offsetX - this._grabX) / this.canvas.offsetWidth * (this.context.history.length-1) ),
+          (event.offsetX - this._grabX) / this.canvas.offsetWidth * (this.context.history.length-1),
           0,
           Math.max( this.context.endDay - 24, 0 )
         )
       }
       else {
         this.context.endDay = clamp(
-          Math.round( (event.offsetX - this._grabX + HISTORY_HANDLE_WIDTH) / this.canvas.offsetWidth * (this.context.history.length-1) ),
+          (event.offsetX - this._grabX + HISTORY_HANDLE_WIDTH) / this.canvas.offsetWidth * (this.context.history.length-1),
           Math.min( this.context.startDay + 24, this.context.history.length-1 ),
           this.context.history.length-1
         )
@@ -84,6 +85,7 @@ export class HistoryHandle implements Object2d {
 
   onMouseDown(event: MouseEvent) {
     this.dragStart(event)
+    return false
   }
 
   onMouseUp() {
@@ -91,7 +93,7 @@ export class HistoryHandle implements Object2d {
   }
 
   onMouseOver() {
-    this.color = HISTORY_BOX_BACKGROUND
+    this.color = HISTORY_BACKGROUND
     this._mouseOver = true
   }
 

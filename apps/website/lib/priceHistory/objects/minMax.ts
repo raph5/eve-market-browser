@@ -1,10 +1,10 @@
 import { Object2d } from "../types"
 import { Graph } from "../index"
 import { GraphContext } from "../context"
-import { AVERAGE5D_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
-import { getGraphCoordinates } from "../lib"
+import { MINMAX_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
+import { getGraphCoordinates, getGraphCoordinatesY } from "../lib"
 
-export class Average5d implements Object2d {
+export class MinMax implements Object2d {
 
   private context: GraphContext
   private canvas: HTMLCanvasElement
@@ -27,16 +27,13 @@ export class Average5d implements Object2d {
     )
     canvasCtx.clip()
 
-    canvasCtx.strokeStyle = AVERAGE5D_COLOR
-    canvasCtx.lineWidth = 2
-    canvasCtx.beginPath()
-    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].average_5d)
-    canvasCtx.moveTo(x, y)
+    canvasCtx.fillStyle = MINMAX_COLOR
+    let x, y1, y2
     for(let i=1; i<this.context.history.length; i++) {
-      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].average_5d)
-      canvasCtx.lineTo(x, y)
+      [x, y1] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].highest)
+      y2 = getGraphCoordinatesY(this.context, this.canvas, this.context.history[i].lowest)
+      canvasCtx.fillRect(x, y1, 1, y2-y1)
     }
-    canvasCtx.stroke()
 
     canvasCtx.restore()
   }

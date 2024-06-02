@@ -6,10 +6,11 @@ export const meta: MetaFunction = () => {
     { title: "EVE Market Browser" },
     { name: "description", content: "Explore real-time market data from EVE Online. Track current prices, trends, and trade opportunities for a wide range of commodities, ships, modules, and more." },
     { property: "og:type", content: "website" },
-    { property: "og:image", content: "https://evemarketbrowser.com/thumbnail.png" }
+    { property: "og:image", content: "https://evemarketbrowser.com/thumbnail.png" },
+    { property: "og:image:type", content: "image/png" }
   ];
 }
 
 export async function loader() {
-  return redirect("/region/10000002/type/605")
+  return redirect("/region/10000002/type/11393")
 }

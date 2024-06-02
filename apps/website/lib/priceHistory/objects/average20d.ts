@@ -1,7 +1,7 @@
 import { Object2d } from "../types"
 import { Graph } from "../index"
 import { GraphContext } from "../context"
-import { AVERAGE20D_COLOR } from "../var"
+import { AVERAGE20D_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
 import { getGraphCoordinates } from "../lib"
 
 export class Average20d implements Object2d {
@@ -17,7 +17,18 @@ export class Average20d implements Object2d {
   }
 
   draw(canvasCtx: CanvasRenderingContext2D) {
+    canvasCtx.save()
+    canvasCtx.beginPath()
+    canvasCtx.rect(
+      GRAPH_PADDING_X,
+      GRAPH_PADDING_TOP,
+      this.canvas.offsetWidth - 2*GRAPH_PADDING_X,
+      this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP
+    )
+    canvasCtx.clip()
+
     canvasCtx.strokeStyle = AVERAGE20D_COLOR
+    canvasCtx.lineWidth = 2
     canvasCtx.beginPath()
     let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].average_20d)
     canvasCtx.moveTo(x, y)
@@ -26,6 +37,8 @@ export class Average20d implements Object2d {
       canvasCtx.lineTo(x, y)
     }
     canvasCtx.stroke()
+
+    canvasCtx.restore()
   }
 
 }
