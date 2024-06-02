@@ -45,7 +45,6 @@ export default function About() {
         <section className="about__contact">
           <h2>Contact Informations</h2>
           <p>
-            Real name : Raphaël Guyader<br/>
             In-game name : Raph Toulouse<br/>
             Email : <a href="mailto:raphguyader@gmail.com">raphguyader@gmail.com</a><br/>
             Discord : raph_5#0989<br/>
