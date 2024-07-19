@@ -14,7 +14,7 @@ export interface HistoryDay {
 
 export interface Order {
   duration: number,
-  order_type: 'buy' | 'sell',
+  is_buy_order: boolean,
   issued: string,
   location_id: number,
   min_volume: number,

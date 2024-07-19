@@ -1,6 +1,7 @@
 
 # To do
 
+- Keep view tree state on reload for quality life
 - Add responsive support
 - Faire la migration de bun vers node
 - Create a hook that fetch and process price history

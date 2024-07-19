@@ -127,11 +127,6 @@ export async function getOrders(type: number, region: number): Promise<Order[]> 
     page += 1
   }
 
-  for(const o of orders) {
-    o.order_type = o.is_buy_order ? 'buy' : 'sell'
-    delete o.is_buy_order
-  }
-
   return orders
 }
 
