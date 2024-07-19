@@ -1,4 +1,4 @@
-import { esiStore } from "@app/.server/esiServerStore";
+import { esiStore } from "@app/esiStore.server";
 import { json } from "@remix-run/node";
 import { MetaFunction, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Navigation from "./navigation";

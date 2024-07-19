@@ -29,14 +29,14 @@ export class Donchian implements Object2d {
 
     canvasCtx.fillStyle = DONCHIAN_COLOR
     canvasCtx.beginPath()
-    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].donchian_top)
+    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].donchianTop)
     canvasCtx.moveTo(x, y)
     for(let i=1; i<this.context.history.length; i++) {
-      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].donchian_top)
+      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].donchianTop)
       canvasCtx.lineTo(x, y)
     }
     for(let i=this.context.history.length-1; i>=0; i--) {
-      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].donchian_bottom)
+      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].donchianBottom)
       canvasCtx.lineTo(x, y)
     }
     canvasCtx.fill()

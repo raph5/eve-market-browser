@@ -1,6 +1,6 @@
 import { Graph } from "@lib/priceHistory/index"
-import { HistoryDay } from "esi-client-store/types"
-import { useEffect, useMemo, useRef } from "react"
+import { HistoryDay } from "esi-store/types"
+import { useEffect, useRef } from "react"
 
 export interface PriceHistoryProps {
   history: HistoryDay[]

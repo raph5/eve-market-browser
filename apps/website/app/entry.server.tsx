@@ -4,9 +4,6 @@
  * For more information, see https://remix.run/file-conventions/entry.server
  */
 
-// TODO: remove this line
-import './.server/goStore'
-
 import 'dotenv/config';
 import { PassThrough } from "node:stream";
 

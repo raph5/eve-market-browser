@@ -6,8 +6,7 @@ import classNames from "classnames"
 import { Type, MarketGroup as MarketGroupType } from "esi-server-store/types"
 import { createContext } from "react"
 import { Link, useNavigate, useParams } from "@remix-run/react"
-import { RARITY_TO_META, getMeta } from "esi-client-store/main"
-import { Meta } from "esi-client-store/types"
+import { Meta } from "@app/meta"
 import { useTypeSearch } from "@hooks/useTypeSearch"
 import { SearchBar } from "@components/searchBar"
 import { BsArrowsCollapse } from "react-icons/bs"
@@ -15,6 +14,7 @@ import QuickbarContext from "@contexts/quickbarContext"
 import { stringSort } from "utils/main"
 import * as ContextMenu from "@radix-ui/react-context-menu"
 import "@scss/market-tree.scss"
+import { getMeta, RARITY_TO_META } from "@app/meta"
 
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {

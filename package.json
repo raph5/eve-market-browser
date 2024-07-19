@@ -1,24 +1,17 @@
 {
   "name": "eve-market-browser",
   "version": "1.0.0",
-  "description": "",
-  "scripts": {},
-  "keywords": [],
-  "workspaces": [
-    "apps/*",
-    "libs/*"
-  ],
   "author": "Raphaël Guyader (in-game name : Raph Toulouse)",
-  "license": "ISC",
+  "description": "",
   "engines": {
     "node": ">=18.16.1"
   },
+  "keywords": [],
+  "license": "ISC",
+  "scripts": {},
   "type": "module",
-  "dependencies": {
-    "bun": "^1.1.0",
-    "pixi.js": "^8.1.1"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.0.12"
-  }
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ]
 }

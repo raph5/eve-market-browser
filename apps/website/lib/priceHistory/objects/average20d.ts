@@ -30,10 +30,10 @@ export class Average20d implements Object2d {
     canvasCtx.strokeStyle = AVERAGE20D_COLOR
     canvasCtx.lineWidth = 2
     canvasCtx.beginPath()
-    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].average_20d)
+    let [x, y] = getGraphCoordinates(this.context, this.canvas, 0, this.context.history[0].average20d)
     canvasCtx.moveTo(x, y)
     for(let i=1; i<this.context.history.length; i++) {
-      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].average_20d)
+      [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].average20d)
       canvasCtx.lineTo(x, y)
     }
     canvasCtx.stroke()

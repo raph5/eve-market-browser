@@ -1,4 +1,4 @@
-import { HistoryDay } from "libs/esi-client-store/types"
+import { HistoryDay } from "esi-store/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Object2d, ObjectHtml, hitBox } from "./types"

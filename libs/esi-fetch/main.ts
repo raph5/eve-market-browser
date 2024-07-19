@@ -22,10 +22,10 @@ async function esiFetch(uri: string, query: queryParams = {}, body: any = {}, me
 
   const serializedBody = JSON.stringify(body)
   const searchParams = new URLSearchParams(query)
-  const headers = new Headers({
+  const headers = {
     'content-type': 'application/json',
     'User-Agent': 'evemarketbrowser.com - contact me at raphguyader@gmail.com'
-  })
+  }
 
   const esiResponse = await fetch(`${ESI_ROOT}${uri}?${searchParams}`, {
     body: method == 'POST' || method == 'PUT' ? serializedBody : null,

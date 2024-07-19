@@ -1,14 +1,13 @@
 import Table, { Cell, Column } from "@components/table"
-import { Order } from "esi-client-store/types"
+import { Order } from "esi-store/types"
 import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "utils"
 
 export interface MarketDataProps {
   orders: Order[]
-  locationRecord: Record<string, string>
   time: number
 }
 
-export default function MarketData({ orders, locationRecord, time }: MarketDataProps) {
+export default function MarketData({ orders, time }: MarketDataProps) {
   const sellColumns: Column[] = [
     { value: 'quantity', label: 'Quantity', sorting: numberSort() },
     { value: 'price', label: 'Price', sorting: numberSort() },
@@ -24,31 +23,25 @@ export default function MarketData({ orders, locationRecord, time }: MarketDataP
     { value: 'expires', label: 'Expires in', sorting: numberSort() },
   ]
 
-  const sellData: Record<string, Cell>[] = orders.filter(order => order.order_type == 'sell').map(order => ({
-    quantity: [ order.volume_remain, order.volume_remain ],
+  const sellData: Record<string, Cell>[] = orders.filter(order => !order.isBuyOrder).map(order => ({
+    quantity: [ order.volumeRemain, order.volumeRemain ],
     price: [ order.price, formatIsk(order.price) ],
-    location: [
-      locationRecord[order.location_id] ?? 'Player Owned Structure',
-      locationRecord[order.location_id] ?? 'Player Owned Structure'
-    ],
+    location: [ order.location, order.location ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
       expiresIn(order.issued, order.duration, time)
     ]
   }))
-  const buyData: Record<string, Cell>[] = orders.filter(order => order.order_type == 'buy').map(order => ({
-    quantity: [ order.volume_remain, order.volume_remain ],
+  const buyData: Record<string, Cell>[] = orders.filter(order => order.isBuyOrder).map(order => ({
+    quantity: [ order.volumeRemain, order.volumeRemain ],
     price: [ order.price, formatIsk(order.price) ],
-    location: [
-      locationRecord[order.location_id] ?? 'Player Owned Structure',
-      locationRecord[order.location_id] ?? 'Player Owned Structure'
-    ],
+    location: [ order.location, order.location ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
       expiresIn(order.issued, order.duration, time)
     ],
     range: [ order.range, order.range ],
-    minVolume: [ order.min_volume, order.min_volume ]
+    minVolume: [ order.minVolume, order.minVolume ]
   }))
 
   return (

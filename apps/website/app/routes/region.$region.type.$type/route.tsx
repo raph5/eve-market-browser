@@ -1,13 +1,11 @@
-import { esiStore } from "@app/.server/esiServerStore";
+import { esiStore } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useOutletContext, useRouteError } from "@remix-run/react";
-import { removeDuplicates } from "utils";
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { Tab, TabsRoot } from "@components/tabs";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "../region/route";
 import { useContext, useMemo } from "react";
-import { getHistory, getNames, getOrders } from "esi-client-store/main";
 import MarketData from "./marketData";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
@@ -61,9 +59,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const historyPromise = getHistory(typeId, regionId)
-  const orders = await getOrders(typeId, regionId)
-  const locationRecord = await getNames(removeDuplicates(orders.map(o => o.location_id).filter(l => 60000000 < l && l < 64000000)))
+  const historyPromise = esiStore.getHistory(typeId, regionId)
+  const orders = await esiStore.getOrders(typeId, regionId)
   const history = await historyPromise
 
   const time = Date.now()
@@ -74,7 +71,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     regionId,
     regionName,
     orders,
-    locationRecord,
     history,
     time
   })
@@ -82,7 +78,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
-  const { typeId, orders, locationRecord, time, history } = useLoaderData<typeof loader>()
+  const { typeId, orders, time, history } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
 
   const breadcrumbs = useMemo(() => {
@@ -126,7 +122,7 @@ export default function Type() {
       <div className="item-body">
         <TabsRoot className="item-body__tabs" tabs={tabs} defaultValue="marketData">
           <Tab className="item-body__tab" value="marketData">
-            <MarketData orders={orders} locationRecord={locationRecord} time={time} />
+            <MarketData orders={orders} time={time} />
           </Tab>
           <Tab className="item-body__tab" value="priceHistory">
             <PriceHistory history={history} />

@@ -1,11 +1,12 @@
 import { createRecord } from "utils"
 import { readCacheFile, writeCacheFile } from "./cache"
-import { fetchMarketGroups, fetchRegions, fetchTypes } from "./fetching"
-import type { MarketGroup, Region, Type } from "./types"
+import { fetchHistory, fetchMarketGroups, fetchOrders, fetchRegions, fetchTypes } from "./fetching"
+import type { MarketGroup, Region, Type, Order, HistoryDay } from "./types"
 
 const REGION_CACHE = 'regions'
 const MARKET_GROUP_CACHE = 'market-group'
 const TYPE_CACHE = 'types'
+
 
 class EsiStore {
 
@@ -96,6 +97,14 @@ class EsiStore {
     return this.typeRecord
   }
 
+  async getOrders(typeId: number, regionId?: number): Promise<Order[]> {
+    return fetchOrders(typeId, regionId)
+  }
+
+  async getHistory(typeId: number, regionId: number): Promise<HistoryDay[]> {
+    return fetchHistory(typeId, regionId)
+  }
+  
 }
 
 export default EsiStore

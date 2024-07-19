@@ -1,6 +1,7 @@
-import type { Region, MarketGroup, Type } from "./types";
+import type { Region, MarketGroup, Type, Order, HistoryDay } from "./types";
 import { createRecord, stringSort } from "utils";
 import { parseCsv } from "utils/server";
+import esiFetch from "esi-fetch/main";
 
 const HUB_REGION = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
 
@@ -124,4 +125,101 @@ export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Type[]> {
   const sortedTypes = types.sort(stringSort(t => t.name))
 
   return sortedTypes
+}
+
+export async function fetchOrders(typeId: number, regionId?: number): Promise<Order[]> {
+  let url = `https://evetycoon.com/api/v1/market/orders/${typeId}`
+  if(regionId != undefined) {
+    url += `?regionId=${regionId}`
+  }
+  const headers = {
+    'content-type': 'application/json',
+    'User-Agent': 'evemarketbrowser.com - contact me at raphguyader@gmail.com'
+  }
+
+  const response = await fetch(url, { headers })
+  if(!response.ok) {
+    throw new Error("EveTycoon request failed")
+  }
+  const data = await response.json()
+
+  const orders = data.orders
+  orders.forEach((o: any) => {
+    o.location = data.stationNames[o.locationId] || data.structureNames[o.locationId] || "Unknown Structure"
+    delete o.locationId
+  })
+
+  return orders as Order[]
+}
+
+export async function fetchHistory(typeId: number, regionId: number): Promise<HistoryDay[]> {
+  console.log(`⚙️ fetching type:${typeId} history from region:${regionId}`)
+  
+  const history = await esiFetch(`/markets/${regionId}/history`, { type_id: typeId.toString() })
+  if(history.error) throw new Error(`esi error : ${history.error}`)
+
+  // add missing days
+  let d = new Date(history[0].date)
+  for(let i=1; i<history.length; i++) {
+    d.setDate(d.getDate() + 1)
+    const dateString = d.toISOString().split('T')[0]
+    if(history[i].date != dateString) {
+      history.splice(i, 0, {
+        ...history[i-1],
+        lowest: history[i-1].average,
+        highest: history[i-1].average,
+        volume: 0,
+        date: dateString
+      })
+    }
+  }
+
+  // comput rolling 5d average
+  history[0].average5d = history[0].average
+  history[0].average20d = history[0].average
+  history[0].donchianTop = history[0].highest
+  history[0].donchianBottom = history[0].lowest
+  for(let i=1; i<history.length; i++) {
+    history[i].average5d = (
+      6 * history[i-1].average5d -
+      history[Math.max(0, i-6)].average +
+      history[i].average
+    ) / 6
+
+    history[i].average20d = (
+      21 * history[i-1].average20d -
+      history[Math.max(0, i-21)].average +
+      history[i].average
+    ) / 21
+
+    if(history[i-1].donchianTop == history[Math.max(0, i-6)].highest) {
+      let j = Math.max(0, i-5)
+      let top = history[j].highest
+      for(j++; j<=i; j++) {
+        if(history[j].highest > top) top = history[j].highest
+      }
+      history[i].donchianTop = top
+    } else {
+      history[i].donchianTop = Math.max(
+        history[i-1].donchianTop,
+        history[i].highest
+      )
+    }
+
+    if(history[i-1].donchianBottom == history[Math.max(0, i-6)].lowest) {
+      let j = Math.max(0, i-5)
+      let bottom = history[j].lowest
+      for(j++; j<=i; j++) {
+        if(history[j].lowest < bottom) bottom = history[j].lowest
+      }
+      history[i].donchianBottom = bottom
+    } else {
+      history[i].donchianBottom = Math.min(
+        history[i-1].donchianBottom,
+        history[i].lowest
+      )
+    }
+  }
+
+  return history
 }

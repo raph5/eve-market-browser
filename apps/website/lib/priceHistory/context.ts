@@ -1,4 +1,4 @@
-import { HistoryDay } from "esi-client-store/types";
+import { HistoryDay } from "esi-store/types";
 import { AverageTooltip } from "./objects/averageTooltip";
 
 export class GraphContext {
