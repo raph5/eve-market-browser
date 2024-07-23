@@ -1,16 +1,17 @@
-import { Object2d, hitBox } from "../types"
+import { Object2d } from "../types"
 import { Graph } from "../index"
 import { GraphContext } from "../context"
-import { AVERAGE_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
-import { getGraphCoordinates } from "../lib"
+import { AVERAGE_COLOR, AVERAGE_HOVER_COLOR, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var"
+import { formatDate, formatPrice, getGraphCoordinates } from "../lib"
 
 export class Average implements Object2d {
-
-  public hitBox: hitBox = [0, 0, 0, 0]
 
   private context: GraphContext
   private canvas: HTMLCanvasElement
   private focusedDay = -1
+  private tooltipX = -1
+  private tooltipY = -1
+  private tooltipHtml = ''
 
   constructor(
     graph: Graph
@@ -22,6 +23,9 @@ export class Average implements Object2d {
   }
 
   draw(canvasCtx: CanvasRenderingContext2D) {
+    const startDay = Math.floor(this.context.startDay)
+    const endDay = Math.ceil(this.context.endDay)+1
+
     canvasCtx.save()
     canvasCtx.beginPath()
     canvasCtx.rect(
@@ -34,11 +38,11 @@ export class Average implements Object2d {
 
     canvasCtx.fillStyle = AVERAGE_COLOR
     let x, y
-    for(let i=1; i<this.context.history.length; i++) {
+    for(let i=startDay; i<endDay; i++) {
       [x, y] = getGraphCoordinates(this.context, this.canvas, i, this.context.history[i].average)
       canvasCtx.beginPath()
       if(this.focusedDay == i) {
-        canvasCtx.fillStyle = '#fff'
+        canvasCtx.fillStyle = AVERAGE_HOVER_COLOR
         canvasCtx.arc(x, y, 4, 0, 2*Math.PI)
         canvasCtx.fill()
         canvasCtx.fillStyle = AVERAGE_COLOR
@@ -49,6 +53,10 @@ export class Average implements Object2d {
     }
 
     canvasCtx.restore()
+
+    if(this.focusedDay != -1) {
+      this.context.tooltip.display(this.tooltipX, this.tooltipY, this.tooltipHtml)
+    }
   }
 
   onMouseMove(event: MouseEvent) {
@@ -56,7 +64,6 @@ export class Average implements Object2d {
         (this.canvas.offsetWidth - 2*GRAPH_PADDING_X) * (this.context.endDay - this.context.startDay))
 
     if(day < 0 || day > this.context.history.length-1) {
-      this.context.tooltip.hide()
       this.focusedDay = -1
       return
     }
@@ -64,13 +71,15 @@ export class Average implements Object2d {
     const [dotX, dotY] = getGraphCoordinates(this.context, this.canvas, day, this.context.history[day].average)
     const distanceToDot = Math.sqrt((event.offsetX - dotX)**2 + (event.offsetY - dotY)**2)
     if(distanceToDot < 6) {
-      this.context.tooltip.display(dotX-46, dotY-70, this.context.history[day].average, this.context.history[day].date)
+      const { date, average } = this.context.history[day]
       this.focusedDay = day
-      return
+      this.tooltipX = dotX,
+      this.tooltipY = dotY,
+      this.tooltipHtml = `${formatDate(new Date(date))}<br>${formatPrice(average)}`
     }
-
-    this.context.tooltip.hide()
-    this.focusedDay = -1
+    else {
+      this.focusedDay = -1
+    }
   }
   
 }

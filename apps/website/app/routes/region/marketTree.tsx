@@ -53,7 +53,7 @@ interface MarketTreeContextType {
 }
 
 const MarketTreeContext = createContext<MarketTreeContextType>({
-  region: '10000002',
+  region: '0',
   typeRecord: {},
   marketGroups: [],
   marketGroupRecord: {},

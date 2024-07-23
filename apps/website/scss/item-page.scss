@@ -114,6 +114,16 @@
   display: grid;
   grid-template-rows: max-content auto;
 
+  &__fallback {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding-bottom: 10%;
+  }
   &__legend {
     display: flex;
     justify-self: center;
@@ -137,8 +147,6 @@
     box-shadow: 0 0 8px #000b;
     font-size: 14px;
     padding: 12px;
-    width: 68px;
-    height: 34px;
     position: absolute;
     visibility: hidden;
 

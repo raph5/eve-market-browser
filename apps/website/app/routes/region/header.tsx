@@ -2,8 +2,8 @@ import "@scss/header.scss"
 import logo from "@assets/logo.png"
 import { Select } from "@components/select";
 import { type Region } from "esi-server-store/types";
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
 import Label from "@components/label";
 
 export interface HeaderProps {
@@ -14,13 +14,16 @@ export default function Header({ regions }: HeaderProps) {
   const navigate = useNavigate()
   const params = useParams()
 
-  const isValidRegion = regions.findIndex(r => r.id.toString() == params.region) != -1
+  const isValidRegion = params.region == '0' || regions.findIndex(r => r.id.toString() == params.region) != -1
   const [selectValue, setSelectValue] = useState(isValidRegion ? params.region : '')
 
   function setRegion(region: string) {
-    setSelectValue(region)
     navigate(params.type ? `/region/${region}/type/${params.type}` : `/region/${region}`)
   }
+
+  useEffect(() => {
+    setSelectValue(isValidRegion ? params.region : '')
+  }, [params])
 
   return (
     <header className="header">
@@ -40,7 +43,10 @@ export default function Header({ regions }: HeaderProps) {
         id="htmlFor"
         className="header__region"
         placeholder="Select a region"
-        items={regions.map(({ id, name }) => ({ key: id.toString(), name }))}
+        items={[
+          {key: '0', name: "All Regions"},
+          ...regions.map(({ id, name }) => ({ key: id.toString(), name }))
+        ]}
         value={selectValue}
         onValueChange={setRegion} />
     </header>

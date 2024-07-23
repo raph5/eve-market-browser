@@ -53,15 +53,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   const typeName = typeRecord[typeId]?.name
-  const regionName = regions.find(r => r.id == regionId)?.name
+  const regionName = regionId == 0 ? "All Regions" : regions.find(r => r.id == regionId)?.name
 
   if(!typeName || !regionName) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const historyPromise = esiStore.getHistory(typeId, regionId)
-  const orders = await esiStore.getOrders(typeId, regionId)
-  const history = await historyPromise
+  const ordersPromise = esiStore.getOrders(typeId, regionId)
+  const history = regionId == 0 ? [] : await esiStore.getHistory(typeId, regionId)
+  const orders = await ordersPromise
 
   const time = Date.now()
 
@@ -78,7 +78,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
-  const { typeId, orders, time, history } = useLoaderData<typeof loader>()
+  const { regionId, typeId, orders, time, history } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
 
   const breadcrumbs = useMemo(() => {
@@ -125,7 +125,7 @@ export default function Type() {
             <MarketData orders={orders} time={time} />
           </Tab>
           <Tab className="item-body__tab" value="priceHistory">
-            <PriceHistory history={history} />
+            <PriceHistory history={history} regionId={regionId} />
           </Tab>
         </TabsRoot>
       </div>

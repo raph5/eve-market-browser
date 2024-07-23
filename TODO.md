@@ -15,11 +15,12 @@
 
 # Doing
 
-- Rebuild market store to add "All regions" market
 
 
 # Done
 
+
+- Rebuild market store to add "All regions" market
 - Faire la migration de bun vers node
 - Add hotjar
 - Add an about page with cerdits, github page, bug reports and legal stulfs

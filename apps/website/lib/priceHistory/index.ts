@@ -12,7 +12,7 @@ import { Donchian } from "./objects/donchian"
 import { MinMax } from "./objects/minMax"
 import { GraphBg } from "./objects/graphBg"
 import { Volume } from "./objects/volume"
-import { AverageTooltip } from "./objects/averageTooltip"
+import { Tooltip } from "./objects/tooltip"
 
 export class Graph {
 
@@ -59,12 +59,11 @@ export class Graph {
     this.canvas.onwheel = this.handleWheel.bind(this)
 
     // html objects init
-    const tooltip = new AverageTooltip()
+    const tooltip = new Tooltip(this.canvas)
     this.objectHtmlStack = [ tooltip ]
     for(const o of this.objectHtmlStack) {
       this.container.appendChild(o.el)
     }
-
 
     // context setup
     this.context = new GraphContext()
@@ -120,6 +119,8 @@ export class Graph {
   }
 
   private render() {
+    this.canvas.dispatchEvent(new Event('beforerender'))
+
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
     let cursor: string|undefined
@@ -154,6 +155,8 @@ export class Graph {
         this._actualCursor = 'unset'
       }
     }
+
+    this.canvas.dispatchEvent(new Event('afterrender'))
 
     requestAnimationFrame(() => {
       if(this._isRuning) {

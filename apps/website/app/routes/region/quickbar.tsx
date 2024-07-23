@@ -43,7 +43,7 @@ interface QuickbarContextType {
 
 const QuickbarComponentContext = createContext<QuickbarContextType>({
   typeRecord: {},
-  region: '10000002',
+  region: '0',
   treeValue: new Set(),
   onTreeValueChange: () => {}
 })

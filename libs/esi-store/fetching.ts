@@ -4,6 +4,20 @@ import { parseCsv } from "utils/server";
 import esiFetch from "esi-fetch/main";
 
 const HUB_REGION = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
+const TYCOON_RANGE: Record<string, string> = {
+  STATION: "Station",
+  REGION: "Region",
+  SOLARSYSTEM: "Solar System",
+  _1: "1 Jumps",
+  _2: "2 Jumps",
+  _3: "3 Jumps",
+  _4: "4 Jumps",
+  _5: "5 Jumps",
+  _10: "10 Jumps",
+  _20: "20 Jumps",
+  _30: "30 Jumps",
+  _40: "40 Jumps"
+}
 
 export async function fetchRegions(): Promise<Region[]> {
   const regionDumpResponse = await fetch('https://www.fuzzwork.co.uk/dump/latest/mapRegions.csv')
@@ -127,9 +141,9 @@ export async function fetchTypes(marketGroups: MarketGroup[]): Promise<Type[]> {
   return sortedTypes
 }
 
-export async function fetchOrders(typeId: number, regionId?: number): Promise<Order[]> {
+export async function fetchOrders(typeId: number, regionId: number): Promise<Order[]> {
   let url = `https://evetycoon.com/api/v1/market/orders/${typeId}`
-  if(regionId != undefined) {
+  if(regionId != 0) {
     url += `?regionId=${regionId}`
   }
   const headers = {
@@ -145,6 +159,7 @@ export async function fetchOrders(typeId: number, regionId?: number): Promise<Or
 
   const orders = data.orders
   orders.forEach((o: any) => {
+    o.range = TYCOON_RANGE[o.range]
     o.location = data.stationNames[o.locationId] || data.structureNames[o.locationId] || "Unknown Structure"
     delete o.locationId
   })
@@ -153,10 +168,14 @@ export async function fetchOrders(typeId: number, regionId?: number): Promise<Or
 }
 
 export async function fetchHistory(typeId: number, regionId: number): Promise<HistoryDay[]> {
-  console.log(`⚙️ fetching type:${typeId} history from region:${regionId}`)
-  
   const history = await esiFetch(`/markets/${regionId}/history`, { type_id: typeId.toString() })
   if(history.error) throw new Error(`esi error : ${history.error}`)
+
+  // set orderCount
+  for(const day of history) {
+    day.orderCount = day.order_count
+    delete day.order_count
+  }
 
   // add missing days
   let d = new Date(history[0].date)

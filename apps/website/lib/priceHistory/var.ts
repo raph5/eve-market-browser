@@ -8,12 +8,14 @@ export const GRAPH_PADDING_TOP = 20 as const
 export const GRAPH_LABEL_SPACING = 70 as const
 
 export const AVERAGE_COLOR = "#950" as const
+export const AVERAGE_HOVER_COLOR = "#fda" as const
 export const AVERAGE5D_COLOR = "#256" as const
 export const AVERAGE20D_COLOR = "#641" as const
 export const MINMAX_COLOR = "#666" as const
 export const DONCHIAN_COLOR = "#bce2" as const
 
 export const VOLUME_COLOR = "#245" as const
+export const VOLUME_HOVER_COLOR = "#278" as const
 export const VOLUME_HEIGHT = 100 as const
 
 export const HISTORY_BACKGROUND = "#aaa1" as const

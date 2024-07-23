@@ -1,7 +1,7 @@
 import { formatDate, formatPrice } from "../lib";
 import { ObjectHtml } from "../types";
 
-export class AverageTooltip implements ObjectHtml {
+export class Tooltip implements ObjectHtml {
 
   public el: HTMLElement
 

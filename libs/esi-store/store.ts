@@ -97,7 +97,7 @@ class EsiStore {
     return this.typeRecord
   }
 
-  async getOrders(typeId: number, regionId?: number): Promise<Order[]> {
+  async getOrders(typeId: number, regionId: number): Promise<Order[]> {
     return fetchOrders(typeId, regionId)
   }
 

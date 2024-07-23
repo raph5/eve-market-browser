@@ -33,7 +33,7 @@ export function formatPrice(price: number) {
     return price.toFixed(2)
   }
   if(price < 1e4) {
-    return (price / 1e3).toFixed(2) + 'K'
+    return (price / 1e3).toFixed(2) + 'k'
   }
   if(price < 1e8) {
     return (price / 1e6).toFixed(2) + 'M'
@@ -42,6 +42,22 @@ export function formatPrice(price: number) {
     return (price / 1e9).toFixed(2) + 'B'
   }
   return (price / 1e12).toFixed(2) + 'T'
+}
+
+export function formatInt(int: number) {
+  if(int < 1e6) {
+    return int
+  }
+  if(int < 1e9) {
+    return Math.round(int / 1e3).toString() + 'k'
+  }
+  if(int < 1e12) {
+    return Math.round(int / 1e6).toString() + 'M'
+  }
+  if(int < 1e15) {
+    return Math.round(int / 1e9).toString() + 'B'
+  }
+  return Math.round(int / 1e12).toString() + 'T'
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
