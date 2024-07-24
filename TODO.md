@@ -1,7 +1,7 @@
 
 # To do
 
-
+- Handle esi-cache renewal
 - Keep view tree state on reload for quality life
 - Add responsive support
 - Create a real error management system instead of dumping them into the console
@@ -13,12 +13,12 @@
 - handle DT
 - make table component aria complient (https://www.w3.org/WAI/ARIA/apg/patterns/table/examples/table/)
 
+
 # Doing
 
 
 
 # Done
-
 
 - Rebuild market store to add "All regions" market
 - Faire la migration de bun vers node
