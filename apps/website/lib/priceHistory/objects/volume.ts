@@ -91,7 +91,7 @@ export class Volume implements Object2d {
       this.tooltipHtml = `
         ${formatDate(new Date(date))}<br>
         Volume : ${formatInt(volume)}<br>
-        Order Count : ${formatInt(orderCount)}
+        Orders : ${formatInt(orderCount)}
       `
     }
     else {
