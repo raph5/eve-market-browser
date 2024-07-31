@@ -14,5 +14,5 @@ export const meta: MetaFunction = () => {
 }
 
 export async function loader() {
-  return redirect("/region/0/type/11393")
+  return redirect("/region/10000002/type/11393")
 }
