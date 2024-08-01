@@ -28,11 +28,32 @@ type jsonError struct {
 const esiUrl = "https://esi.evetech.net/latest"
 const EsiDateLayout = "2006-01-02"
 
-var semaphore = make(chan struct{}, 10)
-// TODO: add support for api state
+var ErrNoTriesLeft = errors.New("Failed 5 esi fetching attempts")
 
-func EsiFetch[T any](uri string, method string, query map[string]string, body any) (T, error) {
+var semaphore = make(chan struct{}, 5)
+var apiTimeout int64
+var apiTimeoutMu sync.RWMutex
+
+func EsiFetch[T any](uri string, method string, query map[string]string, body any, tries int) (T, error) {
+  // if no tries left, fail the request
+  if tries <= 0 {
+    return *new(T), ErrNoTriesLeft
+  }
+
+  // require premission from the semaphore
   semaphore <- struct{}{}
+
+  // wait for the api to be clear of any timeout
+  for {
+    now := time.Now().Unix()
+    apiTimeoutMu.RLock()
+    timeToWait := apiTimeout - now
+    apiTimeoutMu.RUnlock()
+    if timeToWait <= 0 {
+      break
+    }
+    time.Sleep(time.Duration(timeToWait) * time.Second)
+  }
 
   // create the request
 	var serializedBody []byte
@@ -65,55 +86,73 @@ func EsiFetch[T any](uri string, method string, query map[string]string, body an
   // run the request
 	client := &http.Client{}
 
-	for t := 0; t < 5; t++ {
-    var response *http.Response
-		response, err = client.Do(request)
-		if err != nil {
-			continue
-		}
-		defer response.Body.Close()
+  var response *http.Response
+  response, err = client.Do(request)
+  <- semaphore  // release semaphore
+  if err != nil {
+    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
+    if errors.Is(retryErr, ErrNoTriesLeft) {
+      return *new(T), err
+    }
+    return retryData, retryErr
+  }
+  defer response.Body.Close()
 
-		decoder := json.NewDecoder(response.Body)
-		decoder.UseNumber()
+  decoder := json.NewDecoder(response.Body)
+  decoder.UseNumber()
 
-		if response.StatusCode == 503 || response.StatusCode == 420 {
-      log.Println("timeout")
-			time.Sleep(1)
-			continue
-		}
+  if response.StatusCode == 503 || response.StatusCode == 420 {
+    log.Printf("ESI timeout %d", response.StatusCode)
+    apiTimeoutMu.Lock()
+    apiTimeout = time.Now().Unix() + 5
+    apiTimeoutMu.Unlock()
+    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
+    if errors.Is(retryErr, ErrNoTriesLeft) {
+      return *new(T), err
+    }
+    return retryData, retryErr
+  }
 
-		if response.StatusCode == 504 {
-			var error jsonTimeoutError
-			err = decoder.Decode(&error)
-			if err != nil {
-				continue
-			}
-			time.Sleep(time.Duration(error.Timeout) * time.Second)
-			continue
-		}
+  if response.StatusCode == 504 {
+    log.Printf("ESI timeout %d", response.StatusCode)
+    var error jsonTimeoutError
+    err = decoder.Decode(&error)
+    if err == nil {
+      apiTimeoutMu.Lock()
+      apiTimeout = time.Now().Unix() + int64(error.Timeout)
+      apiTimeoutMu.Unlock()
+    }
+    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
+    if errors.Is(retryErr, ErrNoTriesLeft) {
+      return *new(T), err
+    }
+    return retryData, retryErr
+  }
 
-		if response.StatusCode != 200 {
-			var error jsonError
-			err = decoder.Decode(&error)
-			if err != nil {
-				continue
-			}
-			return *new(T), &EsiError{Message: error.Error, Code: response.StatusCode}
-		}
+  if response.StatusCode != 200 {
+    var error jsonError
+    err = decoder.Decode(&error)
+    if err != nil {
+      retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
+      if errors.Is(retryErr, ErrNoTriesLeft) {
+        return *new(T), err
+      }
+      return retryData, retryErr
+    }
+    return *new(T), &EsiError{Message: error.Error, Code: response.StatusCode}
+  }
 
-		var data T
-		err = decoder.Decode(&data)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
+  var data T
+  err = decoder.Decode(&data)
+  if err != nil {
+    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
+    if errors.Is(retryErr, ErrNoTriesLeft) {
+      return *new(T), err
+    }
+    return retryData, retryErr
+  }
 
-		return data, nil
-	}
-  
-  <- semaphore
-
-	return *new(T), errors.New("Failed 5 esi fetching attempts")
+  return data, nil
 }
 
 func (e *EsiError) Error() string {

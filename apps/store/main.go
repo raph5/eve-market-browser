@@ -5,7 +5,23 @@ import (
 	"net"
 	"net/http"
 	"os"
+
 )
+
+type Order struct {
+	Duration     int     `json:"duration"`
+	IsBuyOrder   bool    `json:"is_buy_order"`
+	Issued       string  `json:"issued"`
+	LocationId   int     `json:"location_id"`
+	MinVolume    int     `json:"min_volume"`
+	OrderId      int     `json:"order_id"`
+	Price        float64 `json:"price"`
+	Range        string  `json:"range"`
+	Systemid     int     `json:"system_id"`
+	TypeId       int     `json:"type_id"`
+	VolumeRemain int     `json:"volume_remain"`
+	VolumeTotal  int     `json:"volume_total"`
+}
 
 const socketPath = "/tmp/esi-store.sock"
 
@@ -15,18 +31,7 @@ func main() {
 
 	// Mux handler
 	mux := http.NewServeMux()
-	mux.HandleFunc("/regions", commodities.HandleRegionsRequest)
-	mux.HandleFunc("/marketgroups", commodities.HandleMarketGroupsRequest)
-	mux.HandleFunc("/types", commodities.HandleTypesRequest)
-	mux.HandleFunc("/orders", commodities.HandleOrdersRequest)
-	mux.HandleFunc("/history", commodities.HandleHistoryRequest)
-
-	// Start commoities workers
-	go commodities.RegionsWorker()
-	go commodities.MarketGroupsWorker()
-	go commodities.TypesWorker()
-	// go commodities.OrdersWorker()
-	go commodities.HistoryWroker()
+	// mux.HandleFunc("/orders", commodities.HandleOrdersRequest)
 
 	// Remove any existing socket file
 	if _, err := os.Stat(socketPath); err == nil {
