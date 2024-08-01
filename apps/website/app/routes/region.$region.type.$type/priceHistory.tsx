@@ -31,7 +31,7 @@ export function PriceHistory({ history, regionId }: PriceHistoryProps) {
   return regionId == 0 ? (
     <div className="price-history__fallback">
       <p>Can't display the price history for All Regions</p>
-      <button className="button button--corner-right" onClick={() => setRegion('10000002')}>Display The Froge</button>
+      <button className="button button--corner-right" onClick={() => setRegion('10000002')}>Display The Forge</button>
     </div>
   ) : (
     <div className="price-history">
