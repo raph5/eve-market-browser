@@ -30,14 +30,14 @@ export default function Navigation({ types, typeRecord, marketGroups, marketGrou
   }, [quickbar.state])
 
   const tabs = [
-    { value: 'borwse', label: 'Borwse' },
+    { value: 'browse', label: 'Browse' },
     { value: 'quickbar', label: 'Quickbar' }
   ]
 
   return (
     <nav className="nav">
-      <TabsRoot className="nav__tabs" tabs={tabs} defaultValue="borwse" ref={tabsRef}>
-        <Tab className="nav__tab" value="borwse">
+      <TabsRoot className="nav__tabs" tabs={tabs} defaultValue="browse" ref={tabsRef}>
+        <Tab className="nav__tab" value="browse">
           <MarketTree
             types={types}
             typeRecord={typeRecord}

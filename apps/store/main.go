@@ -5,9 +5,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-
-	"github.com/raph5/eve-market-browser/apps/store/commodities"
-	"github.com/raph5/eve-market-browser/apps/store/diskStorage"
 )
 
 const socketPath = "/tmp/esi-store.sock"
@@ -15,10 +12,6 @@ const socketPath = "/tmp/esi-store.sock"
 func main() {
 	// Init logger and diskStorage
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	err := diskStorage.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// Mux handler
 	mux := http.NewServeMux()
