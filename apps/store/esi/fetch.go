@@ -2,6 +2,7 @@ package esi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/sem"
 )
 
 type EsiError struct {
@@ -26,22 +29,52 @@ type jsonError struct {
 }
 
 const esiUrl = "https://esi.evetech.net/latest"
-const EsiDateLayout = "2006-01-02"
+const DateLayout = "2006-01-02"
+const MaxConcurrentRequests = 10
 
 var ErrNoTriesLeft = errors.New("Failed 5 esi fetching attempts")
 
-var semaphore = make(chan struct{}, 5)
+var semaphore = sem.New(MaxConcurrentRequests)
 var apiTimeout int64
 var apiTimeoutMu sync.RWMutex
 
-func EsiFetch[T any](uri string, method string, query map[string]string, body any, tries int) (T, error) {
+// NOTE: I may want to split this big function in EsiFetch and EsiRawFetch.
+// EsiRawFetch doing only the fetching operation and EsiFetch doing the
+// preprocessing and postprocessing of EsiRawFetch.
+
+func EsiFetch[T any](
+  ctx context.Context,
+  uri string,
+  method string,
+  query map[string]string,
+  body any,
+  priority int,
+  tries int,
+) (T, error) {
   // if no tries left, fail the request
   if tries <= 0 {
     return *new(T), ErrNoTriesLeft
   }
 
+  // init retry function that will be called in case the request fail
+  retry := func(fallbackData T, fallbackErr error) (T, error) {
+    select {
+    case <-ctx.Done():
+      return fallbackData, context.Canceled
+    default:
+      retryData, retryErr := EsiFetch[T](ctx, uri, method, query, body, priority, tries-1)
+      if errors.Is(retryErr, ErrNoTriesLeft) {
+        return fallbackData, fallbackErr
+      }
+      return retryData, retryErr
+    }
+  }
+
   // require premission from the semaphore
-  semaphore <- struct{}{}
+  err := semaphore.AcquireWithContext(ctx, priority)
+  if err != nil {
+    return *new(T), err
+  }
 
   // wait for the api to be clear of any timeout
   for {
@@ -52,7 +85,12 @@ func EsiFetch[T any](uri string, method string, query map[string]string, body an
     if timeToWait <= 0 {
       break
     }
-    time.Sleep(time.Duration(timeToWait) * time.Second)
+    select {
+    case <-time.After(time.Duration(timeToWait) * time.Second):
+    case <-ctx.Done():
+      semaphore.Release()
+      return *new(T), context.Canceled
+    }
   }
 
   // create the request
@@ -61,12 +99,13 @@ func EsiFetch[T any](uri string, method string, query map[string]string, body an
 		var err error
 		serializedBody, err = json.Marshal(body)
 		if err != nil {
+      semaphore.Release()
 			return *new(T), err
 		}
 	}
-
 	u, err := url.Parse(esiUrl + uri)
 	if err != nil {
+    semaphore.Release()
 		return *new(T), err
 	}
 	q := u.Query()
@@ -76,43 +115,39 @@ func EsiFetch[T any](uri string, method string, query map[string]string, body an
 	u.RawQuery = q.Encode()
 	finalUrl := u.String()
 
-	request, err := http.NewRequest(method, finalUrl, bytes.NewBuffer(serializedBody))
+	request, err := http.NewRequestWithContext(ctx, method, finalUrl, bytes.NewBuffer(serializedBody))
 	if err != nil {
+    semaphore.Release()
 		return *new(T), err
 	}
 	request.Header.Set("content-type", "application/json")
 	request.Header.Set("User-Agent", "evemarketbrowser.com - contact me at raphguyader@gmail.com")
 
   // run the request
-	client := &http.Client{}
-
-  var response *http.Response
-  response, err = client.Do(request)
-  <- semaphore  // release semaphore
+	client := &http.Client{
+    Timeout: 5 * time.Second,
+  }
+  response, err := client.Do(request)
+  semaphore.Release()
   if err != nil {
-    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
-    if errors.Is(retryErr, ErrNoTriesLeft) {
+    if errors.Is(err, context.Canceled) {
       return *new(T), err
     }
-    return retryData, retryErr
+    return retry(*new(T), err)
   }
   defer response.Body.Close()
 
-  decoder := json.NewDecoder(response.Body)
-  decoder.UseNumber()
-
+  // TODO: add downtime support
   if response.StatusCode == 503 || response.StatusCode == 420 {
     log.Printf("ESI timeout %d", response.StatusCode)
     apiTimeoutMu.Lock()
-    apiTimeout = time.Now().Unix() + 5
+    apiTimeout = time.Now().Unix() + 1
     apiTimeoutMu.Unlock()
-    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
-    if errors.Is(retryErr, ErrNoTriesLeft) {
-      return *new(T), err
-    }
-    return retryData, retryErr
+    return retry(*new(T), err)
   }
 
+  decoder := json.NewDecoder(response.Body)
+  decoder.UseNumber()
   if response.StatusCode == 504 {
     log.Printf("ESI timeout %d", response.StatusCode)
     var error jsonTimeoutError
@@ -122,22 +157,14 @@ func EsiFetch[T any](uri string, method string, query map[string]string, body an
       apiTimeout = time.Now().Unix() + int64(error.Timeout)
       apiTimeoutMu.Unlock()
     }
-    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
-    if errors.Is(retryErr, ErrNoTriesLeft) {
-      return *new(T), err
-    }
-    return retryData, retryErr
+    return retry(*new(T), err)
   }
 
   if response.StatusCode != 200 {
     var error jsonError
     err = decoder.Decode(&error)
     if err != nil {
-      retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
-      if errors.Is(retryErr, ErrNoTriesLeft) {
-        return *new(T), err
-      }
-      return retryData, retryErr
+      return retry(*new(T), err)
     }
     return *new(T), &EsiError{Message: error.Error, Code: response.StatusCode}
   }
@@ -145,11 +172,7 @@ func EsiFetch[T any](uri string, method string, query map[string]string, body an
   var data T
   err = decoder.Decode(&data)
   if err != nil {
-    retryData, retryErr := EsiFetch[T](uri, method, query, body, tries-1)
-    if errors.Is(retryErr, ErrNoTriesLeft) {
-      return *new(T), err
-    }
-    return retryData, retryErr
+    return retry(*new(T), err)
   }
 
   return data, nil
