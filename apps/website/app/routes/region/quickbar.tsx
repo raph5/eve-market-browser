@@ -1,5 +1,5 @@
 import { TriangleRightIcon, DownloadIcon, UploadIcon, TrashIcon, MixerHorizontalIcon } from "@radix-ui/react-icons";
-import { Type } from "esi-server-store/types";
+import { Type } from "esi-store/types";
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
 import { PiFolderPlusThin } from "react-icons/pi";

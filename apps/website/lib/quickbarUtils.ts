@@ -1,5 +1,5 @@
 import { QuickbarState } from "@hooks/useQuickbar";
-import { Type } from "esi-server-store/types";
+import { Type } from "esi-store/types";
 import { uid } from "utils/main";
 
 /**

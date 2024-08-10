@@ -5,7 +5,7 @@ import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { Tab, TabsRoot } from "@components/tabs";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "../region/route";
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import MarketData from "./marketData";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
@@ -80,6 +80,7 @@ export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
   const { regionId, typeId, orders, time, history } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
+  const [inQuickbar, setInQuickbar] = useState(false)
 
   const breadcrumbs = useMemo(() => {
     const bc: string[] = []
@@ -98,6 +99,11 @@ export default function Type() {
     { value: 'priceHistory', label: 'Price History' }
   ]
 
+  // To avoid hydration errors. I will never use react again
+  useEffect(() => {
+    setInQuickbar(quickbar.has(typeId))
+  }, [quickbar.state])
+
   return (
     <div className="item-page">
       <div className="item-header">
@@ -107,7 +113,7 @@ export default function Type() {
           <h2 className="item-header__name">{typeRecord[typeId].name}</h2>
         </div>
         <div className="item-header__action">
-          {quickbar.has(typeId) ? (
+          {inQuickbar ? (
             <button className="button button--corner-left item-header__button" onClick={() => quickbar.removeItem(typeId)}>
               <span>Remove From Quickbar</span>
             </button>

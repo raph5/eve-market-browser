@@ -1,7 +1,7 @@
 import "@scss/header.scss"
 import logo from "@assets/logo.png"
 import { Select } from "@components/select";
-import { type Region } from "esi-server-store/types";
+import { type Region } from "esi-store/types";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
 import Label from "@components/label";
