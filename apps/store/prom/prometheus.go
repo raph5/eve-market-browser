@@ -69,6 +69,7 @@ func RunPrometheusServer(ctx context.Context, reg *prometheus.Registry) {
   )
 
   go func() {
+    log.Print("Prometheus server up")
     err := server.ListenAndServe()
     if err != nil {
       errCh <- err

@@ -15,8 +15,6 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/prom"
 )
 
-const socketPath = "/tmp/esi-store.sock"
-
 func main() {
 	// Init logger and diskStorage
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -47,20 +45,25 @@ func main() {
 
   // Start workers and servers
   var mainWg sync.WaitGroup
-  mainWg.Add(3)
+  mainWg.Add(4)
   go func() {
-    defer mainWg.Done()
+    runTcpServer(ctx, mux)
+    mainWg.Done()
+    cancel()
+  }()
+  go func() {
     prom.RunPrometheusServer(ctx, reg)
+    mainWg.Done()
     cancel()
   }()
   go func() {
-    defer mainWg.Done()
     orderWorker(ctx)
+    mainWg.Done()
     cancel()
   }()
   go func() {
-    defer mainWg.Done()
     historyWorker(ctx)
+    mainWg.Done()
     cancel()
   }()
 
