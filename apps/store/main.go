@@ -10,6 +10,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/raph5/eve-market-browser/apps/store/prom"
 )
 
 const socketPath = "/tmp/esi-store.sock"
@@ -26,10 +29,14 @@ func main() {
   defer writeDB.Close()
   defer readDB.Close()
 
+  // Init prometheus
+  reg, metrics := prom.InitPrometheus()
+
   // Init context
   ctx, cancel := context.WithCancel(context.Background())
   ctx = context.WithValue(ctx, "writeDB", writeDB)
   ctx = context.WithValue(ctx, "readDB", readDB)
+  ctx = context.WithValue(ctx, "metrics", metrics)
   exitCh := make(chan os.Signal, 1)
   signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -38,16 +45,23 @@ func main() {
 	mux.HandleFunc("/order", createOrderHandler(ctx))
 	mux.HandleFunc("/history", createHisoryHandler(ctx))
 
-  // Start orders and history workers
+  // Start workers and servers
   var mainWg sync.WaitGroup
-  mainWg.Add(2)
+  mainWg.Add(3)
+  go func() {
+    defer mainWg.Done()
+    prom.RunPrometheusServer(ctx, reg)
+    cancel()
+  }()
   go func() {
     defer mainWg.Done()
     orderWorker(ctx)
+    cancel()
   }()
   go func() {
     defer mainWg.Done()
     historyWorker(ctx)
+    cancel()
   }()
 
 	// // Remove any existing socket file
@@ -85,6 +99,7 @@ func main() {
 }
 
 func orderWorker(ctx context.Context) {
+  metrics := ctx.Value("metrics").(*prom.Metrics)
   for {
     select {
     case <-ctx.Done():
@@ -94,23 +109,30 @@ func orderWorker(ctx context.Context) {
       now := time.Now()
       expiration, err := getExpirationTime(ctx, "Order")
       if err != nil {
+        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         log.Printf("Order worker stopping unexpectedly: %v", err)
         return
       }
       delta := expiration.Sub(now)
 
       if delta > 0 {
+        metrics.OrderStatus.Set(1)
         log.Print("Order worker up to date")
         select {
         case <-time.After(delta):
+          metrics.OrderStatus.Set(0)
         case <-ctx.Done():
         }
         continue
       }
 
+      metrics.OrderStatus.Set(0)
       log.Print("Order worker downloading orders and locations")
       err = downloadOrders(ctx)
       if err != nil {
+        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         if errors.Is(err, context.Canceled) {
           log.Print("Order worker stopped")
           return
@@ -121,6 +143,8 @@ func orderWorker(ctx context.Context) {
 
       err = downloadLocations(ctx)
       if err != nil {
+        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         if errors.Is(err, context.Canceled) {
           log.Print("Order worker stopped")
           return
@@ -131,6 +155,8 @@ func orderWorker(ctx context.Context) {
       newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
       err = setExpirationTime(ctx, "Order", newExpiration)
       if err != nil {
+        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         log.Printf("Order worker stopping unexpectedly: %v", err)
         return
       }
@@ -139,6 +165,7 @@ func orderWorker(ctx context.Context) {
 }
 
 func historyWorker(ctx context.Context) {
+  metrics := ctx.Value("metrics").(*prom.Metrics)
   for {
     select {
     case <-ctx.Done():
@@ -148,29 +175,38 @@ func historyWorker(ctx context.Context) {
       now := time.Now()
       expiration, err := getExpirationTime(ctx, "History")
       if err != nil {
+        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         log.Printf("History worker stopping unexpectedly: %v", err)
         return
       }
       delta := expiration.Sub(now)
 
       if delta > 0 {
+        metrics.HistoryStatus.Set(1)
         log.Print("History worker up to date")
         select {
         case <-time.After(delta):
+          metrics.HistoryStatus.Set(0)
         case <-ctx.Done():
         }
         continue
       }
 
+      metrics.HistoryStatus.Set(0)
       log.Print("History worker downloading histories")
       err = populateActiveTypes(ctx)
       if err != nil {
+        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         log.Printf("History worker reporting: %v", err)
         continue
       }
 
       err = downloadHistories(ctx)
       if err != nil {
+        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         if errors.Is(err, context.Canceled) {
           log.Print("History worker stopped")
           return
@@ -185,6 +221,8 @@ func historyWorker(ctx context.Context) {
       }
       err = setExpirationTime(ctx, "History", elevenFifteenTomorrow)
       if err != nil {
+        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+        metrics.WorkerErrors.With(labels).Inc()
         log.Printf("History worker stopping unexpectedly: %v", err)
         return
       }

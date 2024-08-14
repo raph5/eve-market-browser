@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/raph5/eve-market-browser/apps/store/prom"
 	"github.com/raph5/eve-market-browser/apps/store/sem"
 )
 
@@ -51,13 +53,19 @@ func EsiFetch[T any](
   priority int,
   tries int,
 ) (T, error) {
+  metrics := ctx.Value("metrics").(*prom.Metrics)
+
   // if no tries left, fail the request
   if tries <= 0 {
+    labels := prometheus.Labels{"uri": uri, "result": "failure"}
+    metrics.EsiRequests.With(labels).Inc()
     return *new(T), ErrNoTriesLeft
   }
 
   // init retry function that will be called in case the request fail
   retry := func(fallbackData T, fallbackErr error) (T, error) {
+    labels := prometheus.Labels{"uri": uri, "result": "retry"}
+    metrics.EsiRequests.With(labels).Inc()
     select {
     case <-ctx.Done():
       return fallbackData, context.Canceled
@@ -131,6 +139,8 @@ func EsiFetch[T any](
   semaphore.Release()
   if err != nil {
     if errors.Is(err, context.Canceled) {
+      labels := prometheus.Labels{"uri": uri, "result": "failure"}
+      metrics.EsiRequests.With(labels).Inc()
       return *new(T), err
     }
     return retry(*new(T), err)
@@ -138,10 +148,12 @@ func EsiFetch[T any](
   defer response.Body.Close()
 
   // TODO: add downtime support
-  if response.StatusCode == 503 || response.StatusCode == 420 {
+  if response.StatusCode == 503 || response.StatusCode == 420 || response.StatusCode == 500 {
+    labels := prometheus.Labels{"code": response.Status, "message": ""}
+    metrics.EsiErrors.With(labels).Inc()
     log.Printf("ESI timeout %d", response.StatusCode)
     apiTimeoutMu.Lock()
-    apiTimeout = time.Now().Unix() + 1
+    apiTimeout = time.Now().Unix() + 15
     apiTimeoutMu.Unlock()
     return retry(*new(T), err)
   }
@@ -152,6 +164,8 @@ func EsiFetch[T any](
     log.Printf("ESI timeout %d", response.StatusCode)
     var error jsonTimeoutError
     err = decoder.Decode(&error)
+    labels := prometheus.Labels{"code": response.Status, "message": error.Error}
+    metrics.EsiErrors.With(labels).Inc()
     if err == nil {
       apiTimeoutMu.Lock()
       apiTimeout = time.Now().Unix() + int64(error.Timeout)
@@ -163,9 +177,13 @@ func EsiFetch[T any](
   if response.StatusCode != 200 {
     var error jsonError
     err = decoder.Decode(&error)
+    labels := prometheus.Labels{"code": response.Status, "message": error.Error}
+    metrics.EsiErrors.With(labels).Inc()
     if err != nil {
       return retry(*new(T), err)
     }
+    labels = prometheus.Labels{"uri": uri, "result": "failure"}
+    metrics.EsiRequests.With(labels).Inc()
     return *new(T), &EsiError{Message: error.Error, Code: response.StatusCode}
   }
 
@@ -175,6 +193,8 @@ func EsiFetch[T any](
     return retry(*new(T), err)
   }
 
+  labels := prometheus.Labels{"uri": uri, "result": "success"}
+  metrics.EsiRequests.With(labels).Inc()
   return data, nil
 }
 

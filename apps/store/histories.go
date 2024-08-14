@@ -105,6 +105,7 @@ func downloadHistories(ctx context.Context) error {
 
     err = downloadHistoriesChunk(ctx, activeTypeChunk)
     if err != nil {
+      log.Print(err)
       return err
     }
 
@@ -131,6 +132,7 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
       for at := range activeTypeCh {
         history, err := fetchHistory(ctx, at.typeId, at.regionId)
         if err != nil {
+          log.Print(err)
           localCancel(err)
           return
         }
@@ -200,6 +202,7 @@ func fetchHistory(ctx context.Context, typeId int, regionId int) ([]byte, error)
   }
   esiHistory, err := esi.EsiFetch[[]esiHistoryDay](ctx, uri, "GET", query, nil, 3, 5)
   if err != nil {
+    log.Print(err)
     return nil, err
   }
 

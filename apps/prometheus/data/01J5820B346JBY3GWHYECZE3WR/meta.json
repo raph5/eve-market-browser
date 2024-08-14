@@ -1,0 +1,17 @@
+{
+	"ulid": "01J5820B346JBY3GWHYECZE3WR",
+	"minTime": 1723471206425,
+	"maxTime": 1723478400000,
+	"stats": {
+		"numSamples": 6419,
+		"numSeries": 49,
+		"numChunks": 98
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01J5820B346JBY3GWHYECZE3WR"
+		]
+	},
+	"version": 1
+}
