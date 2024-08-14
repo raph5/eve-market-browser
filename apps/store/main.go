@@ -47,7 +47,7 @@ func main() {
   var mainWg sync.WaitGroup
   mainWg.Add(4)
   go func() {
-    runTcpServer(ctx, mux)
+    runUnixSocketServer(ctx, mux)
     mainWg.Done()
     cancel()
   }()
