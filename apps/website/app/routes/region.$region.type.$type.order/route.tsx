@@ -1,9 +1,8 @@
-import { esiStore } from "@app/.server/esiServerStore"
+import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import Table, { Cell, Column } from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { Link, json, useLoaderData, useRouteError } from "@remix-run/react"
-import { getNames, getOrders } from "esi-client-store/main"
 import { DAY, expiresIn, formatIsk, numberSort, removeDuplicates, stringSort } from "utils"
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -39,8 +38,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const orders = await getOrders(typeId, regionId)
-  const locationRecord = await getNames(removeDuplicates(orders.map(o => o.location_id).filter(l => 60000000 < l && l < 64000000)))
+  const orders = await esiStore.getOrders(typeId, regionId)
 
   const time = Date.now()
 
@@ -48,7 +46,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     typeId,
     regionId,
     orders,
-    locationRecord,
     time
   })
 }
