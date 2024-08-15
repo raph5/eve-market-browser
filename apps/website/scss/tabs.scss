@@ -21,6 +21,9 @@
     font-size: 14px;
     color: $font-color-light;
     position: relative;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
     
     &::after {
       content: "";

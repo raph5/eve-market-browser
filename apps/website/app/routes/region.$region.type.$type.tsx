@@ -1,16 +1,13 @@
 import { esiStore } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useOutletContext, useRouteError } from "@remix-run/react";
+import { Outlet, useLoaderData, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
-import { Tab, TabsRoot } from "@components/tabs";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "../region/route";
 import { useContext, useEffect, useMemo, useState } from "react";
-import MarketData from "./marketData";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
-import { PriceHistory } from "./priceHistory";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -29,16 +26,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const typeRecord = await esiStore.getTypeRecord()
-    .catch(() => {
-      throw json("Can't Find Types", { status: 500 })
-    })
-
-  const regions = await esiStore.getRegions()
-    .catch(() => {
-      throw json("Can't Find Regions", { status: 500 })
-    })
-  
   if(!params.type || !params.region) {
     throw json("Type or Region Not Found", { status: 404 })
   }
@@ -52,33 +39,21 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const typeName = typeRecord[typeId]?.name
-  const regionName = regionId == 0 ? "All Regions" : regions.find(r => r.id == regionId)?.name
-
+  const typeName = await esiStore.getTypeName(typeId)
+  const regionName = regionId != 0 ? await esiStore.getRegionName(regionId) : "All Regions"
   if(!typeName || !regionName) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const ordersPromise = esiStore.getOrders(typeId, regionId)
-  const history = regionId == 0 ? [] : await esiStore.getHistory(typeId, regionId)
-  const orders = await ordersPromise
-
-  const time = Date.now()
-
-  return json({
-    typeId,
-    typeName,
-    regionId,
-    regionName,
-    orders,
-    history,
-    time
-  })
+  return json(
+    { typeId, typeName, regionId, regionName },
+    { headers: { "Cache-Control": `public, s-maxage=${60*60*24*7}` } }
+  )
 }
 
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
-  const { regionId, typeId, orders, time, history } = useLoaderData<typeof loader>()
+  const { typeId } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
   const [inQuickbar, setInQuickbar] = useState(false)
 
@@ -94,12 +69,7 @@ export default function Type() {
     return bc
   }, [typeId])
 
-  const tabs = [
-    { value: 'marketData', label: 'Market Data' },
-    { value: 'priceHistory', label: 'Price History' }
-  ]
-
-  // To avoid hydration errors. I will never use react again
+  // To avoid hydration errors
   useEffect(() => {
     setInQuickbar(quickbar.has(typeId))
   }, [quickbar.state])
@@ -126,14 +96,7 @@ export default function Type() {
         </div>
       </div>
       <div className="item-body">
-        <TabsRoot className="item-body__tabs" tabs={tabs} defaultValue="marketData">
-          <Tab className="item-body__tab" value="marketData">
-            <MarketData orders={orders} time={time} />
-          </Tab>
-          <Tab className="item-body__tab" value="priceHistory">
-            <PriceHistory history={history} regionId={regionId} />
-          </Tab>
-        </TabsRoot>
+        <Outlet />
       </div>
     </div>
   );

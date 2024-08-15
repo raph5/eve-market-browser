@@ -30,37 +30,35 @@ export const meta: MetaFunction = () => {
 }
 
 export async function loader() {
-  const marketGroups = await esiStore.getMarketGroups()
+  const marketGroups = await esiStore.marketGroups
     .catch(() => {
       throw json("Can't Find Market Groups", { status: 500 })
     })
 
-  const types = await esiStore.getTypes()
+  const types = await esiStore.types
     .catch(() => {
       throw json("Can't Find Types", { status: 500 })
     })
 
-  const regions = await esiStore.getRegions()
+  const regions = await esiStore.regions
     .catch(() => {
       throw json("Can't Find Regions", { status: 500 })
     })
     
-  const marketGroupsRecord = await esiStore.getMarketGroupRecord()
+  const marketGroupsRecord = await esiStore.marketGroupRecord
     .catch(() => {
       throw json("Can't Find Market Groups Record", { status: 500 })
     })
 
-  const typeRecord = await esiStore.getTypeRecord()
+  const typeRecord = await esiStore.typeRecord
     .catch(() => {
       throw json("Can't Find Type Record", { status: 500 })
     })
   
-  const jsonData = json(
+  return json(
     { types, typeRecord, marketGroups, marketGroupsRecord, regions },
     { headers: { "Cache-Control": `public, s-maxage=${60*60*24*7}` } }
   )
-
-  return jsonData
 }
 
 export default function Layout() {

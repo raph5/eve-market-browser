@@ -3,21 +3,9 @@ import { ErrorMessage } from "@components/errorMessage"
 import Table, { Cell, Column } from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { Link, json, useLoaderData, useRouteError } from "@remix-run/react"
-import { DAY, expiresIn, formatIsk, numberSort, removeDuplicates, stringSort } from "utils"
+import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "utils"
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  // TODO: dont import all the typeRecord just to get one name !
-  const typeRecord = await esiStore.getTypeRecord()
-    .catch(() => {
-      throw json("Can't Find Types", { status: 500 })
-    })
-
-  // TODO: dont import all regions just to get validate one input !
-  const regions = await esiStore.getRegions()
-    .catch(() => {
-      throw json("Can't Find Regions", { status: 500 })
-    })
-  
   if(!params.type || !params.region) {
     throw json("Type or Region Not Found", { status: 404 })
   }
@@ -31,15 +19,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const typeName = typeRecord[typeId]?.name
-  const regionName = regions.find((r: any)=> r.id == regionId)?.name
-
+  const typeName = await esiStore.getTypeName(typeId)
+  const regionName = regionId != 0 ? await esiStore.getRegionName(regionId) : "All Regions"
   if(!typeName || !regionName) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
   const orders = await esiStore.getOrders(typeId, regionId)
-
   const time = Date.now()
 
   return json({
@@ -51,7 +37,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function MarketData() {
-  const { typeId, regionId, orders, locationRecord, time } = useLoaderData<typeof loader>()
+  const { typeId, regionId, orders, time } = useLoaderData<typeof loader>()
 
   const sellColumns: Column[] = [
     { value: 'quantity', label: 'Quantity', sorting: numberSort() },
@@ -68,40 +54,34 @@ export default function MarketData() {
     { value: 'expires', label: 'Expires in', sorting: numberSort() },
   ]
 
-  const sellData: Record<string, Cell>[] = orders.filter(order => order.order_type == 'sell').map(order => ({
-    quantity: [ order.volume_remain, order.volume_remain ],
+  const sellData: Record<string, Cell>[] = orders.filter(order => !order.isBuyOrder).map(order => ({
+    quantity: [ order.volumeRemain, order.volumeRemain ],
     price: [ order.price, formatIsk(order.price) ],
-    location: [
-      locationRecord[order.location_id] ?? 'Player Owned Structure',
-      locationRecord[order.location_id] ?? 'Player Owned Structure'
-    ],
+    location: [ order.location, order.location ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
       expiresIn(order.issued, order.duration, time)
     ]
   }))
-  const buyData: Record<string, Cell>[] = orders.filter(order => order.order_type == 'buy').map(order => ({
-    quantity: [ order.volume_remain, order.volume_remain ],
+  const buyData: Record<string, Cell>[] = orders.filter(order => order.isBuyOrder).map(order => ({
+    quantity: [ order.volumeRemain, order.volumeRemain ],
     price: [ order.price, formatIsk(order.price) ],
-    location: [
-      locationRecord[order.location_id] ?? 'Player Owned Structure',
-      locationRecord[order.location_id] ?? 'Player Owned Structure'
-    ],
+    location: [ order.location, order.location ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
       expiresIn(order.issued, order.duration, time)
     ],
     range: [ order.range, order.range ],
-    minVolume: [ order.min_volume, order.min_volume ]
+    minVolume: [ order.minVolume, order.minVolume ]
   }))
 
   return (
-    <div className="tabs">
+    <div className="tabs item-body__tabs">
       <div className="tabs__list">
-        <Link to={`/region/${regionId}/type/${typeId}/order`} className="tabs__trigger">Market Data</Link>
+        <Link to={`/region/${regionId}/type/${typeId}`} className="tabs__trigger" data-state="active">Market Data</Link>
         <Link to={`/region/${regionId}/type/${typeId}/history`} className="tabs__trigger">Price History</Link>
       </div>
-      <div className="tabs__content">
+      <div className="tabs__content item-body__tab">
         <div className="market-data">
           <div className="market-data__section">
             <h3 className="market-data__heading">Sellers</h3>

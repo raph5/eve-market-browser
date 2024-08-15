@@ -43,6 +43,7 @@ export interface Order {
   orderId: number,
   price: number,
   range: 'station' | 'region' | 'solarsystem' | '1' | '2' | '3' | '4' | '5' | '10' | '20' | '30' | '40',
+  regionId: number,
   systemId: number,
   typeId: number,
   volumeRemain: number,

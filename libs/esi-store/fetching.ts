@@ -160,7 +160,7 @@ export async function fetchOrders(typeId: number, regionId: number): Promise<Ord
   const orders = data.orders
   orders.forEach((o: any) => {
     o.range = TYCOON_RANGE[o.range]
-    o.location = data.stationNames[o.locationId] || data.structureNames[o.locationId] || "Unknown Structure"
+    o.location = data.stationNames[o.locationId] || data.structureNames[o.locationId] || "Unknown Player Structure"
     delete o.locationId
   })
 
