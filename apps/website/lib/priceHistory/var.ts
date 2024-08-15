@@ -1,6 +1,7 @@
 
 export const GRAPH_BACKGROUND = "#ddd2" as const
 export const GRAPH_LINE = "#262626" as const
+export const GRAPH_LINE_ZERO = "#444444" as const
 export const GRAPH_COLOR = "#bbb" as const
 export const GRAPH_PADDING_X = 50 as const
 export const GRAPH_PADDING_TOP = 20 as const

@@ -2,7 +2,7 @@ import { clamp } from "utils/main";
 import { Graph } from "..";
 import { GraphContext } from "../context";
 import { Object2d, hitBox } from "../types";
-import { GRAPH_COLOR, GRAPH_LABEL_SPACING, GRAPH_LINE, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var";
+import { GRAPH_COLOR, GRAPH_LABEL_SPACING, GRAPH_LINE, GRAPH_LINE_ZERO, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var";
 import { formatMonth, formatPrice } from "../lib";
 
 const SCROLLX_SENSIVITY = 1 as const
@@ -44,7 +44,6 @@ export class GraphBg implements Object2d {
         this._maxPrice = this.context.history[i].highest
       }
     }
-    this._maxPrice *= 1.2
 
     this.graph.canvas.addEventListener('mouseup', this.dragEnd.bind(this))
     this.graph.canvas.addEventListener('mouseout', this.dragEnd.bind(this))
@@ -66,12 +65,12 @@ export class GraphBg implements Object2d {
 
     canvasCtx.font = "14px evesansneue"
     canvasCtx.textAlign = "end"
-    let gradPrice = scale * Math.ceil(this.context.startPrice / scale)
+    let gradPrice = Math.max(scale * Math.ceil(this.context.startPrice / scale), 0)
     let gradY
     while(gradPrice < this.context.endPrice) {
-      if(gradPrice != 0) {
+      if(gradPrice != 0 || this.context.startPrice < 0) {
         gradY = Math.floor(GRAPH_PADDING_TOP + (this.context.endPrice - gradPrice) / deltaPrice * graphHeight)
-        canvasCtx.fillStyle = GRAPH_LINE
+        canvasCtx.fillStyle = gradPrice == 0 ? GRAPH_LINE_ZERO : GRAPH_LINE
         canvasCtx.fillRect(GRAPH_PADDING_X, gradY, graphWidth, 1)
         canvasCtx.fillStyle = GRAPH_COLOR
         canvasCtx.fillText(formatPrice(gradPrice), GRAPH_PADDING_X-4, gradY+7)
@@ -120,8 +119,8 @@ export class GraphBg implements Object2d {
       const deltaPrice = this.context.endPrice - this.context.startPrice
       const grabDeltaPrice = (event.offsetY - this._grabY) /
         (this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP) * deltaPrice
-      this.context.startPrice = clamp(this._grabStartPrice + grabDeltaPrice, 0, this._maxPrice - deltaPrice)
-      this.context.endPrice = clamp(this._grabEndPrice + grabDeltaPrice, deltaPrice, this._maxPrice)
+      this.context.startPrice = clamp(this._grabStartPrice + grabDeltaPrice, -this._maxPrice, this._maxPrice*2 - deltaPrice)
+      this.context.endPrice = clamp(this._grabEndPrice + grabDeltaPrice, -this._maxPrice + deltaPrice, this._maxPrice*2)
     }
   }
 
@@ -130,13 +129,13 @@ export class GraphBg implements Object2d {
       event.offsetY / (this.canvas.offsetHeight - HISTORY_HEIGHT) * (this.context.endPrice - this.context.startPrice)
     this.context.startPrice = clamp(
       mousePrice + (this.context.startPrice - mousePrice) * Math.exp(event.deltaY * SCROLLY_SENSIVITY),
-      0,
+      -this._maxPrice,
       mousePrice
     )
     this.context.endPrice = clamp(
       mousePrice + (this.context.endPrice - mousePrice) * Math.exp(event.deltaY * SCROLLY_SENSIVITY),
       mousePrice,
-      this._maxPrice
+      this._maxPrice * 2
     )
 
     const deltaDays = this.context.endDay - this.context.startDay
