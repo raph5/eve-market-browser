@@ -23,7 +23,7 @@ func initDatabase() (*sql.DB, *sql.DB, error) {
   }
   readDB.SetMaxOpenConns(4)
 
-  createOrderTable := `
+  createTablesAndIndexs := `
   CREATE TABLE IF NOT EXISTS "Order" (
     Id INTEGER PRIMARY KEY,
     RegionId INTEGER,
@@ -38,51 +38,36 @@ func initDatabase() (*sql.DB, *sql.DB, error) {
     TypeId INTEGER,
     VolumeRemain INTEGER,
     VolumeTotal INTEGER
-  );`
-  _, err = writeDB.Exec(createOrderTable)
-  if err != nil {
-    return nil, nil, err
-  }
+  );
+  CREATE INDEX IF NOT EXISTS OrderTypeIndex ON "Order" (TypeId);
+  CREATE INDEX IF NOT EXISTS OrderTypeRegionIndex ON "Order" (TypeId, RegionId);
 
-  createLocationTable := `
   CREATE TABLE IF NOT EXISTS Location (
     Id INTEGER PRIMARY KEY,
     Name TEXT
-  );`
-  _, err = writeDB.Exec(createLocationTable)
-  if err != nil {
-    return nil, nil, err
-  }
+  );
+  CREATE INDEX IF NOT EXISTS LocationIndex ON Location (Id);
 
-  createHistoryTable := `
   CREATE TABLE IF NOT EXISTS History (
     TypeId INTEGER,
     RegionId INTEGER,
     HistoryJson TEXT,
     PRIMARY KEY (TypeId, RegionId)
-  );`
-  _, err = writeDB.Exec(createHistoryTable)
-  if err != nil {
-    return nil, nil, err
-  }
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS HistoryTypeIndex ON History (TypeId);
+  CREATE UNIQUE INDEX IF NOT EXISTS HistoryTypeRegionIndex ON History (TypeId, RegionId);
 
-  createActiveTypesTable := `
   CREATE TABLE IF NOT EXISTS ActiveType (
     TypeId INTEGER,
     RegionId INTEGER,
     PRIMARY KEY (TypeId, RegionId)
-  );`
-  _, err = writeDB.Exec(createActiveTypesTable)
-  if err != nil {
-    return nil, nil, err
-  }
+  );
 
-  createExpirationTable := `
   CREATE TABLE IF NOT EXISTS TableExpiration (
     TableName TEXT PRIMARY KEY,
     ExpirationTime INTEGER
   );`
-  _, err = writeDB.Exec(createExpirationTable)
+  _, err = writeDB.Exec(createTablesAndIndexs)
   if err != nil {
     return nil, nil, err
   }

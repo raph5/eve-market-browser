@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,11 +29,27 @@ type esiOrder struct {
 	VolumeTotal  int     `json:"volume_total"`
 }
 
+type dbOrder struct {
+	Duration     int
+	IsBuyOrder   bool
+	Issued       string
+	LocationId   int
+	MinVolume    int
+	OrderId      int
+	Price        float64
+	Range        string
+  RegionId     int
+	SystemId     int
+	TypeId       int
+	VolumeRemain int
+	VolumeTotal  int
+}
+
 type order struct {
 	Duration     int     `json:"duration"`
 	IsBuyOrder   bool    `json:"isBuyOrder"`
 	Issued       string  `json:"issued"`
-	LocationId   int     `json:"locationId"`
+	Location     string  `json:"location"`
 	MinVolume    int     `json:"minVolume"`
 	OrderId      int     `json:"orderId"`
 	Price        float64 `json:"price"`
@@ -47,6 +64,21 @@ type order struct {
 type regionsOrders struct {
   orders   []esiOrder
   regionId int
+}
+
+var rangeMap = map[string]string{
+  "station": "Station",
+  "region": "Region",
+  "solarsystem": "Solar System",
+  "1": "1 Jumps",
+  "2": "2 Jumps",
+  "3": "3 Jumps",
+  "4": "4 Jumps",
+  "5": "5 Jumps",
+  "10": "10 Jumps",
+  "20": "20 Jumps",
+  "30": "30 Jumps",
+  "40": "40 Jumps",
 }
 
 func createOrderHandler(ctx context.Context) http.HandlerFunc {
@@ -79,35 +111,56 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
       rows, err = readDB.Query(orderQuery, typeId, regionId)
     }
     if err != nil {
+      log.Printf("Internal server error: %v", err)
       http.Error(w, "Internal server error", 500)
       return
     }
     defer rows.Close()
 
+    locationStmt, err := readDB.Prepare("SELECT Name FROM Location WHERE Id = ?")
+    if err != nil {
+      log.Printf("Internal server error: %v", err)
+      http.Error(w, "Internal server error", 500)
+      return
+    }
+    defer locationStmt.Close()
+
     orders := make([]*order, 0)
     for rows.Next() {
-      var o order
+      var locationId int
+      var order order
       err = rows.Scan(
-        &o.OrderId,
-        &o.RegionId,
-        &o.Duration,
-        &o.IsBuyOrder,
-        &o.Issued,
-        &o.LocationId,
-        &o.MinVolume,
-        &o.Price,
-        &o.Range,
-        &o.SystemId,
-        &o.TypeId,
-        &o.VolumeRemain,
-        &o.VolumeTotal,
+        &order.OrderId,
+        &order.RegionId,
+        &order.Duration,
+        &order.IsBuyOrder,
+        &order.Issued,
+        &locationId,
+        &order.MinVolume,
+        &order.Price,
+        &order.Range,
+        &order.SystemId,
+        &order.TypeId,
+        &order.VolumeRemain,
+        &order.VolumeTotal,
       )
       if err != nil {
         log.Printf("Internal server error: %v", err)
         http.Error(w, "Internal server error", 500)
         return
       }
-      orders = append(orders, &o)
+
+      err = locationStmt.QueryRow(locationId).Scan(&order.Location)
+      if err != nil && !errors.Is(err, sql.ErrNoRows) {
+        log.Printf("Internal server error: %v", err)
+        http.Error(w, "Internal server error", 500)
+        return
+      }
+      if order.Location == "" {
+        order.Location = "Unknown Player Structure"
+      }
+
+      orders = append(orders, &order)
     }
 
     w.Header().Set("Content-Type", "application/json")
@@ -180,7 +233,7 @@ func downloadOrders(ctx context.Context) error {
         o.LocationId,
         o.MinVolume,
         o.Price,
-        o.Range,
+        rangeMap[o.Range],
         o.SystemId,
         o.TypeId,
         o.VolumeRemain,
