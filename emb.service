@@ -1,0 +1,12 @@
+[Unit]
+Description=Eve Market Browser Server
+After=network.target
+
+[Service]
+Type=simple
+User=raph
+ExecStart=/home/raph/code/eve-market-browser/start.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

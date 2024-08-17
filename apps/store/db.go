@@ -54,8 +54,8 @@ func initDatabase() (*sql.DB, *sql.DB, error) {
     HistoryJson TEXT,
     PRIMARY KEY (TypeId, RegionId)
   );
-  CREATE UNIQUE INDEX IF NOT EXISTS HistoryTypeIndex ON History (TypeId);
-  CREATE UNIQUE INDEX IF NOT EXISTS HistoryTypeRegionIndex ON History (TypeId, RegionId);
+  CREATE INDEX IF NOT EXISTS HistoryTypeIndex ON History (TypeId);
+  CREATE INDEX IF NOT EXISTS HistoryTypeRegionIndex ON History (TypeId, RegionId);
 
   CREATE TABLE IF NOT EXISTS ActiveType (
     TypeId INTEGER,

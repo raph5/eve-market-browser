@@ -48,7 +48,7 @@ export default function PriceHistory() {
   }
 
   useEffect(() => {
-    if(regionId != 0) {
+    if(regionId != 0 && history.length >= 2) {
       if(containerRef.current == null) {
         console.error("cant initialize price history graph")
         return
@@ -69,6 +69,10 @@ export default function PriceHistory() {
           <div className="price-history__fallback">
             <p>Can't display the price history for All Regions</p>
             <button className="button button--corner-right" onClick={() => setRegion('10000002')}>Display The Forge</button>
+          </div>
+        ) : (history.length < 2 ? (
+          <div className="price-history__fallback">
+            <p>No history data available</p>
           </div>
         ) : (
           <div className="price-history">
@@ -100,7 +104,7 @@ export default function PriceHistory() {
             </div>
             <div className="price-history__container" ref={containerRef} />
           </div>
-        )}
+        ))}
       </div>
     </div>
   )
