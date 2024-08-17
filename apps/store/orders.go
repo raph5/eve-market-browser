@@ -194,7 +194,6 @@ func downloadOrders(ctx context.Context) error {
         orders: orders,
         regionId: region,
       }
-      log.Print("region")
     }(region)
   }
 
