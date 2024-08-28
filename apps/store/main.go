@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/raph5/eve-market-browser/apps/store/esi"
 	"github.com/raph5/eve-market-browser/apps/store/prom"
 )
 
@@ -111,6 +112,7 @@ func orderWorker(ctx context.Context) {
 
       metrics.OrderStatus.Set(0)
       log.Print("Order worker downloading orders and locations")
+      log.Printf("Free semaphore threads: %d", esi.Semaphore.GetFreeThreads())
       err = downloadOrders(ctx)
       if err != nil {
         labels := prometheus.Labels{"worker": "order", "message": err.Error()}
@@ -185,6 +187,7 @@ func historyWorker(ctx context.Context) {
         continue
       }
 
+      log.Printf("Free semaphore threads: %d", esi.Semaphore.GetFreeThreads())
       err = downloadHistories(ctx)
       if err != nil {
         labels := prometheus.Labels{"worker": "history", "message": err.Error()}
