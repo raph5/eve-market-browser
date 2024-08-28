@@ -67,27 +67,6 @@ func main() {
     cancel()
   }()
 
-	// // Remove any existing socket file
-	// if _, err := os.Stat(socketPath); err == nil {
-	// 	log.Println("Removing existing socket file on startup")
-	// 	os.Remove(socketPath)
-	// }
-
-	// // Create socket
-	// log.Println("Creating socket")
-	// listener, err := net.Listen("unix", socketPath)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer listener.Close()
-
-	// // Http server
-	// log.Println("Sarting http server")
-	// err = http.Serve(listener, mux)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
   log.Print("Store is up")
 
   // Handle store shutdown

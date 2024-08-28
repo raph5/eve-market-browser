@@ -168,7 +168,7 @@ func EsiFetch[T any](
     metrics.EsiErrors.With(labels).Inc()
     if err == nil {
       apiTimeoutMu.Lock()
-      apiTimeout = time.Now().Unix() + int64(error.Timeout)
+      apiTimeout = time.Now().Unix() + int64(min(error.Timeout, 15))
       apiTimeoutMu.Unlock()
     }
     return retry(*new(T), err)
