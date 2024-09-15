@@ -277,7 +277,7 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 				firstDay = &ghd
 			}
 		}
-		globalHistorySorted = append(globalHistorySorted, *firstDay)
+		globalHistorySorted[i] = *firstDay
 		delete(globalHistoryMap, firstDay.Date)
 	}
 
