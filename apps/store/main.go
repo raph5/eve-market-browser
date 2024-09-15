@@ -84,66 +84,64 @@ func main() {
 func orderWorker(ctx context.Context) {
   metrics := ctx.Value("metrics").(*prom.Metrics)
   for {
-    select {
-    case <-ctx.Done():
+    if ctx.Err() != nil {
       log.Print("Order worker stopped")
       return
-    default:
-      now := time.Now()
-      expiration, err := getExpirationTime(ctx, "Order")
-      if err != nil {
-        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        log.Printf("Order worker stopping unexpectedly: %v", err)
+    }
+
+    now := time.Now()
+    expiration, err := getExpirationTime(ctx, "Order")
+    if err != nil {
+      labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      log.Printf("Order worker stopping unexpectedly: %v", err)
+      return
+    }
+    delta := expiration.Sub(now)
+
+    if delta > 0 {
+      metrics.OrderStatus.Set(1)
+      log.Print("Order worker up to date")
+      select {
+      case <-time.After(delta):
+        metrics.OrderStatus.Set(0)
+      case <-ctx.Done():
+      }
+      continue
+    }
+
+    metrics.OrderStatus.Set(0)
+    log.Print("Order worker downloading orders and locations")
+    err = downloadOrders(ctx)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      if errors.Is(err, context.Canceled) {
+        log.Print("Order worker stopped")
         return
       }
-      delta := expiration.Sub(now)
+      log.Printf("Order worker reporting: %v", err)
+      continue
+    }
 
-      if delta > 0 {
-        metrics.OrderStatus.Set(1)
-        log.Print("Order worker up to date")
-        select {
-        case <-time.After(delta):
-          metrics.OrderStatus.Set(0)
-        case <-ctx.Done():
-        }
-        continue
-      }
-
-      metrics.OrderStatus.Set(0)
-      log.Print("Order worker downloading orders and locations")
-      log.Printf("Free semaphore threads: %d", esi.Semaphore.GetFreeThreads())
-      err = downloadOrders(ctx)
-      if err != nil {
-        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        if errors.Is(err, context.Canceled) {
-          log.Print("Order worker stopped")
-          return
-        }
-        log.Printf("Order worker reporting: %v", err)
-        continue
-      }
-
-      err = downloadLocations(ctx)
-      if err != nil {
-        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        if errors.Is(err, context.Canceled) {
-          log.Print("Order worker stopped")
-          return
-        }
-        log.Printf("Order worker reporting: %v", err)
-      }
-
-      newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
-      err = setExpirationTime(ctx, "Order", newExpiration)
-      if err != nil {
-        labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        log.Printf("Order worker stopping unexpectedly: %v", err)
+    err = downloadLocations(ctx)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      if errors.Is(err, context.Canceled) {
+        log.Print("Order worker stopped")
         return
       }
+      log.Printf("Order worker reporting: %v", err)
+    }
+
+    newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
+    err = setExpirationTime(ctx, "Order", newExpiration)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "order", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      log.Printf("Order worker stopping unexpectedly: %v", err)
+      return
     }
   }
 }
@@ -151,66 +149,75 @@ func orderWorker(ctx context.Context) {
 func historyWorker(ctx context.Context) {
   metrics := ctx.Value("metrics").(*prom.Metrics)
   for {
-    select {
-    case <-ctx.Done():
+    if ctx.Err() != nil {
       log.Print("History worker stopped")
       return
-    default :
-      now := time.Now()
-      expiration, err := getExpirationTime(ctx, "History")
-      if err != nil {
-        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        log.Printf("History worker stopping unexpectedly: %v", err)
+    }
+
+    now := time.Now()
+    expiration, err := getExpirationTime(ctx, "History")
+    if err != nil {
+      labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      log.Printf("History worker stopping unexpectedly: %v", err)
+      return
+    }
+    delta := expiration.Sub(now)
+
+    if delta > 0 {
+      metrics.HistoryStatus.Set(1)
+      log.Print("History worker up to date")
+      select {
+      case <-time.After(delta):
+        metrics.HistoryStatus.Set(0)
+      case <-ctx.Done():
+      }
+      continue
+    }
+
+    metrics.HistoryStatus.Set(0)
+    log.Print("History worker downloading histories")
+    err = populateActiveTypes(ctx)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      log.Printf("History worker reporting: %v", err)
+      continue
+    }
+
+    err = downloadHistories(ctx)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      if errors.Is(err, context.Canceled) {
+        log.Print("History worker stopped")
         return
       }
-      delta := expiration.Sub(now)
+      log.Printf("History worker reporting: %v", err)
+      continue
+    }
 
-      if delta > 0 {
-        metrics.HistoryStatus.Set(1)
-        log.Print("History worker up to date")
-        select {
-        case <-time.After(delta):
-          metrics.HistoryStatus.Set(0)
-        case <-ctx.Done():
-        }
-        continue
-      }
-
-      metrics.HistoryStatus.Set(0)
-      log.Print("History worker downloading histories")
-      err = populateActiveTypes(ctx)
-      if err != nil {
-        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        log.Printf("History worker reporting: %v", err)
-        continue
-      }
-
-      log.Printf("Free semaphore threads: %d", esi.Semaphore.GetFreeThreads())
-      err = downloadHistories(ctx)
-      if err != nil {
-        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        if errors.Is(err, context.Canceled) {
-          log.Print("History worker stopped")
-          return
-        }
-        log.Printf("History worker reporting: %v", err)
-        continue
-      }
-
-      elevenFifteenTomorrow := time.Date(now.Year(), now.Month(), now.Day(), 11, 15, 0, 0, now.Location())
-      if elevenFifteenTomorrow.Before(now) {
-        elevenFifteenTomorrow = elevenFifteenTomorrow.AddDate(0, 0, 1)
-      }
-      err = setExpirationTime(ctx, "History", elevenFifteenTomorrow)
-      if err != nil {
-        labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-        metrics.WorkerErrors.With(labels).Inc()
-        log.Printf("History worker stopping unexpectedly: %v", err)
+    err = computeGobalHistory(ctx)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      if errors.Is(err, context.Canceled) {
+        log.Print("History worker stopped")
         return
       }
+      log.Printf("Global history computation failed: %v", err)
+    }
+
+    elevenFifteenTomorrow := time.Date(now.Year(), now.Month(), now.Day(), 11, 15, 0, 0, now.Location())
+    if elevenFifteenTomorrow.Before(now) {
+      elevenFifteenTomorrow = elevenFifteenTomorrow.AddDate(0, 0, 1)
+    }
+    err = setExpirationTime(ctx, "History", elevenFifteenTomorrow)
+    if err != nil {
+      labels := prometheus.Labels{"worker": "history", "message": err.Error()}
+      metrics.WorkerErrors.With(labels).Inc()
+      log.Printf("History worker stopping unexpectedly: %v", err)
+      return
     }
   }
 }

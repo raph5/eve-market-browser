@@ -77,11 +77,6 @@ func (s *sem) Release() {
   close(ch)
 }
 
-// TODO: remove
-func (s *sem) GetFreeThreads() int {
-  return s.freeThreads
-}
-
 type node struct {
   priority int
   ch chan struct{}

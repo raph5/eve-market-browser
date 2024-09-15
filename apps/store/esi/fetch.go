@@ -36,7 +36,7 @@ const MaxConcurrentRequests = 10
 
 var ErrNoTriesLeft = errors.New("Failed 5 esi fetching attempts")
 
-var Semaphore = sem.New(MaxConcurrentRequests)
+var semaphore = sem.New(MaxConcurrentRequests)
 var apiTimeout int64
 var apiTimeoutMu sync.RWMutex
 
@@ -66,20 +66,20 @@ func EsiFetch[T any](
   retry := func(fallbackData T, fallbackErr error) (T, error) {
     labels := prometheus.Labels{"uri": uri, "result": "retry"}
     metrics.EsiRequests.With(labels).Inc()
-    select {
-    case <-ctx.Done():
+
+    if ctx.Err() != nil {
       return fallbackData, context.Canceled
-    default:
-      retryData, retryErr := EsiFetch[T](ctx, uri, method, query, body, priority, tries-1)
-      if errors.Is(retryErr, ErrNoTriesLeft) {
-        return fallbackData, fallbackErr
-      }
-      return retryData, retryErr
     }
+
+    retryData, retryErr := EsiFetch[T](ctx, uri, method, query, body, priority, tries-1)
+    if errors.Is(retryErr, ErrNoTriesLeft) {
+      return fallbackData, fallbackErr
+    }
+    return retryData, retryErr
   }
 
   // require premission from the semaphore
-  err := Semaphore.AcquireWithContext(ctx, priority)
+  err := semaphore.AcquireWithContext(ctx, priority)
   if err != nil {
     return *new(T), err
   }
@@ -96,7 +96,7 @@ func EsiFetch[T any](
     select {
     case <-time.After(time.Duration(timeToWait) * time.Second):
     case <-ctx.Done():
-      Semaphore.Release()
+      semaphore.Release()
       return *new(T), context.Canceled
     }
   }
@@ -107,13 +107,13 @@ func EsiFetch[T any](
 		var err error
 		serializedBody, err = json.Marshal(body)
 		if err != nil {
-      Semaphore.Release()
+      semaphore.Release()
 			return *new(T), err
 		}
 	}
 	u, err := url.Parse(esiUrl + uri)
 	if err != nil {
-    Semaphore.Release()
+    semaphore.Release()
 		return *new(T), err
 	}
 	q := u.Query()
@@ -125,7 +125,7 @@ func EsiFetch[T any](
 
 	request, err := http.NewRequestWithContext(ctx, method, finalUrl, bytes.NewBuffer(serializedBody))
 	if err != nil {
-    Semaphore.Release()
+    semaphore.Release()
 		return *new(T), err
 	}
 	request.Header.Set("content-type", "application/json")
@@ -136,7 +136,7 @@ func EsiFetch[T any](
     Timeout: 5 * time.Second,
   }
   response, err := client.Do(request)
-  Semaphore.Release()
+  semaphore.Release()
   if err != nil {
     if errors.Is(err, context.Canceled) {
       labels := prometheus.Labels{"uri": uri, "result": "failure"}

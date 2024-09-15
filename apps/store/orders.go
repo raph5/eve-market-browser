@@ -261,24 +261,23 @@ func fetchRegionsOrders(ctx context.Context, region int) ([]esiOrder, error) {
   }
 
   for {
-    select {
-    case <-ctx.Done():
+    if ctx.Err() != nil {
       return nil, context.Canceled
-    default:
-      query["page"] = strconv.Itoa(page)
-      pageOrders, err := esi.EsiFetch[[]esiOrder](ctx, uri, "GET", query, nil, 2, 5)
-      if err != nil {
-        esiError, ok := err.(*esi.EsiError)
-        if ok && esiError.Code == 404 {
-          return orders, nil
-        }
-        return nil, err
-      }
-      orders = append(orders, pageOrders...)
-      if len(pageOrders) < 1000 {
+    }
+
+    query["page"] = strconv.Itoa(page)
+    pageOrders, err := esi.EsiFetch[[]esiOrder](ctx, uri, "GET", query, nil, 2, 5)
+    if err != nil {
+      esiError, ok := err.(*esi.EsiError)
+      if ok && esiError.Code == 404 {
         return orders, nil
       }
-      page += 1
+      return nil, err
     }
+    orders = append(orders, pageOrders...)
+    if len(pageOrders) < 1000 {
+      return orders, nil
+    }
+    page += 1
   }
 }
