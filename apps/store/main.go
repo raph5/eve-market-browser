@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/raph5/eve-market-browser/apps/store/esi"
 	"github.com/raph5/eve-market-browser/apps/store/prom"
 )
 
