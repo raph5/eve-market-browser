@@ -226,7 +226,7 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	}
   defer rows.Close()
 
-	globalHistoryMap := make(map[string]esiHistoryDay)
+	globalHistoryMap := make(map[string]*esiHistoryDay)
 	for rows.Next() {
 		var localHistoryJson []byte
 		var localHistory []esiHistoryDay
@@ -254,11 +254,12 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 				ghd.Average = (ghd.Average*float64(ghd.Volume) + lhd.Average*
 					float64(lhd.Volume)) / float64(ghd.Volume+lhd.Volume)
 				ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
-				ghd.Highest = min(ghd.Highest, lhd.Highest)
+				ghd.Highest = max(ghd.Highest, lhd.Highest)
 				ghd.OrderCount += lhd.OrderCount
 				ghd.Volume += lhd.Volume
 			} else {
-				globalHistoryMap[lhd.Date] = lhd
+        lhdCopy := lhd
+				globalHistoryMap[lhd.Date] = &lhdCopy
 			}
 		}
 	}
@@ -274,7 +275,7 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 		for _, ghd := range globalHistoryMap {
 			if firstTime.IsZero() || timeMap[ghd.Date].Before(firstTime) {
 				firstTime = timeMap[ghd.Date]
-				firstDay = &ghd
+				firstDay = ghd
 			}
 		}
 		globalHistorySorted[i] = *firstDay
