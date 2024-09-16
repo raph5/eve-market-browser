@@ -129,9 +129,9 @@ func computeGobalHistory(ctx context.Context) error {
 			return context.Canceled
 		}
 		err = computeTypeGlobalHistory(ctx, typeId, timeMap)
-    if err != nil {
-      return err
-    }
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -224,7 +224,7 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	if err != nil {
 		return err
 	}
-  defer rows.Close()
+	defer rows.Close()
 
 	globalHistoryMap := make(map[string]*esiHistoryDay)
 	for rows.Next() {
@@ -251,14 +251,16 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 
 			ghd, ok := globalHistoryMap[lhd.Date]
 			if ok {
-				ghd.Average = (ghd.Average*float64(ghd.Volume) + lhd.Average*
-					float64(lhd.Volume)) / float64(ghd.Volume+lhd.Volume)
+				if lhd.Volume > 0 {
+					ghd.Average = (ghd.Average*float64(ghd.Volume) + lhd.Average*
+						float64(lhd.Volume)) / float64(ghd.Volume+lhd.Volume)
+				}
 				ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
 				ghd.Highest = max(ghd.Highest, lhd.Highest)
 				ghd.OrderCount += lhd.OrderCount
 				ghd.Volume += lhd.Volume
 			} else {
-        lhdCopy := lhd
+				lhdCopy := lhd
 				globalHistoryMap[lhd.Date] = &lhdCopy
 			}
 		}
@@ -286,14 +288,14 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	if err != nil {
 		return err
 	}
-  globalHistoryJson, err := json.Marshal(globalHistory)
-  if err != nil {
-    return err
-  }
-  _, err = writeDB.Exec("INSERT OR REPLACE INTO History VALUES (?,0,?)", typeId, globalHistoryJson)
-  if err != nil {
-    return err
-  }
+	globalHistoryJson, err := json.Marshal(globalHistory)
+	if err != nil {
+		return err
+	}
+	_, err = writeDB.Exec("INSERT OR REPLACE INTO History VALUES (?,0,?)", typeId, globalHistoryJson)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

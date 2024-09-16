@@ -38,7 +38,7 @@ type dbOrder struct {
 	OrderId      int
 	Price        float64
 	Range        string
-  RegionId     int
+	RegionId     int
 	SystemId     int
 	TypeId       int
 	VolumeRemain int
@@ -54,7 +54,7 @@ type order struct {
 	OrderId      int     `json:"orderId"`
 	Price        float64 `json:"price"`
 	Range        string  `json:"range"`
-  RegionId     int     `json:"regionId"`
+	RegionId     int     `json:"regionId"`
 	SystemId     int     `json:"systemId"`
 	TypeId       int     `json:"typeId"`
 	VolumeRemain int     `json:"volumeRemain"`
@@ -62,222 +62,222 @@ type order struct {
 }
 
 type regionsOrders struct {
-  orders   []esiOrder
-  regionId int
+	orders   []esiOrder
+	regionId int
 }
 
 var rangeMap = map[string]string{
-  "station": "Station",
-  "region": "Region",
-  "solarsystem": "Solar System",
-  "1": "1 Jumps",
-  "2": "2 Jumps",
-  "3": "3 Jumps",
-  "4": "4 Jumps",
-  "5": "5 Jumps",
-  "10": "10 Jumps",
-  "20": "20 Jumps",
-  "30": "30 Jumps",
-  "40": "40 Jumps",
+	"station":     "Station",
+	"region":      "Region",
+	"solarsystem": "Solar System",
+	"1":           "1 Jumps",
+	"2":           "2 Jumps",
+	"3":           "3 Jumps",
+	"4":           "4 Jumps",
+	"5":           "5 Jumps",
+	"10":          "10 Jumps",
+	"20":          "20 Jumps",
+	"30":          "30 Jumps",
+	"40":          "40 Jumps",
 }
 
 func createOrderHandler(ctx context.Context) http.HandlerFunc {
-  readDB := ctx.Value("readDB").(*sql.DB)
-  return func(w http.ResponseWriter, r *http.Request) {
-    query := r.URL.Query()
-    typeId, err := strconv.Atoi(query.Get("type"))
-    if err != nil {
-      http.Error(w, `Bad request: param "type" is invalid integer`, 400)
-      return
-    }
-    regionId, err := strconv.Atoi(query.Get("region"))
-    if err != nil {
-      http.Error(w, `Bad request: param "region" is invalid integer`, 400)
-      return
-    }
+	readDB := ctx.Value("readDB").(*sql.DB)
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		typeId, err := strconv.Atoi(query.Get("type"))
+		if err != nil {
+			http.Error(w, `Bad request: param "type" is invalid integer`, 400)
+			return
+		}
+		regionId, err := strconv.Atoi(query.Get("region"))
+		if err != nil {
+			http.Error(w, `Bad request: param "region" is invalid integer`, 400)
+			return
+		}
 
-    var rows *sql.Rows
-    if regionId == 0 {
-      orderQuery := `
+		var rows *sql.Rows
+		if regionId == 0 {
+			orderQuery := `
       SELECT * FROM "Order"
         WHERE TypeId = ?;
       `
-      rows, err = readDB.Query(orderQuery, typeId)
-    } else {
-      orderQuery := `
+			rows, err = readDB.Query(orderQuery, typeId)
+		} else {
+			orderQuery := `
       SELECT * FROM "Order"
         WHERE TypeId = ? AND RegionId = ?;
       `
-      rows, err = readDB.Query(orderQuery, typeId, regionId)
-    }
-    if err != nil {
-      log.Printf("Internal server error: %v", err)
-      http.Error(w, "Internal server error", 500)
-      return
-    }
-    defer rows.Close()
+			rows, err = readDB.Query(orderQuery, typeId, regionId)
+		}
+		if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+		defer rows.Close()
 
-    locationStmt, err := readDB.Prepare("SELECT Name FROM Location WHERE Id = ?")
-    if err != nil {
-      log.Printf("Internal server error: %v", err)
-      http.Error(w, "Internal server error", 500)
-      return
-    }
-    defer locationStmt.Close()
+		locationStmt, err := readDB.Prepare("SELECT Name FROM Location WHERE Id = ?")
+		if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+		defer locationStmt.Close()
 
-    orders := make([]*order, 0)
-    for rows.Next() {
-      var locationId int
-      var order order
-      err = rows.Scan(
-        &order.OrderId,
-        &order.RegionId,
-        &order.Duration,
-        &order.IsBuyOrder,
-        &order.Issued,
-        &locationId,
-        &order.MinVolume,
-        &order.Price,
-        &order.Range,
-        &order.SystemId,
-        &order.TypeId,
-        &order.VolumeRemain,
-        &order.VolumeTotal,
-      )
-      if err != nil {
-        log.Printf("Internal server error: %v", err)
-        http.Error(w, "Internal server error", 500)
-        return
-      }
+		orders := make([]*order, 0)
+		for rows.Next() {
+			var locationId int
+			var order order
+			err = rows.Scan(
+				&order.OrderId,
+				&order.RegionId,
+				&order.Duration,
+				&order.IsBuyOrder,
+				&order.Issued,
+				&locationId,
+				&order.MinVolume,
+				&order.Price,
+				&order.Range,
+				&order.SystemId,
+				&order.TypeId,
+				&order.VolumeRemain,
+				&order.VolumeTotal,
+			)
+			if err != nil {
+				log.Printf("Internal server error: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
 
-      err = locationStmt.QueryRow(locationId).Scan(&order.Location)
-      if err != nil && !errors.Is(err, sql.ErrNoRows) {
-        log.Printf("Internal server error: %v", err)
-        http.Error(w, "Internal server error", 500)
-        return
-      }
-      if order.Location == "" {
-        order.Location = "Unknown Player Structure"
-      }
+			err = locationStmt.QueryRow(locationId).Scan(&order.Location)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				log.Printf("Internal server error: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
+			if order.Location == "" {
+				order.Location = "Unknown Player Structure"
+			}
 
-      orders = append(orders, &order)
-    }
+			orders = append(orders, &order)
+		}
 
-    w.Header().Set("Content-Type", "application/json")
-    err = json.NewEncoder(w).Encode(orders)
-    if err != nil {
-      log.Printf("Internal server error: %v", err)
-      http.Error(w, "Internal server error", 500)
-      return
-    }
-  }
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(orders)
+		if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+	}
 }
 
 func downloadOrders(ctx context.Context) error {
-  writeDB := ctx.Value("writeDB").(*sql.DB)
-  localCtx, localCancel := context.WithCancelCause(ctx)
-  defer localCancel(nil)
-  var wg sync.WaitGroup
-  regionsOrdersCh := make(chan regionsOrders, len(regions))
+	writeDB := ctx.Value("writeDB").(*sql.DB)
+	localCtx, localCancel := context.WithCancelCause(ctx)
+	defer localCancel(nil)
+	var wg sync.WaitGroup
+	regionsOrdersCh := make(chan regionsOrders, len(regions))
 
-  // start the workers
-  wg.Add(len(regions))
-  for _, region := range regions {
-    go func(region int) {
-      defer wg.Done()
-      orders, err := fetchRegionsOrders(localCtx, region)
-      if err != nil {
-        localCancel(err)
-        return
-      }
-      regionsOrdersCh <- regionsOrders{
-        orders: orders,
-        regionId: region,
-      }
-    }(region)
-  }
+	// start the workers
+	wg.Add(len(regions))
+	for _, region := range regions {
+		go func(region int) {
+			defer wg.Done()
+			orders, err := fetchRegionsOrders(localCtx, region)
+			if err != nil {
+				localCancel(err)
+				return
+			}
+			regionsOrdersCh <- regionsOrders{
+				orders:   orders,
+				regionId: region,
+			}
+		}(region)
+	}
 
-  wg.Wait()
-  close(regionsOrdersCh)
+	wg.Wait()
+	close(regionsOrdersCh)
 
-  err := context.Cause(localCtx)
-  if err != nil {
-    return err
-  }
+	err := context.Cause(localCtx)
+	if err != nil {
+		return err
+	}
 
-  // commit the orders to database
-  tx, err := writeDB.Begin()
-  if err != nil {
-    return err
-  }
-  defer tx.Rollback()
-  _, err = tx.Exec("DELETE FROM `Order`")
-  if err != nil {
-    return err
-  }
-  stmt, err := tx.Prepare("INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
-  if err != nil {
-    return err
-  }
-  defer stmt.Close()
+	// commit the orders to database
+	tx, err := writeDB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec("DELETE FROM `Order`")
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.Prepare("INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
 
-  for ro := range regionsOrdersCh {
-    for _, o := range ro.orders {
-      _, err := stmt.Exec(
-        o.OrderId,
-        ro.regionId,
-        o.Duration,
-        o.IsBuyOrder,
-        o.Issued,
-        o.LocationId,
-        o.MinVolume,
-        o.Price,
-        rangeMap[o.Range],
-        o.SystemId,
-        o.TypeId,
-        o.VolumeRemain,
-        o.VolumeTotal,
-      )
-      if err != nil {
-        return err
-      }
-    }
-  }
+	for ro := range regionsOrdersCh {
+		for _, o := range ro.orders {
+			_, err := stmt.Exec(
+				o.OrderId,
+				ro.regionId,
+				o.Duration,
+				o.IsBuyOrder,
+				o.Issued,
+				o.LocationId,
+				o.MinVolume,
+				o.Price,
+				rangeMap[o.Range],
+				o.SystemId,
+				o.TypeId,
+				o.VolumeRemain,
+				o.VolumeTotal,
+			)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
-  err = tx.Commit()
-  if err != nil {
-    return err
-  }
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 func fetchRegionsOrders(ctx context.Context, region int) ([]esiOrder, error) {
-  orders := make([]esiOrder, 0, 1000)
-  page := 1
-  uri := fmt.Sprintf("/markets/%d/orders", region)
-  query := map[string]string{
-    "order_type": "all",
-  }
+	orders := make([]esiOrder, 0, 1000)
+	page := 1
+	uri := fmt.Sprintf("/markets/%d/orders", region)
+	query := map[string]string{
+		"order_type": "all",
+	}
 
-  for {
-    if ctx.Err() != nil {
-      return nil, context.Canceled
-    }
+	for {
+		if ctx.Err() != nil {
+			return nil, context.Canceled
+		}
 
-    query["page"] = strconv.Itoa(page)
-    pageOrders, err := esi.EsiFetch[[]esiOrder](ctx, uri, "GET", query, nil, 2, 5)
-    if err != nil {
-      esiError, ok := err.(*esi.EsiError)
-      if ok && esiError.Code == 404 {
-        return orders, nil
-      }
-      return nil, err
-    }
-    orders = append(orders, pageOrders...)
-    if len(pageOrders) < 1000 {
-      return orders, nil
-    }
-    page += 1
-  }
+		query["page"] = strconv.Itoa(page)
+		pageOrders, err := esi.EsiFetch[[]esiOrder](ctx, uri, "GET", query, nil, 2, 5)
+		if err != nil {
+			esiError, ok := err.(*esi.EsiError)
+			if ok && esiError.Code == 404 {
+				return orders, nil
+			}
+			return nil, err
+		}
+		orders = append(orders, pageOrders...)
+		if len(pageOrders) < 1000 {
+			return orders, nil
+		}
+		page += 1
+	}
 }

@@ -11,19 +11,19 @@ import (
 )
 
 func initDatabase() (*sql.DB, *sql.DB, error) {
-  writeDB, err := sql.Open("sqlite3", "./data.db?_txlock=immediate")
-  if err != nil {
-    return nil, nil, err
-  }
-  writeDB.SetMaxOpenConns(1)
+	writeDB, err := sql.Open("sqlite3", "./data.db?_txlock=immediate")
+	if err != nil {
+		return nil, nil, err
+	}
+	writeDB.SetMaxOpenConns(1)
 
-  readDB, err := sql.Open("sqlite3", "./data.db")
-  if err != nil {
-    return nil, nil, err
-  }
-  readDB.SetMaxOpenConns(4)
+	readDB, err := sql.Open("sqlite3", "./data.db")
+	if err != nil {
+		return nil, nil, err
+	}
+	readDB.SetMaxOpenConns(4)
 
-  createTablesAndIndexs := `
+	createTablesAndIndexs := `
   CREATE TABLE IF NOT EXISTS "Order" (
     Id INTEGER PRIMARY KEY,
     RegionId INTEGER,
@@ -67,25 +67,25 @@ func initDatabase() (*sql.DB, *sql.DB, error) {
     TableName TEXT PRIMARY KEY,
     ExpirationTime INTEGER
   );`
-  _, err = writeDB.Exec(createTablesAndIndexs)
-  if err != nil {
-    return nil, nil, err
-  }
+	_, err = writeDB.Exec(createTablesAndIndexs)
+	if err != nil {
+		return nil, nil, err
+	}
 
-  pargmaConfig := `
+	pargmaConfig := `
   PRAGMA journal_mode = WAL;
   PRAGMA synchronous = NORMAL;
   PRAGMA cache_size = 20000; -- ~80MB
   PRAGMA busy_timeout = 5000;
   `
-  _, err = writeDB.Exec(pargmaConfig)
-  if err != nil {
-    return nil, nil, err
-  }
-  _, err = readDB.Exec(pargmaConfig)
-  if err != nil {
-    return nil, nil, err
-  }
+	_, err = writeDB.Exec(pargmaConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	_, err = readDB.Exec(pargmaConfig)
+	if err != nil {
+		return nil, nil, err
+	}
 
-  return writeDB, readDB, nil
+	return writeDB, readDB, nil
 }
