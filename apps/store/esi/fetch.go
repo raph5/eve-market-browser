@@ -23,11 +23,11 @@ type EsiError struct {
 }
 
 type jsonTimeoutError struct {
-  Error string `json:"error"`
-  Timeout int  `json:"timeout"`
+	Error   string `json:"error"`
+	Timeout int    `json:"timeout"`
 }
 type jsonError struct {
-  Error string `json:"error"`
+	Error string `json:"error"`
 }
 
 const esiUrl = "https://esi.evetech.net/latest"
@@ -45,63 +45,63 @@ var apiTimeoutMu sync.RWMutex
 // preprocessing and postprocessing of EsiRawFetch.
 
 func EsiFetch[T any](
-  ctx context.Context,
-  uri string,
-  method string,
-  query map[string]string,
-  body any,
-  priority int,
-  tries int,
+	ctx context.Context,
+	uri string,
+	method string,
+	query map[string]string,
+	body any,
+	priority int,
+	tries int,
 ) (T, error) {
-  metrics := ctx.Value("metrics").(*prom.Metrics)
+	metrics := ctx.Value("metrics").(*prom.Metrics)
 
-  // if no tries left, fail the request
-  if tries <= 0 {
-    labels := prometheus.Labels{"uri": uri, "result": "failure"}
-    metrics.EsiRequests.With(labels).Inc()
-    return *new(T), ErrNoTriesLeft
-  }
+	// if no tries left, fail the request
+	if tries <= 0 {
+		labels := prometheus.Labels{"uri": uri, "result": "failure"}
+		metrics.EsiRequests.With(labels).Inc()
+		return *new(T), ErrNoTriesLeft
+	}
 
-  // init retry function that will be called in case the request fail
-  retry := func(fallbackData T, fallbackErr error) (T, error) {
-    labels := prometheus.Labels{"uri": uri, "result": "retry"}
-    metrics.EsiRequests.With(labels).Inc()
+	// init retry function that will be called in case the request fail
+	retry := func(fallbackData T, fallbackErr error) (T, error) {
+		labels := prometheus.Labels{"uri": uri, "result": "retry"}
+		metrics.EsiRequests.With(labels).Inc()
 
-    if ctx.Err() != nil {
-      return fallbackData, context.Canceled
-    }
+		if ctx.Err() != nil {
+			return fallbackData, context.Canceled
+		}
 
-    retryData, retryErr := EsiFetch[T](ctx, uri, method, query, body, priority, tries-1)
-    if errors.Is(retryErr, ErrNoTriesLeft) {
-      return fallbackData, fallbackErr
-    }
-    return retryData, retryErr
-  }
+		retryData, retryErr := EsiFetch[T](ctx, uri, method, query, body, priority, tries-1)
+		if errors.Is(retryErr, ErrNoTriesLeft) {
+			return fallbackData, fallbackErr
+		}
+		return retryData, retryErr
+	}
 
-  // require premission from the semaphore
-  thread, err := semaphore.AcquireWithContext(ctx, priority)
-  if err != nil {
-    return *new(T), err
-  }
-  defer semaphore.Release(thread)
+	// require premission from the semaphore
+	thread, err := semaphore.AcquireWithContext(ctx, priority)
+	if err != nil {
+		return *new(T), err
+	}
+	defer semaphore.Release(thread)
 
-  // wait for the api to be clear of any timeout
-  for {
-    now := time.Now().Unix()
-    apiTimeoutMu.RLock()
-    timeToWait := apiTimeout - now
-    apiTimeoutMu.RUnlock()
-    if timeToWait <= 0 {
-      break
-    }
-    select {
-    case <-time.After(time.Duration(timeToWait) * time.Second):
-    case <-ctx.Done():
-      return *new(T), context.Canceled
-    }
-  }
+	// wait for the api to be clear of any timeout
+	for {
+		now := time.Now().Unix()
+		apiTimeoutMu.RLock()
+		timeToWait := apiTimeout - now
+		apiTimeoutMu.RUnlock()
+		if timeToWait <= 0 {
+			break
+		}
+		select {
+		case <-time.After(time.Duration(timeToWait) * time.Second):
+		case <-ctx.Done():
+			return *new(T), context.Canceled
+		}
+	}
 
-  // create the request
+	// create the request
 	var serializedBody []byte
 	if method == "POST" || method == "PUT" {
 		var err error
@@ -128,70 +128,70 @@ func EsiFetch[T any](
 	request.Header.Set("content-type", "application/json")
 	request.Header.Set("User-Agent", "evemarketbrowser.com - contact me at raphguyader@gmail.com")
 
-  // run the request
+	// run the request
 	client := &http.Client{
-    Timeout: 5 * time.Second,
-  }
-  response, err := client.Do(request)
-  semaphore.Release(thread)
-  if err != nil {
-    if errors.Is(err, context.Canceled) {
-      labels := prometheus.Labels{"uri": uri, "result": "failure"}
-      metrics.EsiRequests.With(labels).Inc()
-      return *new(T), err
-    }
-    return retry(*new(T), err)
-  }
-  defer response.Body.Close()
+		Timeout: 5 * time.Second,
+	}
+	response, err := client.Do(request)
+	semaphore.Release(thread)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			labels := prometheus.Labels{"uri": uri, "result": "failure"}
+			metrics.EsiRequests.With(labels).Inc()
+			return *new(T), err
+		}
+		return retry(*new(T), err)
+	}
+	defer response.Body.Close()
 
-  if response.StatusCode == 503 || response.StatusCode == 420 || response.StatusCode == 500 {
-    labels := prometheus.Labels{"code": response.Status, "message": ""}
-    metrics.EsiErrors.With(labels).Inc()
-    log.Printf("ESI timeout %d", response.StatusCode)
-    apiTimeoutMu.Lock()
-    apiTimeout = time.Now().Unix() + 15
-    apiTimeoutMu.Unlock()
-    return retry(*new(T), err)
-  }
+	if response.StatusCode == 503 || response.StatusCode == 420 || response.StatusCode == 500 {
+		labels := prometheus.Labels{"code": response.Status, "message": ""}
+		metrics.EsiErrors.With(labels).Inc()
+		log.Printf("ESI timeout %d", response.StatusCode)
+		apiTimeoutMu.Lock()
+		apiTimeout = time.Now().Unix() + 15
+		apiTimeoutMu.Unlock()
+		return retry(*new(T), err)
+	}
 
-  decoder := json.NewDecoder(response.Body)
-  decoder.UseNumber()
-  if response.StatusCode == 504 {
-    log.Printf("ESI timeout %d", response.StatusCode)
-    var error jsonTimeoutError
-    err = decoder.Decode(&error)
-    labels := prometheus.Labels{"code": response.Status, "message": error.Error}
-    metrics.EsiErrors.With(labels).Inc()
-    if err == nil {
-      apiTimeoutMu.Lock()
-      apiTimeout = time.Now().Unix() + int64(min(error.Timeout, 15))
-      apiTimeoutMu.Unlock()
-    }
-    return retry(*new(T), err)
-  }
+	decoder := json.NewDecoder(response.Body)
+	decoder.UseNumber()
+	if response.StatusCode == 504 {
+		log.Printf("ESI timeout %d", response.StatusCode)
+		var error jsonTimeoutError
+		err = decoder.Decode(&error)
+		labels := prometheus.Labels{"code": response.Status, "message": error.Error}
+		metrics.EsiErrors.With(labels).Inc()
+		if err == nil {
+			apiTimeoutMu.Lock()
+			apiTimeout = time.Now().Unix() + int64(min(error.Timeout, 15))
+			apiTimeoutMu.Unlock()
+		}
+		return retry(*new(T), err)
+	}
 
-  if response.StatusCode != 200 {
-    var error jsonError
-    err = decoder.Decode(&error)
-    labels := prometheus.Labels{"code": response.Status, "message": error.Error}
-    metrics.EsiErrors.With(labels).Inc()
-    if err != nil {
-      return retry(*new(T), err)
-    }
-    labels = prometheus.Labels{"uri": uri, "result": "failure"}
-    metrics.EsiRequests.With(labels).Inc()
-    return *new(T), &EsiError{Message: error.Error, Code: response.StatusCode}
-  }
+	if response.StatusCode != 200 {
+		var error jsonError
+		err = decoder.Decode(&error)
+		labels := prometheus.Labels{"code": response.Status, "message": error.Error}
+		metrics.EsiErrors.With(labels).Inc()
+		if err != nil {
+			return retry(*new(T), err)
+		}
+		labels = prometheus.Labels{"uri": uri, "result": "failure"}
+		metrics.EsiRequests.With(labels).Inc()
+		return *new(T), &EsiError{Message: error.Error, Code: response.StatusCode}
+	}
 
-  var data T
-  err = decoder.Decode(&data)
-  if err != nil {
-    return retry(*new(T), err)
-  }
+	var data T
+	err = decoder.Decode(&data)
+	if err != nil {
+		return retry(*new(T), err)
+	}
 
-  labels := prometheus.Labels{"uri": uri, "result": "success"}
-  metrics.EsiRequests.With(labels).Inc()
-  return data, nil
+	labels := prometheus.Labels{"uri": uri, "result": "success"}
+	metrics.EsiRequests.With(labels).Inc()
+	return data, nil
 }
 
 func (e *EsiError) Error() string {
