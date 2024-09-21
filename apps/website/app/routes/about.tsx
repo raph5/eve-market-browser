@@ -58,8 +58,7 @@ export default function About() {
             If you found a bug or you have a feature request <a href="https://github.com/raph5/eve-market-browser/issues/new">create new issue</a> on the github repository<br/>
           </p>
           <p>
-            This project is fully open source. The github repo is available <a href="https://github.com/raph5/eve-market-browser">here</a><br/>
-            Don't forget to like the repo !
+            This project is fully open source. The github repo is available <a href="https://github.com/raph5/eve-market-browser">here</a>
           </p>
         </section>
 
