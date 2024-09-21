@@ -79,10 +79,11 @@ func EsiFetch[T any](
   }
 
   // require premission from the semaphore
-  err := semaphore.AcquireWithContext(ctx, priority)
+  thread, err := semaphore.AcquireWithContext(ctx, priority)
   if err != nil {
     return *new(T), err
   }
+  defer semaphore.Release(thread)
 
   // wait for the api to be clear of any timeout
   for {
@@ -96,7 +97,6 @@ func EsiFetch[T any](
     select {
     case <-time.After(time.Duration(timeToWait) * time.Second):
     case <-ctx.Done():
-      semaphore.Release()
       return *new(T), context.Canceled
     }
   }
@@ -107,13 +107,11 @@ func EsiFetch[T any](
 		var err error
 		serializedBody, err = json.Marshal(body)
 		if err != nil {
-      semaphore.Release()
 			return *new(T), err
 		}
 	}
 	u, err := url.Parse(esiUrl + uri)
 	if err != nil {
-    semaphore.Release()
 		return *new(T), err
 	}
 	q := u.Query()
@@ -125,7 +123,6 @@ func EsiFetch[T any](
 
 	request, err := http.NewRequestWithContext(ctx, method, finalUrl, bytes.NewBuffer(serializedBody))
 	if err != nil {
-    semaphore.Release()
 		return *new(T), err
 	}
 	request.Header.Set("content-type", "application/json")
@@ -136,7 +133,7 @@ func EsiFetch[T any](
     Timeout: 5 * time.Second,
   }
   response, err := client.Do(request)
-  semaphore.Release()
+  semaphore.Release(thread)
   if err != nil {
     if errors.Is(err, context.Canceled) {
       labels := prometheus.Labels{"uri": uri, "result": "failure"}

@@ -14,67 +14,110 @@ import (
 )
 
 type sem struct {
-  threads int
-  freeThreads int
+  threads []int
   queue *node
   mu sync.Mutex
 }
 
-func New(threads int) *sem {
-  return &sem{
-    threads: threads,
-    freeThreads: threads,
+func New(threadsCount int) *sem {
+  threads := make([]int, threadsCount)
+  for i := range threads {
+    threads[i] = -1;
   }
+  return &sem{threads: threads}
 }
 
-func (s *sem) Acquire(priority int) {
+func (s *sem) Acquire(priority int) int {
+  newThread := getNewThread()
   s.mu.Lock()
-  if s.freeThreads > 0 {
-    s.freeThreads -= 1
-    s.mu.Unlock()
-    return
-  }
-  ch := make(chan struct{})
-  node := &node{priority: priority, ch: ch}
-  push(&s.queue, node)
-  s.mu.Unlock()
-  <-ch
-}
-
-func (s *sem) AcquireWithContext(ctx context.Context, priority int) error {
-  s.mu.Lock()
-  if s.freeThreads > 0 {
-    s.freeThreads -= 1
-    s.mu.Unlock()
-    return nil
-  }
-  ch := make(chan struct{})
-  node := &node{priority: priority, ch: ch}
-  push(&s.queue, node)
-  s.mu.Unlock()
-  select {
-  case <-ch:
-    return nil
-  case <-ctx.Done():
-    s.mu.Lock()
-    remove(&s.queue, node)
-    s.mu.Unlock()
-    return context.Canceled
-  }
-}
-
-func (s *sem) Release() {
-  s.mu.Lock()
-  if s.queue == nil {
-    if s.freeThreads < s.threads {
-      s.freeThreads += 1
+  for i := range s.threads {
+    if s.threads[i] == -1 {
+      s.threads[i] = newThread
+      s.mu.Unlock()
+      return newThread
     }
-    s.mu.Unlock()
-    return
   }
-  ch := pop(&s.queue)
+
+  for {
+    ch := make(chan struct{})
+    node := &node{priority: priority, ch: ch}
+    push(&s.queue, node)
+    s.mu.Unlock()
+
+    <-ch
+    s.mu.Lock()
+    for i := range s.threads {
+      if s.threads[i] == -1 {
+        s.threads[i] = newThread
+        s.mu.Unlock()
+        return newThread
+      }
+    }
+  }
+}
+
+func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error) {
+  newThread := getNewThread()
+  s.mu.Lock()
+  for i := range s.threads {
+    if s.threads[i] == -1 {
+      s.threads[i] = newThread
+      s.mu.Unlock()
+      return newThread, nil
+    }
+  }
+
+  for {
+    ch := make(chan struct{})
+    node := &node{priority: priority, ch: ch}
+    push(&s.queue, node)
+    s.mu.Unlock()
+
+    select {
+    case <-ch:
+    case <-ctx.Done():
+      s.mu.Lock()
+      remove(&s.queue, node)
+      s.mu.Unlock()
+      return -1, context.Canceled
+    }
+    s.mu.Lock()
+    for i := range s.threads {
+      if s.threads[i] == -1 {
+        s.threads[i] = newThread
+        s.mu.Unlock()
+        return newThread, nil
+      }
+    }
+  }
+}
+
+func (s *sem) Release(thread int) {
+  if thread == -1 {
+    panic("custom semaphore: trying to release thread -1")
+  }
+
+  s.mu.Lock()
+  for i := range s.threads {
+    if s.threads[i] == thread {
+      s.threads[i] = -1
+      if s.queue != nil {
+        ch := pop(&s.queue)
+        close(ch)
+      }
+    }
+  }
   s.mu.Unlock()
-  close(ch)
+}
+
+var threadId int = 0
+func getNewThread() int {
+  if threadId == -2 {
+    threadId += 2
+  } else {
+    threadId += 1
+  }
+  return threadId
 }
 
 type node struct {
@@ -102,7 +145,7 @@ func push(queue **node, node *node) {
 }
 
 func pop(queue **node) chan struct{} {
-n := *queue
+  n := *queue
   *queue = n.next
   return n.ch
 }
