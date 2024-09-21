@@ -226,10 +226,10 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	}
 	defer rows.Close()
 
-	globalHistoryMap := make(map[string]*esiHistoryDay)
+	globalHistoryMap := make(map[string]*historyDay)
 	for rows.Next() {
 		var localHistoryJson []byte
-		var localHistory []esiHistoryDay
+		var localHistory []historyDay
 		err = rows.Scan(&localHistoryJson)
 		if err != nil {
 			return err
@@ -273,14 +273,19 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	globalHistorySorted := make([]esiHistoryDay, len(globalHistoryMap))
 	for i := 0; i < len(globalHistorySorted); i++ {
 		var firstTime time.Time
-		var firstDay *esiHistoryDay
+		var firstDay *historyDay
 		for _, ghd := range globalHistoryMap {
 			if firstTime.IsZero() || timeMap[ghd.Date].Before(firstTime) {
 				firstTime = timeMap[ghd.Date]
 				firstDay = ghd
 			}
 		}
-		globalHistorySorted[i] = *firstDay
+		globalHistorySorted[i].Date = firstDay.Date
+		globalHistorySorted[i].Lowest = firstDay.Lowest
+		globalHistorySorted[i].Highest = firstDay.Highest
+		globalHistorySorted[i].Volume = firstDay.Volume
+		globalHistorySorted[i].OrderCount = firstDay.OrderCount
+		globalHistorySorted[i].Average = firstDay.Average
 		delete(globalHistoryMap, firstDay.Date)
 	}
 
