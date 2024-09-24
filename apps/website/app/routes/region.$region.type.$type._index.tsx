@@ -37,7 +37,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function MarketData() {
-  const { typeId, regionId, orders, time } = useLoaderData<typeof loader>()
+  const { orders, time } = useLoaderData<typeof loader>()
 
   const sellColumns: Column[] = [
     { value: 'quantity', label: 'Quantity', sorting: numberSort() },
@@ -76,35 +76,27 @@ export default function MarketData() {
   }))
 
   return (
-    <div className="tabs item-body__tabs">
-      <div className="tabs__list">
-        <Link to={`/region/${regionId}/type/${typeId}`} className="tabs__trigger" data-state="active">Market Data</Link>
-        <Link to={`/region/${regionId}/type/${typeId}/history`} className="tabs__trigger">Price History</Link>
+    <div className="market-data">
+      <div className="market-data__section">
+        <h3 className="market-data__heading">Sellers</h3>
+        <Table
+          className="market-data__table"
+          columns={sellColumns}
+          data={sellData}
+          columnTemplate="max-content max-content max-content max-content"
+          defaultSorting={{ column: 'price', direction: 'ascending' }}
+        />
       </div>
-      <div className="tabs__content item-body__tab">
-        <div className="market-data">
-          <div className="market-data__section">
-            <h3 className="market-data__heading">Sellers</h3>
-            <Table
-              className="market-data__table"
-              columns={sellColumns}
-              data={sellData}
-              columnTemplate="max-content max-content max-content max-content"
-              defaultSorting={{ column: 'price', direction: 'ascending' }}
-            />
-          </div>
-          <div className="market-data__separator" role="separator"></div>
-          <div className="market-data__section">
-            <h3 className="market-data__heading">Buyers</h3>
-            <Table
-              className="market-data__table"
-              columns={buyColumns}
-              data={buyData}
-              columnTemplate="max-content max-content max-content max-content max-content max-content"
-              defaultSorting={{ column: 'price', direction: 'descending' }}
-            />
-          </div>
-        </div>
+      <div className="market-data__separator" role="separator"></div>
+      <div className="market-data__section">
+        <h3 className="market-data__heading">Buyers</h3>
+        <Table
+          className="market-data__table"
+          columns={buyColumns}
+          data={buyData}
+          columnTemplate="max-content max-content max-content max-content max-content max-content"
+          defaultSorting={{ column: 'price', direction: 'descending' }}
+        />
       </div>
     </div>
   )

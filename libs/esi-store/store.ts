@@ -87,7 +87,10 @@ class EsiStore {
       return await requestStoreHistory(typeId, regionId)
     } catch(error) {
       console.log(error)
-      return await fetchHistory(typeId, regionId)
+      if(regionId != 0) {
+        return await fetchHistory(typeId, regionId)
+      } 
+      throw error
     }
   }
   

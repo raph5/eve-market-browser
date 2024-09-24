@@ -11,6 +11,7 @@ export interface HeaderProps {
 }
 
 export default function Header({ regions }: HeaderProps) {
+  const location = useLocation()
   const navigate = useNavigate()
   const params = useParams()
 
@@ -18,7 +19,11 @@ export default function Header({ regions }: HeaderProps) {
   const [selectValue, setSelectValue] = useState(isValidRegion ? params.region : '')
 
   function setRegion(region: string) {
-    navigate(params.type ? `/region/${region}/type/${params.type}` : `/region/${region}`)
+    if(params.region !== undefined) {
+      navigate(location.pathname.replace(params.region, region))
+    } else {
+      navigate(`/region/${region}`)
+    }
   }
 
   useEffect(() => {

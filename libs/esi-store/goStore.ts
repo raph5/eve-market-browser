@@ -1,6 +1,14 @@
 import http from "http"
 import type { Order, HistoryDay } from "./types"
 
+export interface ErrnoException extends Error {
+  errno?: number;
+  code?: string;
+  path?: string;
+  syscall?: string;
+  stack?: string;
+}
+
 const socketPath = "/tmp/esi-store.sock"
 
 export function requestStoreOrders(typeId: number, regionId: number): Promise<Order[]> {
@@ -24,7 +32,10 @@ export function requestStoreOrders(typeId: number, regionId: number): Promise<Or
       })
     })
 
-    request.on('error', (error) => {
+    request.on('error', (error: ErrnoException) => {
+      if(error?.code == "ENOENT" && error?.syscall == "connect") {
+        rej(new Error("ESI store is not available"))
+      }
       rej(error)
     })
 
@@ -53,7 +64,10 @@ export function requestStoreHistory(typeId: number, regionId: number): Promise<H
       })
     })
 
-    request.on('error', (error) => {
+    request.on('error', (error: ErrnoException) => {
+      if(error?.code == "ENOENT" && error?.syscall == "connect") {
+        rej(new Error("ESI store is not available"))
+      }
       rej(error)
     })
 

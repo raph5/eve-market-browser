@@ -1,9 +1,9 @@
 import { esiStore } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useLoaderData, useOutletContext, useRouteError } from "@remix-run/react";
+import { Link, Outlet, useLoaderData, useLocation, useMatches, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { ErrorMessage } from "@components/errorMessage";
-import { RegionContext } from "../region/route";
+import { RegionContext } from "./region/route";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
@@ -52,9 +52,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function Type() {
   const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
-  const { typeId } = useLoaderData<typeof loader>()
+  const { typeId, regionId } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
   const [inQuickbar, setInQuickbar] = useState(false)
+  const matches = useMatches()
 
   const breadcrumbs = useMemo(() => {
     const bc: string[] = []
@@ -72,6 +73,9 @@ export default function Type() {
   useEffect(() => {
     setInQuickbar(quickbar.has(typeId))
   }, [quickbar.state])
+
+  const dataTabState = (matches.at(-1)?.id == "routes/region.$region.type.$type._index") ? "active" : ""
+  const historyTabState = (matches.at(-1)?.id == "routes/region.$region.type.$type.history") ? "active" : ""
 
   return (
     <div className="item-page">
@@ -95,7 +99,19 @@ export default function Type() {
         </div>
       </div>
       <div className="item-body">
-        <Outlet />
+        <div className="tabs item-body__tabs">
+          <div className="tabs__list">
+            <Link to={`/region/${regionId}/type/${typeId}`} className="tabs__trigger" data-state={dataTabState}>
+              Market Data
+            </Link>
+            <Link to={`/region/${regionId}/type/${typeId}/history`} className="tabs__trigger" data-state={historyTabState}>
+              Price History
+            </Link>
+          </div>
+          <div className="tabs__content item-body__tab">
+            <Outlet />
+          </div>
+        </div>
       </div>
     </div>
   );
