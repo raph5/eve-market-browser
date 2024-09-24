@@ -254,9 +254,9 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 				if lhd.Volume > 0 {
 					ghd.Average = (ghd.Average*float64(ghd.Volume) + lhd.Average*
 						float64(lhd.Volume)) / float64(ghd.Volume+lhd.Volume)
+          ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
+          ghd.Highest = max(ghd.Highest, lhd.Highest)
 				}
-				ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
-				ghd.Highest = max(ghd.Highest, lhd.Highest)
 				ghd.OrderCount += lhd.OrderCount
 				ghd.Volume += lhd.Volume
 			} else {
