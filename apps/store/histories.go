@@ -146,8 +146,8 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
 	historyDataCh := make(chan historyData, len(activeTypeChunk))
 
 	// the workers will run until the active type channel is cloed
-	wg.Add(esi.MaxConcurrentRequests)
-	for i := 0; i < esi.MaxConcurrentRequests; i++ {
+	wg.Add(2*esi.MaxConcurrentRequests)
+	for i := 0; i < 2*esi.MaxConcurrentRequests; i++ {
 		go func() {
 			defer wg.Done()
 			for at := range activeTypeCh {
@@ -181,7 +181,7 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
 
 	// close the history channel when workers are finished or canceled
 	wg.Wait()
-	err := context.Cause(ctx)
+	err := context.Cause(localCtx)
 	if err != nil {
 		return err
 	}
@@ -310,9 +310,8 @@ func fetchHistory(ctx context.Context, typeId int, regionId int) ([]byte, error)
 	query := map[string]string{
 		"type_id": strconv.Itoa(typeId),
 	}
-	esiHistory, err := esi.EsiFetch[[]esiHistoryDay](ctx, uri, "GET", query, nil, 3, 5)
+	esiHistory, err := esi.EsiFetch[[]esiHistoryDay](ctx, uri, "GET", query, nil, 3, 12)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
