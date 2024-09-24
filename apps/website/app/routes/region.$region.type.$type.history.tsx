@@ -36,11 +36,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function PriceHistory() {
-  const { regionId, history } = useLoaderData<typeof loader>()
+  const { history } = useLoaderData<typeof loader>()
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if(regionId != 0 && history.length >= 2) {
+    if(history.length >= 2) {
       if(containerRef.current == null) {
         console.error("cant initialize price history graph")
         return
