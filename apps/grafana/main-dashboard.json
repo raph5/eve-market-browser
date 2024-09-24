@@ -154,7 +154,7 @@
         "type": "prometheus",
         "uid": "fdv48xapil7nkd"
       },
-      "description": "The number of requests per minute",
+      "description": "The number of requests per seconds",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -241,7 +241,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(result) (rate(store_esi_request_total[1m])) * 60",
+          "expr": "sum by(result) (rate(store_esi_request_total[1m]))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
@@ -272,7 +272,7 @@
         "type": "prometheus",
         "uid": "fdv48xapil7nkd"
       },
-      "description": "Display the rate of esi errors",
+      "description": "Display the rate of esi errors per seconds",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -356,7 +356,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "rate(store_esi_error_total[$__rate_interval]) * 60",
+          "expr": "rate(store_esi_error_total[$__rate_interval])",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
@@ -698,13 +698,13 @@
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Main Dashboard",
   "uid": "aduse4nezfe2ob",
-  "version": 8,
+  "version": 10,
   "weekStart": ""
 }
