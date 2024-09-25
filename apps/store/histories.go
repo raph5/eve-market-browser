@@ -146,19 +146,19 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
 	historyDataCh := make(chan historyData, len(activeTypeChunk))
 
 	// the workers will run until the active type channel is cloed
-	wg.Add(2*esi.MaxConcurrentRequests)
+	wg.Add(2 * esi.MaxConcurrentRequests)
 	for i := 0; i < 2*esi.MaxConcurrentRequests; i++ {
 		go func() {
 			defer wg.Done()
 			for at := range activeTypeCh {
 				history, err := fetchHistory(ctx, at.typeId, at.regionId)
 				if err != nil {
-          esiError, ok := err.(*esi.EsiError)
-          // NOTE: I can maybe handle 404 errors better
-          if !ok || esiError.Code == 404 {
-            localCancel(err)
-            return
-          }
+					esiError, ok := err.(*esi.EsiError)
+					// NOTE: I can maybe handle 404 errors better
+					if !ok || esiError.Code == 404 {
+						localCancel(err)
+						return
+					}
 				}
 				historyDataCh <- historyData{
 					typeId:   at.typeId,
@@ -257,8 +257,8 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 				if lhd.Volume > 0 {
 					ghd.Average = (ghd.Average*float64(ghd.Volume) + lhd.Average*
 						float64(lhd.Volume)) / float64(ghd.Volume+lhd.Volume)
-          ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
-          ghd.Highest = max(ghd.Highest, lhd.Highest)
+					ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
+					ghd.Highest = max(ghd.Highest, lhd.Highest)
 				}
 				ghd.OrderCount += lhd.OrderCount
 				ghd.Volume += lhd.Volume
