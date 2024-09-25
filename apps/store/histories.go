@@ -155,7 +155,7 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
 				if err != nil {
 					esiError, ok := err.(*esi.EsiError)
 					// NOTE: I can maybe handle 404 errors better
-					if !ok || esiError.Code == 404 {
+					if !ok || esiError.Code != 404 {
 						localCancel(err)
 						return
 					}
