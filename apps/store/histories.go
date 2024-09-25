@@ -153,9 +153,12 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
 			for at := range activeTypeCh {
 				history, err := fetchHistory(ctx, at.typeId, at.regionId)
 				if err != nil {
-					log.Print(err)
-					localCancel(err)
-					return
+          esiError, ok := err.(*esi.EsiError)
+          // NOTE: I can maybe handle 404 errors better
+          if !ok || esiError.Code == 404 {
+            localCancel(err)
+            return
+          }
 				}
 				historyDataCh <- historyData{
 					typeId:   at.typeId,
