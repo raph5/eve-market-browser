@@ -104,10 +104,18 @@ func downloadHistories(ctx context.Context) error {
 			return nil
 		}
 
-		err = downloadHistoriesChunk(ctx, activeTypesChunk)
-		if err != nil {
-			log.Print(err)
-			return err
+		tries := 0
+		for {
+			tries += 1
+			err = downloadHistoriesChunk(ctx, activeTypesChunk)
+			if err == nil {
+				break
+			}
+			if tries >= 3 {
+				return err
+			}
+			log.Printf("History chunk error, retry downloading the chunk after 5 mintues: %v", err)
+			time.Sleep(5 * time.Minute)
 		}
 
 		if len(activeTypesChunk) != chunkSize {
