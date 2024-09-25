@@ -111,7 +111,8 @@ func downloadHistories(ctx context.Context) error {
 			if err == nil {
 				break
 			}
-			if tries >= 3 {
+			_, isEsi := err.(*esi.EsiError)
+			if tries >= 3 || isEsi {
 				return err
 			}
 			log.Printf("History chunk error, retry downloading the chunk after 5 mintues: %v", err)
@@ -162,8 +163,8 @@ func downloadHistoriesChunk(ctx context.Context, activeTypeChunk []activeType) e
 				history, err := fetchHistory(ctx, at.typeId, at.regionId)
 				if err != nil {
 					esiError, ok := err.(*esi.EsiError)
-					// NOTE: I can maybe handle 404 errors better
-					if !ok || esiError.Code != 404 {
+					// NOTE: I can maybe handle 404, 400 errors better
+					if !ok || esiError.Code != 404 && esiError.Code != 400 {
 						localCancel(err)
 						return
 					}
