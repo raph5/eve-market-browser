@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"sync"
@@ -232,7 +233,7 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	writeDB := ctx.Value("writeDB").(*sql.DB)
 	readDB := ctx.Value("readDB").(*sql.DB)
 
-	rows, err := readDB.Query("SELECT HistoryJson FROM History WHERE TypeId = ?", typeId)
+	rows, err := readDB.Query("SELECT HistoryJson FROM History WHERE TypeId = ? AND RegionId != 0", typeId)
 	if err != nil {
 		return err
 	}
@@ -266,8 +267,13 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 				if lhd.Volume > 0 {
 					ghd.Average = (ghd.Average*float64(ghd.Volume) + lhd.Average*
 						float64(lhd.Volume)) / float64(ghd.Volume+lhd.Volume)
-					ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
-					ghd.Highest = max(ghd.Highest, lhd.Highest)
+					if ghd.Volume == 0 {
+						ghd.Lowest = lhd.Lowest
+						ghd.Highest = ghd.Highest
+					} else {
+						ghd.Lowest = min(ghd.Lowest, lhd.Lowest)
+						ghd.Highest = max(ghd.Highest, lhd.Highest)
+					}
 				}
 				ghd.OrderCount += lhd.OrderCount
 				ghd.Volume += lhd.Volume
