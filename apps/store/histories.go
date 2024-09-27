@@ -140,7 +140,7 @@ func computeGobalHistory(ctx context.Context) error {
 		}
 		err = computeTypeGlobalHistory(ctx, typeId, timeMap)
 		if err != nil {
-			return err
+			log.Printf("Can't compute global history for type %d: %v", typeId, err)
 		}
 	}
 
@@ -233,7 +233,7 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 	writeDB := ctx.Value("writeDB").(*sql.DB)
 	readDB := ctx.Value("readDB").(*sql.DB)
 
-	rows, err := readDB.Query("SELECT HistoryJson FROM History WHERE TypeId = ? AND RegionId != 0", typeId)
+	rows, err := readDB.Query("SELECT HistoryJson, TypeId, RegionId FROM History WHERE TypeId = ? AND RegionId != 0", typeId)
 	if err != nil {
 		return err
 	}
@@ -241,15 +241,17 @@ func computeTypeGlobalHistory(ctx context.Context, typeId int, timeMap map[strin
 
 	globalHistoryMap := make(map[string]*historyDay)
 	for rows.Next() {
+		var typeId, regionId int
 		var localHistoryJson []byte
 		var localHistory []historyDay
-		err = rows.Scan(&localHistoryJson)
+		err = rows.Scan(&localHistoryJson, &typeId, &regionId)
 		if err != nil {
 			return err
 		}
 		err = json.Unmarshal(localHistoryJson, &localHistory)
 		if err != nil {
-			return err
+			log.Printf("Can't unmarshal history for type %d in region %d: %v", typeId, regionId, err)
+			continue
 		}
 
 		for _, lhd := range localHistory {
