@@ -15,6 +15,11 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/prom"
 )
 
+const historiesEnabled = true
+const ordersEnabled = true
+const unixSocketEnabled = true
+const prometheusEnabled = true
+
 func main() {
 	// Init logger and diskStorage
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -45,28 +50,38 @@ func main() {
 
 	// Start workers and servers
 	var mainWg sync.WaitGroup
-	mainWg.Add(4)
-	go func() {
-		runUnixSocketServer(ctx, mux)
-		mainWg.Done()
-		cancel()
-	}()
-	go func() {
-		prom.RunPrometheusServer(ctx, reg)
-		mainWg.Done()
-		cancel()
-	}()
-	go func() {
-		orderWorker(ctx)
-		mainWg.Done()
-		cancel()
-	}()
-	go func() {
-		historyWorker(ctx)
-		mainWg.Done()
-		cancel()
-	}()
-
+	if unixSocketEnabled {
+		mainWg.Add(1)
+		go func() {
+			runUnixSocketServer(ctx, mux)
+			mainWg.Done()
+			cancel()
+		}()
+	}
+	if prometheusEnabled {
+		mainWg.Add(1)
+		go func() {
+			prom.RunPrometheusServer(ctx, reg)
+			mainWg.Done()
+			cancel()
+		}()
+	}
+	if ordersEnabled {
+		mainWg.Add(1)
+		go func() {
+			orderWorker(ctx)
+			mainWg.Done()
+			cancel()
+		}()
+	}
+	if historiesEnabled {
+		mainWg.Add(1)
+		go func() {
+			historyWorker(ctx)
+			mainWg.Done()
+			cancel()
+		}()
+	}
 	log.Print("Store is up")
 
 	// Handle store shutdown
