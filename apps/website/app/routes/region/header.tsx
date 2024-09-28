@@ -5,26 +5,19 @@ import { type Region } from "esi-store/types";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react";
 import Label from "@components/label";
+import { usePath } from "@hooks/usePath";
 
 export interface HeaderProps {
   regions: Region[]
 }
 
 export default function Header({ regions }: HeaderProps) {
-  const location = useLocation()
   const navigate = useNavigate()
   const params = useParams()
+  const path = usePath()
 
   const isValidRegion = params.region == '0' || regions.findIndex(r => r.id.toString() == params.region) != -1
   const [selectValue, setSelectValue] = useState(isValidRegion ? params.region : '')
-
-  function setRegion(region: string) {
-    if(params.region !== undefined) {
-      navigate(location.pathname.replace(params.region, region))
-    } else {
-      navigate(`/region/${region}`)
-    }
-  }
 
   useEffect(() => {
     setSelectValue(isValidRegion ? params.region : '')
@@ -53,7 +46,7 @@ export default function Header({ regions }: HeaderProps) {
           ...regions.map(({ id, name }) => ({ key: id.toString(), name }))
         ]}
         value={selectValue}
-        onValueChange={setRegion} />
+        onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
     </header>
   );
 }

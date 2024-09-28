@@ -12,6 +12,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as ContextMenu from "@radix-ui/react-context-menu"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import "@scss/quickbar.scss";
+import { usePath } from "@hooks/usePath";
 
 
 export interface QuickbarProps {
@@ -36,22 +37,18 @@ interface QuickbarDataTransfer {
 
 interface QuickbarContextType {
   typeRecord: Record<string, Type>
-  region: string
   treeValue: Set<string>
   onTreeValueChange: (v: Set<string>) => void
 }
 
 const QuickbarComponentContext = createContext<QuickbarContextType>({
   typeRecord: {},
-  region: '0',
   treeValue: new Set(),
   onTreeValueChange: () => {}
 })
 
 
 export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarProps) {
-  const params = useParams()
-  const region = params.region as string
   const quickbar = useContext(QuickbarContext)
   const rootRef = useRef<HTMLUListElement>(null)
   const isQuickbarEmpty = Object.keys(quickbar.state).length == 1
@@ -86,7 +83,7 @@ export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarP
   }, [])
 
   return (
-    <QuickbarComponentContext.Provider value={{ typeRecord, region, treeValue, onTreeValueChange }}>
+    <QuickbarComponentContext.Provider value={{ typeRecord, treeValue, onTreeValueChange }}>
       <div className="quickbar">
         <div className="quickbar__header">
           <div className="quickbar__actions">
@@ -281,9 +278,10 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
 }
 
 function QuickbarItem({ typeId }: QuickbarItemProps) {
-  const { typeRecord, region } = useContext(QuickbarComponentContext)
+  const { typeRecord } = useContext(QuickbarComponentContext)
   const quickbar = useContext(QuickbarContext)
   const navigate = useNavigate()
+  const path = usePath()
   const type = typeRecord[typeId]
   const itemRef = useRef<HTMLLIElement>(null)
 
@@ -312,7 +310,7 @@ function QuickbarItem({ typeId }: QuickbarItemProps) {
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if(event.key == 'Enter') {
-      navigate(`/region/${region}/type/${type.id}`)
+      navigate(path.setTypeId(type.id))
     }
   }
 
@@ -328,7 +326,7 @@ function QuickbarItem({ typeId }: QuickbarItemProps) {
           onKeyDown={handleKeyDown}
           ref={itemRef}
         >
-          <Link to={`/region/${region}/type/${type.id}`} tabIndex={-1} className="quickbar-item__link">
+          <Link to={path.setTypeId(type.id)} tabIndex={-1} className="quickbar-item__link">
             {type.name}
           </Link>
         </TreeView.Item>

@@ -15,6 +15,7 @@ import { stringSort } from "utils/main"
 import * as ContextMenu from "@radix-ui/react-context-menu"
 import "@scss/market-tree.scss"
 import { getMeta, RARITY_TO_META } from "@app/meta"
+import { usePath } from "@hooks/usePath"
 
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
@@ -200,6 +201,7 @@ function MarketMetaGroup({ meta, groupId, children }: MarketMetaGroupProps) {
 
 function MarketItem({ typeId }: MarketItemProps) {
   const navigate = useNavigate()
+  const path = usePath()
   const { typeRecord, region } = useContext(MarketTreeContext)
   const type = typeRecord[typeId]
   const quickbar = useContext(QuickbarContext)
@@ -207,7 +209,7 @@ function MarketItem({ typeId }: MarketItemProps) {
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
-      navigate(`/region/${region}/type/${type.id}`)
+      navigate(path.setTypeId(type.id))
     }
   }
 
@@ -250,6 +252,7 @@ function MarketItem({ typeId }: MarketItemProps) {
 
 function MarketType({ typeId }: MarketTypeProps) {
   const navigate = useNavigate()
+  const path = usePath()
   const { typeRecord, region } = useContext(MarketTreeContext)
   const type = typeRecord[typeId]
   const quickbar = useContext(QuickbarContext)
@@ -257,7 +260,7 @@ function MarketType({ typeId }: MarketTypeProps) {
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
-      navigate(`/region/${region}/type/${type.id}`)
+      navigate(path.setTypeId(type.id))
     }
   }
 
