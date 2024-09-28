@@ -140,6 +140,10 @@
     height: 100%;
     overflow: hidden;
     position: relative;
+
+    canvas {
+      user-select: none;
+    }
   }
   &__tooltip {
     background-color: $background-1;
