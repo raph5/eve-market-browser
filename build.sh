@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 emb_dir=/home/raph/code/eve-market-browser
 
