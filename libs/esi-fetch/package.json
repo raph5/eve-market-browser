@@ -7,7 +7,7 @@
   "author": "Raphaël Guyader (in-game name Raph Toulouse)",
   "license": "ISC",
   "dependencies": {
-    "utils": "workspace:^"
+    "utils": "1.0.0"
   },
   "devDependencies": {
     "@remix-run/node": "^2.8.1",
