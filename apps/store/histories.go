@@ -68,7 +68,7 @@ func createHisoryHandler(ctx context.Context) http.HandlerFunc {
 		err = readDB.QueryRow(historyQuery, typeId, regionId).Scan(&historyJson)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				log.Print("History cache miss, querying esi")
+				log.Printf("History cache miss on type %d and region %d, querying esi", typeId, regionId)
 				historyJson, err = fetchHistory(ctx, typeId, regionId)
 				if err != nil {
 					esiError, ok := err.(*esi.EsiError)
