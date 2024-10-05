@@ -18,7 +18,7 @@ app.disable("x-powered-by");
 // everything else (like favicon.ico) is cached for an hour. You may want to be
 // more aggressive with this caching.
 app.use(express.static("build/client", { maxAge: "1h" }));
-app.use(morgan(":date[web] :method :url :status | :remote-addr :user-agent | :response-time ms"));
+app.use(morgan(":date[web] :method :url :status :response-time ms"));
 
 // handle SSR requests
 app.all("*", remixHandler);
