@@ -67,8 +67,13 @@ func createHisoryHandler(ctx context.Context) http.HandlerFunc {
     `
 		err = readDB.QueryRow(historyQuery, typeId, regionId).Scan(&historyJson)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) && regionId != 0 {
-				log.Printf("History cache miss on type %d and region %d, querying esi", typeId, regionId)
+			if errors.Is(err, sql.ErrNoRows) {
+				if regionId == 0 {
+					log.Printf("History for type %d in region 0 is not available", typeId)
+					http.Error(w, "History not available", 404)
+					return
+				}
+				log.Printf("History cache miss on type %d in region %d, querying esi", typeId, regionId)
 				historyJson, err = fetchHistory(ctx, typeId, regionId)
 				if err != nil {
 					esiError, ok := err.(*esi.EsiError)
@@ -116,11 +121,11 @@ func downloadHistories(ctx context.Context) error {
 				return err
 			}
 			log.Printf("History chunk error, retry downloading the chunk after 5 mintues: %v", err)
-      select {
-      case <-time.After(5 * time.Minute):
-      case <-ctx.Done():
-        return context.Canceled
-      }
+			select {
+			case <-time.After(5 * time.Minute):
+			case <-ctx.Done():
+				return context.Canceled
+			}
 		}
 
 		if len(activeTypesChunk) != chunkSize {
