@@ -6,27 +6,27 @@ Available at http://evemarketbrowser.com/
 
 ## Install
 
-**Dependencies:**
-Node
+**Dependencies:**  
+Node  
 Go
 
-**Configuration:**
+**Configuration:**  
 Set emb_dir and node_bin variables in start.sh
 
-**Prometheus setup:**
+**Prometheus setup:**  
 Run install.sh in apps/prometheus
 
-**Systemd setup:**
-Create a /etc/emb folder
-Symlink start.sh into /etc/emb/start.sh
-Symlink emb.service into /etc/systemd/system
+**Systemd setup:**  
+Create a /etc/emb folder  
+Symlink start.sh into /etc/emb/start.sh  
+Symlink emb.service into /etc/systemd/system  
 Enable emb service `systemctl enable emb`
 
-**Build:**
-Build go-store binary `go build`
+**Build:**  
+Build go-store binary `go build`  
 Build remix app `npm run build`
 
-**Start:**
+**Start:**  
 `systemctl start emb`
 
 
