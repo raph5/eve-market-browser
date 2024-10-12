@@ -18,7 +18,7 @@ Run install.sh in apps/prometheus
 
 **Systemd setup:**  
 Create a /etc/emb folder  
-Symlink start.sh into /etc/emb/start.sh  
+Copy start.sh into /etc/emb/start.sh  
 Symlink emb.service into /etc/systemd/system  
 Enable emb service `systemctl enable emb`
 
