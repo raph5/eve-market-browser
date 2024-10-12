@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=raph
-ExecStart=/home/raph/code/eve-market-browser/start.sh
+ExecStart=/etc/emb/start.sh
 Restart=always
 
 [Install]
