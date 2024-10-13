@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -15,14 +16,18 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/prom"
 )
 
-const historiesEnabled = true
-const ordersEnabled = true
-const unixSocketEnabled = true
-const prometheusEnabled = true
-
 func main() {
 	// Init logger and diskStorage
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	// Flags
+	noUpdate := flag.Bool("noupdate", false, "Disable histories and orders update")
+	noPrometheus := flag.Bool("noprom", false, "Disable prometheus")
+	flag.Parse()
+	var historiesEnabled = !*noUpdate
+	var ordersEnabled = !*noUpdate
+	var unixSocketEnabled = true
+	var prometheusEnabled = !*noPrometheus
 
 	// Init database
 	writeDB, readDB, err := initDatabase()
