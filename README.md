@@ -22,6 +22,9 @@ Copy start.sh into /etc/emb/start.sh
 Symlink emb.service into /etc/systemd/system  
 Enable emb service `systemctl enable emb`
 
+**Cron jobs:**
+Setup a cron jobs to restart emb.service and clear the esi-cache
+
 **Build:**  
 Build go-store binary `go build`  
 Build remix app `npm run build`
