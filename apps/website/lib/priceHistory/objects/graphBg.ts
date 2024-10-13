@@ -26,6 +26,15 @@ export class GraphBg implements Object2d {
   private _grabStartPrice = 0
   private _grabEndPrice = 0
   private _grabbed = false
+  private _pinchX1 = 0
+  private _pinchY1 = 0
+  private _pinchX2 = 0
+  private _pinchY2 = 0
+  private _pinchStartDay = 0
+  private _pinchEndDay = 0
+  private _pinchStartPrice = 0
+  private _pinchEndPrice = 0
+  private _pinched = 0  // the number of touches
 
   constructor(
     private graph: Graph
@@ -121,6 +130,12 @@ export class GraphBg implements Object2d {
         (this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP) * deltaPrice
       this.context.startPrice = clamp(this._grabStartPrice + grabDeltaPrice, -this._maxPrice, this._maxPrice*2 - deltaPrice)
       this.context.endPrice = clamp(this._grabEndPrice + grabDeltaPrice, -this._maxPrice + deltaPrice, this._maxPrice*2)
+    }
+  }
+
+  pinchMove(event: TouchEvent) {
+    if(this._pinched == 1) {
+      // TODO:
     }
   }
 

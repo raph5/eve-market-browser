@@ -119,7 +119,7 @@ export class Graph {
   }
 
   private render() {
-    this.canvas.dispatchEvent(new Event('beforerender'))
+    this.canvas.dispatchEvent(new Event('beforeRender'))
 
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
@@ -156,7 +156,7 @@ export class Graph {
       }
     }
 
-    this.canvas.dispatchEvent(new Event('afterrender'))
+    this.canvas.dispatchEvent(new Event('afterRender'))
 
     requestAnimationFrame(() => {
       if(this._isRuning) {
@@ -253,6 +253,20 @@ export class Graph {
       ) {
         // @ts-ignore
         const rep = this.object2dStack[i].onWheel(event)
+        if(rep == false) return
+      }
+    }
+  }
+
+  private handleTouchStart(event: WheelEvent) {
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
+      if(
+        this.object2dStack[i].hitBox != undefined &&
+        this.object2dStack[i].onTouchStart != undefined &&
+        isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
+      ) {
+        // @ts-ignore
+        const rep = this.object2dStack[i].onTouchStart(event)
         if(rep == false) return
       }
     }

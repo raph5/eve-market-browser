@@ -14,6 +14,7 @@ export interface Object2d {
   onMouseUp?:(event: MouseEvent) => void|boolean
   onMouseDown?:(event: MouseEvent) => void|boolean
   onWheel?:(event: WheelEvent) => void|boolean
+  onTouchStart?:(event: TouchEvent) => void|boolean
 }
 
 export interface ObjectHtml {
