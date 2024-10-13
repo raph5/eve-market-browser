@@ -36,8 +36,6 @@ Build remix app `npm run build`
 ## To do
 
 - Remove type from activeTypes if history == []
-- Handle esi-cache renewal
-- Keep view tree state on reload for quality of life
 - Add responsive support
 - Improve search experience
 - Test quickbar exports
