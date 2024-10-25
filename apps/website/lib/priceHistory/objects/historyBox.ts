@@ -3,6 +3,7 @@ import { Graph } from "..";
 import { GraphContext } from "../context";
 import { Object2d, hitBox } from "../types";
 import { HISTORY_HEIGHT, HISTORY_BACKGROUND, HISTORY_COLOR, HISTORY_CORNER_WIDTH, HISTORY_PADDING_TOP } from "../var";
+import { createCustomTouchList } from "../lib";
 
 export class HistoryBox implements Object2d {
 
@@ -14,7 +15,10 @@ export class HistoryBox implements Object2d {
 
   private _grabbed = false
   private _grabX = 0
+  private _pinched = false
+  private _pinchX = 0
   private _x = 0
+
 
   constructor(
     private graph: Graph
@@ -25,6 +29,9 @@ export class HistoryBox implements Object2d {
     this.canvas.addEventListener('mouseup', this.dragEnd.bind(this))
     this.canvas.addEventListener('mouseout', this.dragEnd.bind(this))
     this.canvas.addEventListener('mousemove', this.dragMove.bind(this))
+    this.canvas.addEventListener('touchend', this.pinchEnd.bind(this))
+    this.canvas.addEventListener('touchcancel', this.pinchEnd.bind(this))
+    this.canvas.addEventListener('touchmove', this.pinchMove.bind(this))
   }
   
   draw(canvasCtx: CanvasRenderingContext2D) {
@@ -89,8 +96,44 @@ export class HistoryBox implements Object2d {
     this._grabbed = false
   }
 
+  pinchStart(event: TouchEvent) {
+    const ctl = createCustomTouchList(event, event.targetTouches)
+    if(ctl.length == 1) {
+      this._pinched = true
+      this._pinchX = ctl[0].offsetX - this._x
+    }
+    else {
+      this._pinched = false
+    }
+  }
+
+  pinchMove(event: TouchEvent) {
+    const ctl = createCustomTouchList(event, event.targetTouches)
+    if(this._pinched) {
+      const deltaDays = this.context.endDay - this.context.startDay
+      this.context.startDay = clamp(
+        (ctl[0].offsetX - this._pinchX) / this.canvas.offsetWidth * (this.context.history.length-1),
+        0,
+        this.context.history.length-1 - deltaDays
+      )
+      this.context.endDay = clamp(
+        deltaDays + (ctl[0].offsetX - this._pinchX) / this.canvas.offsetWidth * (this.context.history.length-1),
+        deltaDays,
+        this.context.history.length-1
+      )
+    }
+  }
+
+  pinchEnd() {
+    this._pinched = false
+  }
+
   onMouseDown(event: MouseEvent) {
     this.dragStart(event)
+  }
+
+  onTouchStart(event: TouchEvent) {
+    this.pinchStart(event)
   }
 
 }

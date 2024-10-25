@@ -7,6 +7,7 @@ export const GRAPH_PADDING_X = 50 as const
 export const GRAPH_PADDING_TOP = 20 as const
 // desired spacing between to price label on price axis
 export const GRAPH_LABEL_SPACING = 70 as const
+export const GRAPH_MIN_WIDTH = 24 as const  // in days
 
 export const AVERAGE_COLOR = "#950" as const
 export const AVERAGE_HOVER_COLOR = "#fda" as const
@@ -25,3 +26,5 @@ export const HISTORY_HEIGHT = 60 as const
 export const HISTORY_PADDING_TOP = 4 as const
 export const HISTORY_CORNER_WIDTH = 6 as const
 export const HISTORY_HANDLE_WIDTH = 10 as const
+export const HISTORY_HANDLE_HITBOX_WIDTH = 16 as const
+export const HISTORY_HANDLE_COLOR = "#aaa3" as const

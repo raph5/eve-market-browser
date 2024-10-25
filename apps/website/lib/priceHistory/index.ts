@@ -2,7 +2,7 @@ import { HistoryDay } from "esi-store/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Object2d, ObjectHtml, hitBox } from "./types"
-import { getMinMaxPrice, isInHitBox } from "./lib"
+import { createCustomTouchList, getMinMaxPrice, isInHitBox } from "./lib"
 import { HistoryHandle } from "./objects/historyHandle"
 import { HistoryBg } from "./objects/historyBg"
 import { Average } from "./objects/average"
@@ -57,6 +57,7 @@ export class Graph {
     this.canvas.onmouseup = this.handleMouseUp.bind(this)
     this.canvas.onmousedown = this.handleMouseDown.bind(this)
     this.canvas.onwheel = this.handleWheel.bind(this)
+    this.canvas.ontouchstart = this.handleTouchStart.bind(this)
 
     // html objects init
     const tooltip = new Tooltip(this.canvas)
@@ -119,7 +120,7 @@ export class Graph {
   }
 
   private render() {
-    this.canvas.dispatchEvent(new Event('beforeRender'))
+    this.canvas.dispatchEvent(new Event('beforerender'))
 
     this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
@@ -156,7 +157,7 @@ export class Graph {
       }
     }
 
-    this.canvas.dispatchEvent(new Event('afterRender'))
+    this.canvas.dispatchEvent(new Event('afterrender'))
 
     requestAnimationFrame(() => {
       if(this._isRuning) {
@@ -258,12 +259,16 @@ export class Graph {
     }
   }
 
-  private handleTouchStart(event: WheelEvent) {
+  private handleTouchStart(event: TouchEvent) {
+    const ctl = createCustomTouchList(event, event.targetTouches)
     for(let i=this.object2dStack.length-1; i>=0; i--) {
       if(
         this.object2dStack[i].hitBox != undefined &&
         this.object2dStack[i].onTouchStart != undefined &&
-        isInHitBox(event.offsetX, event.offsetY, this.object2dStack[i].hitBox as hitBox)
+        // NOTE: this condition could be improved by reimplementing a
+        // targetTouches like api for graph elements. However for now I will
+        // check if the first touch is in hitbox.
+        isInHitBox(ctl[0].offsetX, ctl[0].offsetY, this.object2dStack[i].hitBox as hitBox)
       ) {
         // @ts-ignore
         const rep = this.object2dStack[i].onTouchStart(event)

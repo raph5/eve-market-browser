@@ -3,7 +3,7 @@ import { Graph } from "..";
 import { GraphContext } from "../context";
 import { Object2d, hitBox } from "../types";
 import { GRAPH_COLOR, GRAPH_LABEL_SPACING, GRAPH_LINE, GRAPH_LINE_ZERO, GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "../var";
-import { formatMonth, formatPrice } from "../lib";
+import { createCustomTouchList, formatMonth, formatPrice } from "../lib";
 
 const SCROLLX_SENSIVITY = 1 as const
 const SCROLLY_SENSIVITY = 0.001 as const
@@ -57,6 +57,9 @@ export class GraphBg implements Object2d {
     this.graph.canvas.addEventListener('mouseup', this.dragEnd.bind(this))
     this.graph.canvas.addEventListener('mouseout', this.dragEnd.bind(this))
     this.graph.canvas.addEventListener('mousemove', this.dragMove.bind(this))
+    this.graph.canvas.addEventListener('touchend', this.pinchEnd.bind(this))
+    this.graph.canvas.addEventListener('touchcancel', this.pinchEnd.bind(this))
+    this.graph.canvas.addEventListener('touchmove', this.pinchMove.bind(this))
   }
 
   draw(canvasCtx: CanvasRenderingContext2D) {
@@ -122,45 +125,166 @@ export class GraphBg implements Object2d {
       const deltaDays = this.context.endDay - this.context.startDay
       const grabDeltaDays = - (event.offsetX - this._grabX) /
         (this.canvas.offsetWidth - 2*GRAPH_PADDING_X) * deltaDays
-      this.context.startDay = clamp(this._grabStartDay + grabDeltaDays, 0, this.context.history.length-1 - deltaDays)
-      this.context.endDay = clamp(this._grabEndDay + grabDeltaDays, deltaDays, this.context.history.length-1)
+      this.context.startDay = clamp(
+        this._grabStartDay + grabDeltaDays,
+        0,
+        this.context.history.length-1 - deltaDays
+      )
+      this.context.endDay = clamp(
+        this._grabEndDay + grabDeltaDays,
+        deltaDays,
+        this.context.history.length-1
+      )
 
       const deltaPrice = this.context.endPrice - this.context.startPrice
       const grabDeltaPrice = (event.offsetY - this._grabY) /
         (this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP) * deltaPrice
-      this.context.startPrice = clamp(this._grabStartPrice + grabDeltaPrice, -this._maxPrice, this._maxPrice*2 - deltaPrice)
-      this.context.endPrice = clamp(this._grabEndPrice + grabDeltaPrice, -this._maxPrice + deltaPrice, this._maxPrice*2)
+      this.context.startPrice = clamp(
+        this._grabStartPrice + grabDeltaPrice,
+        -this._maxPrice,
+        this._maxPrice*2 - deltaPrice
+      )
+      this.context.endPrice = clamp(
+        this._grabEndPrice + grabDeltaPrice,
+        -this._maxPrice + deltaPrice,
+        this._maxPrice*2
+      )
+    }
+  }
+
+  pinchStart(event: TouchEvent) {
+    const ctl = createCustomTouchList(event, event.targetTouches)
+    if(ctl.length == 1) {
+      this._pinchX1 = ctl[0].offsetX
+      this._pinchY1 = ctl[0].offsetY
+      this._pinchStartDay = this.context.startDay
+      this._pinchEndDay = this.context.endDay
+      this._pinchStartPrice = this.context.startPrice
+      this._pinchEndPrice = this.context.endPrice
+      this._pinched = 1
+    }
+    else if(ctl.length == 2) {
+      this._pinchX1 = ctl[0].offsetX
+      this._pinchY1 = ctl[0].offsetY
+      this._pinchX2 = ctl[1].offsetX
+      this._pinchY2 = ctl[1].offsetY
+      this._pinchStartDay = this.context.startDay
+      this._pinchEndDay = this.context.endDay
+      this._pinchStartPrice = this.context.startPrice
+      this._pinchEndPrice = this.context.endPrice
+      this._pinched = 2
+    }
+    else {
+      this._pinched = 0
+    }
+  }
+
+  pinchEnd(event: TouchEvent) {
+    if(event.targetTouches.length == 0) {
+      this._pinched = 0
     }
   }
 
   pinchMove(event: TouchEvent) {
-    if(this._pinched == 1) {
-      // TODO:
+    event.preventDefault()
+    const ctl = createCustomTouchList(event, event.targetTouches)
+    if(this._pinched == 1 && ctl.length == 1) {
+      const deltaDays = this.context.endDay - this.context.startDay
+      const pinchDeltaDays = - (ctl[0].offsetX - this._pinchX1) /
+        (this.canvas.offsetWidth - 2*GRAPH_PADDING_X) * deltaDays
+      this.context.startDay = clamp(
+        this._pinchStartDay + pinchDeltaDays,
+        0,
+        this.context.history.length-1 - deltaDays
+      )
+      this.context.endDay = clamp(
+        this._pinchEndDay + pinchDeltaDays,
+        deltaDays,
+        this.context.history.length-1
+      )
+
+      const deltaPrice = this.context.endPrice - this.context.startPrice
+      const pinchDeltaPrice = (ctl[0].offsetY - this._pinchY1) /
+        (this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP) * deltaPrice
+      this.context.startPrice = clamp(
+        this._pinchStartPrice + pinchDeltaPrice,
+        -this._maxPrice,
+        this._maxPrice*2 - deltaPrice
+      )
+      this.context.endPrice = clamp(
+        this._pinchEndPrice + pinchDeltaPrice,
+        -this._maxPrice + deltaPrice,
+        this._maxPrice*2
+      )
+    }
+    else if(this._pinched == 2 && ctl.length == 2) {
+      const minDeltaPrice = this._maxPrice / 200
+      const deltaPricePinch = this._pinchEndPrice - this._pinchStartPrice
+      const graphHeight = this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP
+      const centerPrice = this._pinchEndPrice -
+        ((this._pinchY1 + this._pinchY2)/2 - GRAPH_PADDING_TOP) / graphHeight * deltaPricePinch
+      const ctlDist = Math.sqrt(
+        (ctl[0].offsetX - ctl[1].offsetX)**2 +
+        (ctl[0].offsetY - ctl[1].offsetY)**2
+      )
+      const pinchDist = Math.sqrt(
+        (this._pinchX1 - this._pinchX2)**2 +
+        (this._pinchY1 - this._pinchY2)**2
+      )
+      const gamma = pinchDist / ctlDist
+      this.context.startPrice = clamp(
+        centerPrice + (this._pinchStartPrice - centerPrice) * gamma,
+        -this._maxPrice,
+        centerPrice + (this._pinchStartPrice - centerPrice) / deltaPricePinch * minDeltaPrice
+      )
+      this.context.endPrice = clamp(
+        centerPrice + (this._pinchEndPrice - centerPrice) * gamma,
+        centerPrice + (this._pinchEndPrice - centerPrice) / deltaPricePinch * minDeltaPrice,
+        2*this._maxPrice
+      )
+    }
+    else {
+      this._pinched = 0
     }
   }
 
   onWheel(event: WheelEvent) {
-    const mousePrice = this.context.endPrice -
-      event.offsetY / (this.canvas.offsetHeight - HISTORY_HEIGHT) * (this.context.endPrice - this.context.startPrice)
+    const minDeltaPrice = this._maxPrice / 200
+    const deltaPrice = this.context.endPrice - this.context.startPrice
+    const graphHeight = this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP
+    const mousePrice = this.context.endPrice - (event.offsetY - GRAPH_PADDING_TOP) / graphHeight * deltaPrice
     this.context.startPrice = clamp(
       mousePrice + (this.context.startPrice - mousePrice) * Math.exp(event.deltaY * SCROLLY_SENSIVITY),
       -this._maxPrice,
-      mousePrice
+      mousePrice + (this.context.startPrice - mousePrice) / deltaPrice * minDeltaPrice
     )
     this.context.endPrice = clamp(
       mousePrice + (this.context.endPrice - mousePrice) * Math.exp(event.deltaY * SCROLLY_SENSIVITY),
-      mousePrice,
-      this._maxPrice * 2
+      mousePrice + (this.context.endPrice - mousePrice) / deltaPrice * minDeltaPrice,
+      2*this._maxPrice
     )
 
     const deltaDays = this.context.endDay - this.context.startDay
-    const wheelDeltaDays = event.deltaX / this.canvas.offsetWidth * deltaDays * SCROLLX_SENSIVITY
-    this.context.startDay = clamp(this.context.startDay + wheelDeltaDays, 0, this.context.history.length-1 - deltaDays)
-    this.context.endDay = clamp(this.context.endDay + wheelDeltaDays, deltaDays, this.context.history.length-1)
+    const graphWidth = this.canvas.offsetWidth - 2*GRAPH_PADDING_X
+    const wheelDeltaDays = event.deltaX / graphWidth * deltaDays * SCROLLX_SENSIVITY
+    this.context.startDay = clamp(
+      this.context.startDay + wheelDeltaDays,
+      0,
+      this.context.history.length-1 - deltaDays
+    )
+    this.context.endDay = clamp(
+      this.context.endDay + wheelDeltaDays,
+      deltaDays,
+      this.context.history.length-1
+    )
   }
 
   onMouseDown(event: MouseEvent) {
     this.dragStart(event)
+  }
+
+  onTouchStart(event: TouchEvent) {
+    this.pinchStart(event)
   }
 
 }

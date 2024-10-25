@@ -81,3 +81,30 @@ export function getMinMaxPrice(history: HistoryDay[], startDay: number, endDay: 
   }
   return [min, max]
 }
+
+// As explained here, the JS api do not provide offsetX and offsetY properties
+// on Touch objects. So I have to create my own TouchList
+// https://github.com/w3c/touch-events/issues/62
+export interface CustomTouch {
+  offsetX: number
+  offsetY: number
+}
+export function createCustomTouchList(event: TouchEvent, touchList: TouchList): CustomTouch[] {
+  // @ts-ignore
+  if(!event.target || !event.target.getBoundingClientRect) {
+    throw new Error(`custom touchlist: event.target.getBoundingClientRect does not exist`)
+  }
+  // @ts-ignore
+  const rect = event.target.getBoundingClientRect()
+  if(!rect || !rect.left || !rect.top) {
+    throw new Error(`custom touchlist: invalid bounding client rect`)
+  }
+  const customTouchList: CustomTouch[] = []
+  for(let i = 0; i < touchList.length; i++) {
+    customTouchList.push({
+      offsetX: touchList[i].pageX - rect.left,
+      offsetY: touchList[i].pageY - rect.top,
+    })
+  }
+  return customTouchList
+}
