@@ -197,3 +197,9 @@
     background-color: #245;
   }
 }
+
+@media (max-width: $mobile-width) {
+  .market-data__section {
+    max-height: 70vh;
+  }
+}

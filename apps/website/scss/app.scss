@@ -11,3 +11,9 @@
   nav { grid-area: nav; }
   main { grid-area: main; }
 }
+
+@media (max-width: $mobile-width) {
+  .app {
+    display: block;
+  }
+}
