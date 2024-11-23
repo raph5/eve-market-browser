@@ -59,6 +59,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			runUnixSocketServer(ctx, mux)
+      log.Print("Unix socket stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -67,6 +68,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			prom.RunPrometheusServer(ctx, reg)
+      log.Print("Prometheus stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -75,6 +77,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			orderWorker(ctx)
+      log.Print("Order worker stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -83,6 +86,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			historyWorker(ctx)
+      log.Print("History worker stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -104,7 +108,7 @@ func orderWorker(ctx context.Context) {
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 	for {
 		if ctx.Err() != nil {
-			log.Print("Order worker stopped")
+			log.Print("Order worker stopping")
 			return
 		}
 
@@ -136,7 +140,7 @@ func orderWorker(ctx context.Context) {
 			labels := prometheus.Labels{"worker": "order", "message": err.Error()}
 			metrics.WorkerErrors.With(labels).Inc()
 			if errors.Is(err, context.Canceled) {
-				log.Print("Order worker stopped")
+				log.Print("Order worker stopping")
 				return
 			}
 			log.Printf("Order worker reporting: %v", err)
@@ -148,7 +152,7 @@ func orderWorker(ctx context.Context) {
 			labels := prometheus.Labels{"worker": "order", "message": err.Error()}
 			metrics.WorkerErrors.With(labels).Inc()
 			if errors.Is(err, context.Canceled) {
-				log.Print("Order worker stopped")
+				log.Print("Order worker stopping")
 				return
 			}
 			log.Printf("Order worker reporting: %v", err)
@@ -169,7 +173,7 @@ func historyWorker(ctx context.Context) {
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 	for {
 		if ctx.Err() != nil {
-			log.Print("History worker stopped")
+			log.Print("History worker stopping")
 			return
 		}
 
@@ -209,7 +213,7 @@ func historyWorker(ctx context.Context) {
 			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
 			metrics.WorkerErrors.With(labels).Inc()
 			if errors.Is(err, context.Canceled) {
-				log.Print("History worker stopped")
+				log.Print("History worker stopping")
 				return
 			}
 			log.Printf("History worker reporting: %v", err)
@@ -221,7 +225,7 @@ func historyWorker(ctx context.Context) {
 			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
 			metrics.WorkerErrors.With(labels).Inc()
 			if errors.Is(err, context.Canceled) {
-				log.Print("History worker stopped")
+				log.Print("History worker stopping")
 				return
 			}
 			log.Printf("Global history computation failed: %v", err)
