@@ -33,10 +33,9 @@ Build remix app `npm run build`
 `systemctl start emb`
 
 
-## To do
+## TODO
 
 - Remove type from activeTypes if history == []
-- Add responsive support
 - Improve search experience
 - Test quickbar exports
 - Fix market group icons

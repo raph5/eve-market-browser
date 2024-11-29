@@ -150,3 +150,12 @@
     align-items: center;
   }
 }
+
+@media (max-width: $mobile-width) {
+  .quickbar {
+    min-height: 300px;
+  }
+  .quickbar__empty {
+    margin-top: 60px;
+  }
+}

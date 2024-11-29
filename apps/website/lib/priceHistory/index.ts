@@ -44,7 +44,9 @@ export class Graph {
     if(context == null) throw new Error("can't get canvas context")
     this.canvasCtx = context
 
-    // canvas size
+    // canvas size and style
+    this.canvas.style.userSelect = "none"
+    this.canvas.style.touchAction = "none"
     this.canvas.width = this.container.offsetWidth
     this.canvas.height = this.container.offsetHeight
     this._resize = this.handleResize.bind(this)
@@ -70,7 +72,8 @@ export class Graph {
     this.context = new GraphContext()
     this.context.history = history
     this.context.tooltip = tooltip
-    this.context.startDay = this.context.history.length-1 - 80
+    this.context.startDay = this.context.history.length-1 -
+      Math.min(Math.ceil(0.1 * this.canvas.offsetWidth), 80)
     this.context.endDay = this.context.history.length-1
     const [min, max] = getMinMaxPrice(history, this.context.startDay, this.context.endDay)
     this.context.startPrice = min * 0.7

@@ -11,13 +11,15 @@
 
 .item-header {
   width: 100%;
-  height: 80px;
   display: flex;
   gap: 8px;
 
   &__icon {
     width: 64px;
     height: 64px;
+  }
+  &__info {
+    min-height: 80px;
   }
   &__breadcrumbs {
     font-size: 14px;
@@ -126,6 +128,7 @@
   }
   &__legend {
     display: flex;
+    flex-wrap: wrap;
     justify-self: center;
     gap: 12px;
   }
@@ -134,16 +137,13 @@
     color: $font-color-light;
     display: flex;
     gap: 2px;
+    text-wrap: nowrap;
   }
   &__container {
     width: 100%;
     height: 100%;
     overflow: hidden;
     position: relative;
-
-    canvas {
-      user-select: none;
-    }
   }
   &__tooltip {
     background-color: $background-1;
@@ -199,7 +199,12 @@
 }
 
 @media (max-width: $mobile-width) {
-  .market-data__section {
+  .market-data .table {
     max-height: 70vh;
+    min-height: 20vh;
+  }
+
+  .price-history {
+    height: 70vh;
   }
 }

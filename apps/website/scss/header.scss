@@ -113,6 +113,10 @@
     &__nav-item {
       border-bottom: solid 1px $border-1;
       height: unset;
+
+      &--active {
+        border-bottom: solid 1px $border-2;
+      }
     }
     &__link {
       height: unset;

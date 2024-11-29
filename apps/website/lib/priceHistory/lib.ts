@@ -102,8 +102,8 @@ export function createCustomTouchList(event: TouchEvent, touchList: TouchList): 
   const customTouchList: CustomTouch[] = []
   for(let i = 0; i < touchList.length; i++) {
     customTouchList.push({
-      offsetX: touchList[i].pageX - rect.left,
-      offsetY: touchList[i].pageY - rect.top,
+      offsetX: touchList[i].pageX - rect.left - window.scrollX,
+      offsetY: touchList[i].pageY - rect.top - window.scrollY,
     })
   }
   return customTouchList

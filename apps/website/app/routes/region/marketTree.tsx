@@ -155,7 +155,7 @@ function MarketGroup({ groupId }: MarketGroupProps) {
     <TreeView.Group value={`group:${group.id}`} className="market-group">
       <TreeView.Trigger className="market-group__trigger">
         <TriangleRightIcon className="market-group__triangle" />
-        <EveIcon src={iconSrc(group.iconFile)} alt={group.iconAlt} className="market-group__icon" />
+        <EveIcon src={iconSrc(group.iconFile)} alt="" className="market-group__icon" />
         <span className="market-group__label">{group.name}</span>
       </TreeView.Trigger>
       <TreeView.Content className="market-group__content">
