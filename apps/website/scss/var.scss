@@ -63,12 +63,14 @@ $error-0: #842626;
 $header-height: 48px;
 $nav-width: 250px;
 
+// media values
+$mobile-width: 500px;
+
 @keyframes skeleton-shine {
   to {
     background-position-x: -200%;
   }
 }
-
 
 @mixin skeleton-bg($color: $background-2) {
   background-color: $color;

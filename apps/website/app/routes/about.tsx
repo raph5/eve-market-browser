@@ -1,4 +1,3 @@
-
 /**
  * The goal of this page :
  * 1. Link the github page
@@ -7,10 +6,8 @@
  * 4. Add legal mentions and rgpd stuff
  */
 
-import { Link } from "@remix-run/react"
 import { MetaFunction } from "@remix-run/node"
-import logo from "@assets/logo.png"
-import "@scss/header.scss"
+import Header from "./region/header"
 import "@scss/about.scss"
 
 export const meta: MetaFunction = () => {
@@ -26,18 +23,7 @@ export default function About() {
   
   return (
     <>
-      <header className="header">
-        <Link to="/" className="header__title-link">
-          <img className="header__logo" src={logo} alt="eve market browser logo" />
-          <h1 className="header__title">EVE Market Browser</h1>
-        </Link>
-        
-        <ul className="header__nav">
-          <li className="header__nav-item header__nav-item--active">
-            <Link to="/about" className="header__link">About</Link>
-          </li>
-        </ul>
-      </header>
+      <Header/>
       <main className="about">
         <section className="about__feedback">
           <p>This site is currently under active development. If you have any feedback, please let me know.</p>

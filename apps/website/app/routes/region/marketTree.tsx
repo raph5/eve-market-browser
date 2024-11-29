@@ -1,11 +1,11 @@
-import { useContext, useMemo, useState } from "react"
+import { useContext, useEffect, useMemo, useState } from "react"
 import TreeView from "react-composable-treeview"
 import { MixerHorizontalIcon, TriangleRightIcon, DrawingPinIcon, DrawingPinFilledIcon } from "@radix-ui/react-icons"
 import EveIcon, { iconSrc } from "@components/eveIcon"
 import classNames from "classnames"
 import { Type, MarketGroup as MarketGroupType } from "esi-store/types"
 import { createContext } from "react"
-import { Link, useNavigate, useParams } from "@remix-run/react"
+import { Link, useLocation, useNavigate, useParams } from "@remix-run/react"
 import { Meta } from "@app/meta"
 import { useTypeSearch } from "@hooks/useTypeSearch"
 import { SearchBar } from "@components/searchBar"
@@ -155,7 +155,7 @@ function MarketGroup({ groupId }: MarketGroupProps) {
     <TreeView.Group value={`group:${group.id}`} className="market-group">
       <TreeView.Trigger className="market-group__trigger">
         <TriangleRightIcon className="market-group__triangle" />
-        <EveIcon src={iconSrc(group.iconFile)} alt={group.iconAlt} className="market-group__icon" />
+        <EveIcon src={iconSrc(group.iconFile)} alt="" className="market-group__icon" />
         <span className="market-group__label">{group.name}</span>
       </TreeView.Trigger>
       <TreeView.Content className="market-group__content">
@@ -200,12 +200,14 @@ function MarketMetaGroup({ meta, groupId, children }: MarketMetaGroupProps) {
 }
 
 function MarketItem({ typeId }: MarketItemProps) {
+  const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
-  const { typeRecord, region } = useContext(MarketTreeContext)
+  const { typeRecord } = useContext(MarketTreeContext)
   const type = typeRecord[typeId]
   const quickbar = useContext(QuickbarContext)
   const inQuickbar = useMemo(() => quickbar.has(typeId), [typeId, quickbar.state])
+  const [linkHref, setLinkHref] = useState(path.setTypeId(typeId))
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
@@ -213,11 +215,14 @@ function MarketItem({ typeId }: MarketItemProps) {
     }
   }
 
+  // NOTE: The cost of the useEffect may be big
+  useEffect(() => setLinkHref(path.setTypeId(typeId)), [location])
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
         <TreeView.Item value={`type:${type.id}`} onKeyDown={handleKeyDown} className="market-item">
-          <Link to={`/region/${region}/type/${type.id}`} tabIndex={-1} className="market-item__link">
+          <Link to={linkHref} tabIndex={-1} className="market-item__link">
             {type.name}
           </Link>
           {inQuickbar ? (
@@ -251,12 +256,14 @@ function MarketItem({ typeId }: MarketItemProps) {
 }
 
 function MarketType({ typeId }: MarketTypeProps) {
+  const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
-  const { typeRecord, region } = useContext(MarketTreeContext)
+  const { typeRecord } = useContext(MarketTreeContext)
   const type = typeRecord[typeId]
   const quickbar = useContext(QuickbarContext)
   const inQuickbar = useMemo(() => quickbar.has(typeId), [typeId, quickbar.state])
+  const [linkHref, setLinkHref] = useState(path.setTypeId(typeId))
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
@@ -264,11 +271,14 @@ function MarketType({ typeId }: MarketTypeProps) {
     }
   }
 
+  // NOTE: The cost of the useEffect may be big
+  useEffect(() => setLinkHref(path.setTypeId(typeId)), [location])
+
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
         <li onKeyDown={handleKeyDown} className="market-item">
-          <Link to={`/region/${region}/type/${type.id}`} tabIndex={-1} className="market-item__link">
+          <Link to={linkHref} tabIndex={-1} className="market-item__link">
             {type.name}
           </Link>
           {inQuickbar ? (

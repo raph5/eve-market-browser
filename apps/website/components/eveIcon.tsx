@@ -1,4 +1,5 @@
 import fallback from "@assets/fallback.png"
+import { useEffect, useRef } from "react"
 
 export interface EveIconProps {
   src: string
@@ -10,15 +11,26 @@ export const iconSrc = (file: string) => `/icons/${file}`
 export const typeIconSrc = (type: string|number) => `https://images.evetech.net/types/${type}/icon`
 
 export default function EveIcon({ src, alt, className }: EveIconProps) {
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (imgRef.current?.naturalWidth == 0 && imgRef.current?.naturalHeight == 0) {
+      handleError(imgRef.current)
+    }
+  }, [])
+
+  function handleError(img: HTMLImageElement) {
+    img.onerror = null
+    img.src = fallback
+    img.alt = 'Unknown'
+  }
+
   return (
     <img
       className={className}
       src={src}
       alt={alt}
-      onError={({ currentTarget }) => {
-        currentTarget.onerror = null
-        currentTarget.src = fallback
-        currentTarget.alt = 'Unknown'
-      }} />
+      ref={imgRef}
+      onError={error => handleError(error.currentTarget)} />
   )
 }

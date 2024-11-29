@@ -2,7 +2,7 @@ import { HistoryDay } from "esi-store/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Object2d, ObjectHtml, hitBox } from "./types"
-import { getMinMaxPrice, isInHitBox } from "./lib"
+import { createCustomTouchList, getMinMaxPrice, isInHitBox } from "./lib"
 import { HistoryHandle } from "./objects/historyHandle"
 import { HistoryBg } from "./objects/historyBg"
 import { Average } from "./objects/average"
@@ -44,7 +44,9 @@ export class Graph {
     if(context == null) throw new Error("can't get canvas context")
     this.canvasCtx = context
 
-    // canvas size
+    // canvas size and style
+    this.canvas.style.userSelect = "none"
+    this.canvas.style.touchAction = "none"
     this.canvas.width = this.container.offsetWidth
     this.canvas.height = this.container.offsetHeight
     this._resize = this.handleResize.bind(this)
@@ -57,6 +59,7 @@ export class Graph {
     this.canvas.onmouseup = this.handleMouseUp.bind(this)
     this.canvas.onmousedown = this.handleMouseDown.bind(this)
     this.canvas.onwheel = this.handleWheel.bind(this)
+    this.canvas.ontouchstart = this.handleTouchStart.bind(this)
 
     // html objects init
     const tooltip = new Tooltip(this.canvas)
@@ -69,7 +72,8 @@ export class Graph {
     this.context = new GraphContext()
     this.context.history = history
     this.context.tooltip = tooltip
-    this.context.startDay = this.context.history.length-1 - 80
+    this.context.startDay = this.context.history.length-1 -
+      Math.min(Math.ceil(0.1 * this.canvas.offsetWidth), 80)
     this.context.endDay = this.context.history.length-1
     const [min, max] = getMinMaxPrice(history, this.context.startDay, this.context.endDay)
     this.context.startPrice = min * 0.7
@@ -253,6 +257,24 @@ export class Graph {
       ) {
         // @ts-ignore
         const rep = this.object2dStack[i].onWheel(event)
+        if(rep == false) return
+      }
+    }
+  }
+
+  private handleTouchStart(event: TouchEvent) {
+    const ctl = createCustomTouchList(event, event.targetTouches)
+    for(let i=this.object2dStack.length-1; i>=0; i--) {
+      if(
+        this.object2dStack[i].hitBox != undefined &&
+        this.object2dStack[i].onTouchStart != undefined &&
+        // NOTE: this condition could be improved by reimplementing a
+        // targetTouches like api for graph elements. However for now I will
+        // check if the first touch is in hitbox.
+        isInHitBox(ctl[0].offsetX, ctl[0].offsetY, this.object2dStack[i].hitBox as hitBox)
+      ) {
+        // @ts-ignore
+        const rep = this.object2dStack[i].onTouchStart(event)
         if(rep == false) return
       }
     }
