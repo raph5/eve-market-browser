@@ -23,3 +23,9 @@
     }
   }
 }
+
+@media (max-width: $mobile-width) {
+  .about {
+    padding: 32px 16px;
+  }
+}

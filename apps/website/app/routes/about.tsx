@@ -42,7 +42,7 @@ export default function About() {
         <section className="about__github">
           <h2>Source Code</h2>
           <p>
-            All the source code for this projet available under the MIT license on <a href="https://github.com/raph5/eve-market-browser">github</a>
+            All the source code for this projet available under the MIT license on <a href="https://github.com/raph5/eve-market-browser">github</a>.
           </p>
         </section>
 
