@@ -27,6 +27,7 @@ export default function About() {
       <main className="about">
         <section className="about__feedback">
           <p>This site is currently under active development. If you have any feedback, please let me know.</p>
+          <p>I created a <a href="https://discord.gg/mTrd3XQvgv">discord server</a> for feedback and bug reports.</p>
         </section>
         <section className="about__contact">
           <h2>Contact Informations</h2>
@@ -39,12 +40,9 @@ export default function About() {
         </section>
 
         <section className="about__github">
-          <h2>Bug report</h2>
+          <h2>Source Code</h2>
           <p>
-            If you found a bug or you have a feature request <a href="https://github.com/raph5/eve-market-browser/issues/new">create new issue</a> on the github repository<br/>
-          </p>
-          <p>
-            This project is fully open source. The github repo is available <a href="https://github.com/raph5/eve-market-browser">here</a>
+            All the source code for this projet available under the MIT license on <a href="https://github.com/raph5/eve-market-browser">github</a>
           </p>
         </section>
 
