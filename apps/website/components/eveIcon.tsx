@@ -24,9 +24,11 @@ export default function EveIcon({ src, alt, className }: EveIconProps) {
   }, [])
 
   function handleError(img: HTMLImageElement) {
-    img.onerror = null
-    img.src = fallback
-    img.alt = 'Unknown'
+    if (img.src != fallback) {
+      img.onerror = null
+      img.src = fallback
+      img.alt = 'Unknown'
+    }
   }
 
   return (
