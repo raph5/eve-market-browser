@@ -179,8 +179,9 @@ export async function fetchHistory(typeId: number, regionId: number): Promise<Hi
 
   // add missing days
   let d = new Date(history[0].date)
-  for(let i=1; i<history.length; i++) {
-    d.setDate(d.getDate() + 1)
+  let i;
+  for(i=1; i<history.length && i<500; i++) {
+    d.setUTCDate(d.getUTCDate() + 1)
     const dateString = d.toISOString().split('T')[0]
     if(history[i].date != dateString) {
       history.splice(i, 0, {
@@ -191,6 +192,9 @@ export async function fetchHistory(typeId: number, regionId: number): Promise<Hi
         date: dateString
       })
     }
+  }
+  if (i == 500) {
+    throw new Error("Error while processing history data")
   }
 
   // comput rolling 5d average
