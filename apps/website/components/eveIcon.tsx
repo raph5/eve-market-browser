@@ -14,7 +14,11 @@ export default function EveIcon({ src, alt, className }: EveIconProps) {
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (imgRef.current?.naturalWidth == 0 && imgRef.current?.naturalHeight == 0) {
+    if (
+      imgRef.current?.complete &&
+      imgRef.current?.naturalWidth == 0 &&
+      imgRef.current?.naturalHeight == 0
+    ) {
       handleError(imgRef.current)
     }
   }, [])
