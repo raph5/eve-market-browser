@@ -249,7 +249,7 @@ export class GraphBg implements Object2d {
   }
 
   onWheel(event: WheelEvent) {
-    const minDeltaPrice = this._maxPrice / 200
+    const minDeltaPrice = 0
     const deltaPrice = this.context.endPrice - this.context.startPrice
     const graphHeight = this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP
     const mousePrice = this.context.endPrice - (event.offsetY - GRAPH_PADDING_TOP) / graphHeight * deltaPrice
