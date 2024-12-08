@@ -2,7 +2,7 @@ import { HistoryDay } from "esi-store/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Object2d, ObjectHtml, hitBox } from "./types"
-import { createCustomTouchList, getMinMaxPrice, isInHitBox } from "./lib"
+import { createCustomTouchList, getStartEndPrice, isInHitBox } from "./lib"
 import { HistoryHandle } from "./objects/historyHandle"
 import { HistoryBg } from "./objects/historyBg"
 import { Average } from "./objects/average"
@@ -75,9 +75,9 @@ export class Graph {
     this.context.startDay = this.context.history.length-1 -
       Math.min(Math.ceil(0.1 * this.canvas.offsetWidth), 80)
     this.context.endDay = this.context.history.length-1
-    const [min, max] = getMinMaxPrice(history, this.context.startDay, this.context.endDay)
-    this.context.startPrice = min * 0.7
-    this.context.endPrice = max * 1.1
+    const [startPrice, endPrice] = getStartEndPrice(history, this.context.startDay, this.context.endDay)
+    this.context.startPrice = startPrice * 0.8
+    this.context.endPrice = endPrice * 1.1
 
     // scene init
     this.object2dStack = [

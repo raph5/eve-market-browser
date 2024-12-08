@@ -72,14 +72,19 @@ export function formatDate(date: Date) {
     return `${year}.${month}.${day}`;
 }
 
-export function getMinMaxPrice(history: HistoryDay[], startDay: number, endDay: number) {
-  let min = history[startDay].lowest
-  let max = history[startDay].highest
-  for(let i=startDay+1; i<endDay; i++) {
-    if(history[i].lowest < min) min = history[i].lowest
-    if(history[i].highest > max) max = history[i].highest
+export function getStartEndPrice(history: HistoryDay[], startDay: number, endDay: number) {
+  console.assert(startDay < endDay)
+  const margin = Math.floor(0.1 * (endDay - startDay))
+  // return the margin-th lowest and highest prices as start and end prices
+  let highest = []
+  let lowest = []
+  for(let i=startDay; i<endDay; i++) {
+    lowest.push(history[i].lowest)
+    highest.push(history[i].highest)
   }
-  return [min, max]
+  highest = highest.sort((a, b) => b - a)
+  lowest = lowest.sort((a, b) => a - b)
+  return [lowest[margin], highest[margin]]
 }
 
 // As explained here, the JS api do not provide offsetX and offsetY properties
