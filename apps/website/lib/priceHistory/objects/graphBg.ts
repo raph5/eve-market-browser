@@ -218,7 +218,7 @@ export class GraphBg implements Object2d {
       )
     }
     else if(this._pinched == 2 && ctl.length == 2) {
-      const minDeltaPrice = this._maxPrice / 200
+      const minDeltaPrice = 0
       const deltaPricePinch = this._pinchEndPrice - this._pinchStartPrice
       const graphHeight = this.canvas.offsetHeight - HISTORY_HEIGHT - GRAPH_PADDING_TOP
       const centerPrice = this._pinchEndPrice -
