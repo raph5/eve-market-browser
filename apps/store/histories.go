@@ -403,6 +403,9 @@ func processHistory(esiHistory []esiHistoryDay) ([]historyDay, error) {
 		if j >= len(history) {
 			return nil, errors.New("Index out of bounds in history processing")
 		}
+		if j > 1000 {
+			return nil, errors.New("Failed to process price history")
+		}
 		day = day.AddDate(0, 0, 1)
 	}
 
