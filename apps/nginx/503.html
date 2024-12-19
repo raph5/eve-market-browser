@@ -31,14 +31,20 @@
       }
       .error-message__title {
         font-family: evesansneue;
-        margin: 0;
+        margin: 16px 0;
       }
       .error-message__message {
         font-family: evesansneue;
         color: #F39058;
-        margin: 8px 0;
+        margin: 4px 0;
         max-width: 60%;
         text-align: center;
+      }
+      .error-message__link, .error-message__link:visited {
+        color: #F39058;
+      }
+      .error-message__link:hover {
+        color: #ffe2d1;
       }
     </style>
   </head>
@@ -48,6 +54,9 @@
     </h1>
     <p class="error-message__message">
       Eve market browser is temporarily unavailable. Go touch some grass.
+    </p>
+    <p class="error-message__message"3>
+      If the outage persists you can leave me a message <a class="error-message__link" href="https://discord.gg/mTrd3XQvgv">here</a>.
     </p>
   </body>
 </html>
