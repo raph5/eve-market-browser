@@ -60,6 +60,7 @@ func fetchRegionOrders(ctx context.Context, regionId int) ([]dbOrder, error) {
     panic("orders fetcher worker: too many iterations");
   }
 
+  wg.Add(esi.MaxConcurrentRequests)
   for i := 0; i < esi.MaxConcurrentRequests; i++ {
     go worker()
   }
