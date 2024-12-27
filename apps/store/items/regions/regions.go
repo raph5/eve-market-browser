@@ -1,6 +1,6 @@
-package main
+package regions
 
-var regions = [...]int{
+var Regions = [...]int{
 	10000002,
 	10000043,
 	10000030,

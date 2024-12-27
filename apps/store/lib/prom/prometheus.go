@@ -58,7 +58,7 @@ func InitPrometheus() (*prometheus.Registry, *Metrics) {
 }
 
 func RunPrometheusServer(ctx context.Context, reg *prometheus.Registry) {
-	errCh := make(chan error, 1)
+	errCh := make(chan error)
 	server := &http.Server{
 		Addr: ":2112",
 	}
@@ -83,7 +83,7 @@ func RunPrometheusServer(ctx context.Context, reg *prometheus.Registry) {
 		log.Printf("Prometheus server error: %v", err)
 	}
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer shutdownCancel()
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"log"
 	"net/http"
@@ -10,10 +9,10 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/raph5/eve-market-browser/apps/store/prom"
+	"github.com/raph5/eve-market-browser/apps/store/items/histories"
+	"github.com/raph5/eve-market-browser/apps/store/items/orders"
+	"github.com/raph5/eve-market-browser/apps/store/lib/prom"
 )
 
 func main() {
@@ -21,16 +20,21 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Flags
-	noUpdate := flag.Bool("noupdate", false, "Disable histories and orders update")
-	noPrometheus := flag.Bool("noprom", false, "Disable prometheus")
+  var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, prometheusEnabled bool
+  var socketPath, dbPath string
+  var tcpPort int
+	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update (default: true)")
+	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update (default: true)")
+  flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server (default: true)")
+  flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server (default: false)")
+  flag.BoolVar(&prometheusEnabled, "prom", true, "Enable prometheus server (default: true)")
+  flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server (default: /tmp/emb.sock)")
+  flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database (default: ./data.db)")
+  flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port (default: 7562)")
 	flag.Parse()
-	var historiesEnabled = !*noUpdate
-	var ordersEnabled = !*noUpdate
-	var unixSocketEnabled = true
-	var prometheusEnabled = !*noPrometheus
 
 	// Init database
-	writeDB, readDB, err := initDatabase()
+	writeDB, readDB, err := initDatabase(dbPath)
 	if err != nil {
 		log.Fatalf("Can't start up the database: %v", err)
 	}
@@ -50,16 +54,25 @@ func main() {
 
 	// Mux handler
 	mux := http.NewServeMux()
-	mux.HandleFunc("/order", createOrderHandler(ctx))
-	mux.HandleFunc("/history", createHisoryHandler(ctx))
+	mux.HandleFunc("/order", orders.CreateHandler(ctx))
+	mux.HandleFunc("/history", histories.CreateHandler(ctx))
 
 	// Start workers and servers
 	var mainWg sync.WaitGroup
 	if unixSocketEnabled {
 		mainWg.Add(1)
 		go func() {
-			runUnixSocketServer(ctx, mux)
-      log.Print("Unix socket stopped")
+			runUnixSocketServer(ctx, mux, socketPath)
+      log.Print("Unix socket server stopped")
+			mainWg.Done()
+			cancel()
+		}()
+	}
+	if tcpEnabled {
+		mainWg.Add(1)
+		go func() {
+			runTcpServer(ctx, mux, tcpPort)
+      log.Print("Tcp server stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -76,7 +89,7 @@ func main() {
 	if ordersEnabled {
 		mainWg.Add(1)
 		go func() {
-			orderWorker(ctx)
+		  runOrdersHoardling(ctx)
       log.Print("Order worker stopped")
 			mainWg.Done()
 			cancel()
@@ -85,7 +98,7 @@ func main() {
 	if historiesEnabled {
 		mainWg.Add(1)
 		go func() {
-			historyWorker(ctx)
+			runHistoriesHoardling(ctx)
       log.Print("History worker stopped")
 			mainWg.Done()
 			cancel()
@@ -102,145 +115,4 @@ func main() {
 	}
 	mainWg.Wait()
 	log.Print("Store stopped")
-}
-
-func orderWorker(ctx context.Context) {
-	metrics := ctx.Value("metrics").(*prom.Metrics)
-	for {
-		if ctx.Err() != nil {
-			log.Print("Order worker stopping")
-			return
-		}
-
-		now := time.Now()
-		expiration, err := getExpirationTime(ctx, "Order")
-		if err != nil {
-			labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			log.Printf("Order worker stopping unexpectedly: %v", err)
-			return
-		}
-		delta := expiration.Sub(now)
-
-		if delta > 0 {
-			metrics.OrderStatus.Set(1)
-			log.Print("Order worker up to date")
-			select {
-			case <-time.After(delta):
-				metrics.OrderStatus.Set(0)
-			case <-ctx.Done():
-			}
-			continue
-		}
-
-		metrics.OrderStatus.Set(0)
-		log.Print("Order worker downloading orders and locations")
-		err = downloadOrders(ctx)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			if errors.Is(err, context.Canceled) {
-				log.Print("Order worker stopping")
-				return
-			}
-			log.Printf("Order worker reporting: %v", err)
-			continue
-		}
-
-		err = downloadLocations(ctx)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			if errors.Is(err, context.Canceled) {
-				log.Print("Order worker stopping")
-				return
-			}
-			log.Printf("Order worker reporting: %v", err)
-		}
-
-		newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
-		err = setExpirationTime(ctx, "Order", newExpiration)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "order", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			log.Printf("Order worker stopping unexpectedly: %v", err)
-			return
-		}
-	}
-}
-
-func historyWorker(ctx context.Context) {
-	metrics := ctx.Value("metrics").(*prom.Metrics)
-	for {
-		if ctx.Err() != nil {
-			log.Print("History worker stopping")
-			return
-		}
-
-		now := time.Now()
-		expiration, err := getExpirationTime(ctx, "History")
-		if err != nil {
-			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			log.Printf("History worker stopping unexpectedly: %v", err)
-			return
-		}
-		delta := expiration.Sub(now)
-
-		if delta > 0 {
-			metrics.HistoryStatus.Set(1)
-			log.Print("History worker up to date")
-			select {
-			case <-time.After(delta):
-				metrics.HistoryStatus.Set(0)
-			case <-ctx.Done():
-			}
-			continue
-		}
-
-		metrics.HistoryStatus.Set(0)
-		log.Print("History worker downloading histories")
-		err = populateActiveTypes(ctx)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			log.Printf("History worker reporting: %v", err)
-			continue
-		}
-
-		err = downloadHistories(ctx)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			if errors.Is(err, context.Canceled) {
-				log.Print("History worker stopping")
-				return
-			}
-			log.Printf("History worker reporting: %v", err)
-			continue
-		}
-
-		err = computeGobalHistory(ctx)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			if errors.Is(err, context.Canceled) {
-				log.Print("History worker stopping")
-				return
-			}
-			log.Printf("Global history computation failed: %v", err)
-		}
-
-		elevenFifteenTomorrow := time.Date(now.Year(), now.Month(), now.Day(), 11, 15, 0, 0, now.Location())
-		if elevenFifteenTomorrow.Before(now) {
-			elevenFifteenTomorrow = elevenFifteenTomorrow.AddDate(0, 0, 1)
-		}
-		err = setExpirationTime(ctx, "History", elevenFifteenTomorrow)
-		if err != nil {
-			labels := prometheus.Labels{"worker": "history", "message": err.Error()}
-			metrics.WorkerErrors.With(labels).Inc()
-			log.Printf("History worker stopping unexpectedly: %v", err)
-			return
-		}
-	}
 }

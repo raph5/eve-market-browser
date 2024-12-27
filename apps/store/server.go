@@ -6,20 +6,19 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
-const socketPath = "/tmp/esi-store.sock"
-
-func runTcpServer(ctx context.Context, mux *http.ServeMux) {
-	errCh := make(chan error, 1)
+func runTcpServer(ctx context.Context, mux *http.ServeMux, port int) {
+	errCh := make(chan error)
 	server := &http.Server{
-		Addr:    ":7001",
+		Addr:    ":" + strconv.Itoa(port),
 		Handler: mux,
 	}
 
 	go func() {
-		log.Print("Store listening on http://localhost" + server.Addr)
+    log.Printf("TCP server: listening on http://localhost%s", server.Addr)
 		err := server.ListenAndServe()
 		if err != nil {
 			errCh <- err
@@ -33,15 +32,17 @@ func runTcpServer(ctx context.Context, mux *http.ServeMux) {
 		log.Printf("TCP server error: %v", err)
 	}
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer shutdownCancel()
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {
 		log.Printf("TCP server error: %v", err)
 	}
+
+  log.Print("TCP server: not listening")
 }
 
-func runUnixSocketServer(ctx context.Context, mux *http.ServeMux) {
+func runUnixSocketServer(ctx context.Context, mux *http.ServeMux, socketPath string) {
 	_, err := os.Stat(socketPath)
 	if err == nil {
 		err = os.Remove(socketPath)
@@ -58,13 +59,13 @@ func runUnixSocketServer(ctx context.Context, mux *http.ServeMux) {
 	}
 	defer listener.Close()
 
-	errCh := make(chan error, 1)
+	errCh := make(chan error)
 	server := http.Server{
 		Handler: mux,
 	}
 
 	go func() {
-		log.Print("Store listening")
+    log.Printf("Unix socket server: listening on %s", socketPath)
 		err := server.Serve(listener)
 		if err != nil {
 			errCh <- err
@@ -78,7 +79,7 @@ func runUnixSocketServer(ctx context.Context, mux *http.ServeMux) {
 		log.Printf("Unix socket server error: %v", err)
 	}
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer shutdownCancel()
 	err = os.Remove(socketPath)
 	if err != nil {
@@ -88,4 +89,6 @@ func runUnixSocketServer(ctx context.Context, mux *http.ServeMux) {
 	if err != nil {
 		log.Printf("Unix socket server error: %v", err)
 	}
+
+  log.Print("Unix socket server: not listening")
 }

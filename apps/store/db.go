@@ -10,14 +10,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func initDatabase() (*sql.DB, *sql.DB, error) {
-	writeDB, err := sql.Open("sqlite3", "./data.db?_txlock=immediate")
+func initDatabase(dbPath string) (*sql.DB, *sql.DB, error) {
+	writeDB, err := sql.Open("sqlite3", dbPath + "?_txlock=immediate")
 	if err != nil {
 		return nil, nil, err
 	}
 	writeDB.SetMaxOpenConns(1)
 
-	readDB, err := sql.Open("sqlite3", "./data.db")
+	readDB, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -57,15 +57,15 @@ func initDatabase() (*sql.DB, *sql.DB, error) {
   CREATE INDEX IF NOT EXISTS HistoryTypeIndex ON History (TypeId);
   CREATE INDEX IF NOT EXISTS HistoryTypeRegionIndex ON History (TypeId, RegionId);
 
-  CREATE TABLE IF NOT EXISTS ActiveType (
+  CREATE TABLE IF NOT EXISTS ActiveMarket (
     TypeId INTEGER,
     RegionId INTEGER,
     PRIMARY KEY (TypeId, RegionId)
   );
 
-  CREATE TABLE IF NOT EXISTS TableExpiration (
-    TableName TEXT PRIMARY KEY,
-    ExpirationTime INTEGER
+  CREATE TABLE IF NOT EXISTS TimeRecord (
+    "Key" TEXT PRIMARY KEY,
+    "Time" INTEGER
   );`
 	_, err = writeDB.Exec(createTablesAndIndexs)
 	if err != nil {
@@ -75,8 +75,8 @@ func initDatabase() (*sql.DB, *sql.DB, error) {
 	pargmaConfig := `
   PRAGMA journal_mode = WAL;
   PRAGMA synchronous = NORMAL;
-  PRAGMA cache_size = 20000; -- ~80MB
-  PRAGMA busy_timeout = 5000;
+  PRAGMA cache_size = 20000;   -- ~80MB
+  PRAGMA busy_timeout = 10000; -- 10s
   `
 	_, err = writeDB.Exec(pargmaConfig)
 	if err != nil {

@@ -1,0 +1,123 @@
+package orders
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+	"strconv"
+)
+
+// orders type that the store will return
+type apiOrder struct {
+	Duration     int     `json:"duration"`
+	IsBuyOrder   bool    `json:"isBuyOrder"`
+	Issued       string  `json:"issued"`
+	Location     string  `json:"location"`
+	MinVolume    int     `json:"minVolume"`
+	OrderId      int     `json:"orderId"`
+	Price        float64 `json:"price"`
+	Range        string  `json:"range"`
+	RegionId     int     `json:"regionId"`
+	SystemId     int     `json:"systemId"`
+	TypeId       int     `json:"typeId"`
+	VolumeRemain int     `json:"volumeRemain"`
+	VolumeTotal  int     `json:"volumeTotal"`
+}
+
+// NOTE: even though I could split the fonction in two api and db function,
+// I don't do it for the sake of performance.
+func CreateHandler(ctx context.Context) http.HandlerFunc {
+	readDB := ctx.Value("readDB").(*sql.DB)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		typeId, err := strconv.Atoi(query.Get("type"))
+		if err != nil {
+			http.Error(w, `Bad request: param "type" is invalid integer`, 400)
+			return
+		}
+		regionId, err := strconv.Atoi(query.Get("region"))
+		if err != nil {
+			http.Error(w, `Bad request: param "region" is invalid integer`, 400)
+			return
+		}
+
+		var rows *sql.Rows
+		if regionId == 0 {
+			orderQuery := `
+      SELECT * FROM "Order"
+        WHERE TypeId = ?;
+      `
+			rows, err = readDB.Query(orderQuery, typeId)
+		} else {
+			orderQuery := `
+      SELECT * FROM "Order"
+        WHERE TypeId = ? AND RegionId = ?;
+      `
+			rows, err = readDB.Query(orderQuery, typeId, regionId)
+		}
+		if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+		defer rows.Close()
+
+		locationStmt, err := readDB.Prepare("SELECT Name FROM Location WHERE Id = ?")
+		if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+		defer locationStmt.Close()
+
+		orders := make([]*apiOrder, 0)
+		for rows.Next() {
+			var locationId int
+			var order apiOrder
+			err = rows.Scan(
+				&order.OrderId,
+				&order.RegionId,
+				&order.Duration,
+				&order.IsBuyOrder,
+				&order.Issued,
+				&locationId,
+				&order.MinVolume,
+				&order.Price,
+				&order.Range,
+				&order.SystemId,
+				&order.TypeId,
+				&order.VolumeRemain,
+				&order.VolumeTotal,
+			)
+			if err != nil {
+				log.Printf("Internal server error: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
+
+			err = locationStmt.QueryRow(locationId).Scan(&order.Location)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+				log.Printf("Internal server error: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
+			if order.Location == "" {
+				order.Location = "Unknown Player Structure"
+			}
+
+			orders = append(orders, &order)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(orders)
+		if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+	}
+}

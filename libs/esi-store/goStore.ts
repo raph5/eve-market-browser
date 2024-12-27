@@ -9,7 +9,7 @@ export interface ErrnoException extends Error {
   stack?: string;
 }
 
-const socketPath = "/tmp/esi-store.sock"
+const socketPath = "/tmp/emb.sock"
 
 export function requestStoreOrders(typeId: number, regionId: number): Promise<Order[]> {
   const options: http.RequestOptions = {

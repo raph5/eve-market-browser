@@ -19,6 +19,8 @@ type sem struct {
 	mu      sync.Mutex
 }
 
+const maxQueueLength = 100000
+
 func New(threadsCount int) *sem {
 	threads := make([]int, threadsCount)
 	for i := range threads {
@@ -38,7 +40,7 @@ func (s *sem) Acquire(priority int) int {
 		}
 	}
 
-	for {
+  for i := 0; i < 30; i++ {
 		ch := make(chan struct{})
 		node := &node{priority: priority, ch: ch}
 		push(&s.queue, node)
@@ -54,6 +56,8 @@ func (s *sem) Acquire(priority int) int {
 			}
 		}
 	}
+
+  panic("custom semaphore: exceeded 30 thread acquisition trails")
 }
 
 func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error) {
@@ -67,7 +71,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		}
 	}
 
-	for {
+  for i := 0; i < 30; i++ {
 		ch := make(chan struct{})
 		node := &node{priority: priority, ch: ch}
 		push(&s.queue, node)
@@ -79,7 +83,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 			s.mu.Lock()
 			remove(&s.queue, node)
 			s.mu.Unlock()
-			return -1, context.Canceled
+			return -1, ctx.Err()
 		}
 		s.mu.Lock()
 		for i := range s.threads {
@@ -90,6 +94,8 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 			}
 		}
 	}
+
+  panic("custom semaphore: exceeded 30 thread acquisition trails")
 }
 
 func (s *sem) Release(thread int) {
@@ -110,9 +116,12 @@ func (s *sem) Release(thread int) {
 	s.mu.Unlock()
 }
 
-var threadId int = 0
+var threadId = 0
+var threadIdMu sync.Mutex
 
 func getNewThread() int {
+  threadIdMu.Lock()
+  defer threadIdMu.Unlock()
 	if threadId == -2 {
 		threadId += 2
 	} else {
@@ -138,7 +147,12 @@ func push(queue **node, node *node) {
 		*queue = node
 		return
 	}
+  i := 0
 	for n.next != nil && node.priority <= n.priority {
+    if i >= maxQueueLength {
+      panic("custom semaphore: exceeded maxQueueLength")
+    }
+    i++
 		n = n.next
 	}
 	node.next = n.next
@@ -156,7 +170,12 @@ func remove(queue **node, node *node) {
 		*queue = node.next
 		return
 	}
-	for n := *queue; n != nil; n = n.next {
+  i := 0
+  for n := *queue; n != nil; n = n.next {
+    if i >= maxQueueLength {
+      panic("custom semaphore: exceeded maxQueueLength")
+    }
+    i++
 		if n.next == node {
 			n.next = n.next.next
 			return
