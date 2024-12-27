@@ -88,7 +88,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
       return new(T), fmt.Errorf("body mashalling: %w", err)
 		}
 	}
-	request, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewBuffer(jsonBody))
+	request, err := http.NewRequestWithContext(ctx, method, esiRoot+uri, bytes.NewBuffer(jsonBody))
 	if err != nil {
     return new(T), fmt.Errorf("new request: %w", err)
 	}
