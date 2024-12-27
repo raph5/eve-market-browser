@@ -7,8 +7,8 @@ Available at http://evemarketbrowser.com/
 ## Install
 
 **Dependencies:**  
-Node  
-Go
+Node 20  
+Go 1.22
 
 **Configuration:**  
 Set emb_dir and node_bin variables in start.sh
