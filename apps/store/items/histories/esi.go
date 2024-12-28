@@ -104,6 +104,10 @@ func esiToDbHistory(esiHistoryDays []esiHistoryDay, regionId int, typeId int) (*
 	// copy data from esiHistoryDays to historyDays and add missing days
   j := 0
   for i, d := 0, firstDate; i < len(historyDays); i, d = i+1, d.AddDate(0, 0, 1) {
+    if j >= len(esiHistoryDays) {
+      return nil, fmt.Errorf("messed up date order on type %d in region %d: %w", typeId, regionId, ErrInvalidEsiData)
+    }
+
     esiDate, err := time.Parse(esi.DateLayout, esiHistoryDays[j].Date)
     if err != nil {
       return nil, fmt.Errorf("invalid date: %w", ErrInvalidEsiData)
@@ -117,9 +121,6 @@ func esiToDbHistory(esiHistoryDays []esiHistoryDay, regionId int, typeId int) (*
       historyDays[i].Average = esiHistoryDays[j].Average
       historyDays[i].OrderCount = esiHistoryDays[j].OrderCount
       j++
-      if j >= len(esiHistoryDays) {
-        return nil, fmt.Errorf("messed up date order: %w", ErrInvalidEsiData)
-      }
     } else {
       historyDays[i].Volume = 0
       historyDays[i].Date = d.Format(esi.DateLayout)
