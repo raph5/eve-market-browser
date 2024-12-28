@@ -23,14 +23,14 @@ func main() {
   var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, prometheusEnabled bool
   var socketPath, dbPath string
   var tcpPort int
-	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update (default: true)")
-	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update (default: true)")
-  flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server (default: true)")
-  flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server (default: false)")
-  flag.BoolVar(&prometheusEnabled, "prom", true, "Enable prometheus server (default: true)")
-  flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server (default: /tmp/emb.sock)")
-  flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database (default: ./data.db)")
-  flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port (default: 7562)")
+	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
+	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
+  flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
+  flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
+  flag.BoolVar(&prometheusEnabled, "prom", true, "Enable prometheus server")
+  flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
+  flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
+  flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port")
 	flag.Parse()
 
 	// Init database
