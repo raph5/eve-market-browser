@@ -148,7 +148,7 @@ func push(queue **node, node *node) {
 		return
 	}
   i := 0
-	for n.next != nil && node.priority <= n.priority {
+	for n.next != nil && node.priority <= n.next.priority {
     if i >= maxQueueLength {
       panic("custom semaphore: exceeded maxQueueLength")
     }
