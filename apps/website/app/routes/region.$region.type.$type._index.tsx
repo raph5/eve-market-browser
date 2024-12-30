@@ -3,7 +3,7 @@ import { ErrorMessage } from "@components/errorMessage"
 import Table, { Cell, Column } from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { Link, json, useLoaderData, useRouteError } from "@remix-run/react"
-import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "utils"
+import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "@lib/utils"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {

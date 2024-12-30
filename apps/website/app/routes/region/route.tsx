@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { MetaFunction, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Navigation from "./navigation";
 import { ErrorMessage } from "@components/errorMessage";
-import { MarketGroup, Region, Type } from "esi-store/types";
+import { MarketGroup, Region, Type } from "@lib/esiStore/types";
 import Header from "./header";
 import { useQuickbar } from "@hooks/useQuickbar";
 import QuickbarContext from "@contexts/quickbarContext";

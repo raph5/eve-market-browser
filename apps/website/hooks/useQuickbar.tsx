@@ -1,7 +1,7 @@
 import { useLocalStorage } from "@hooks/useLocalStorage"
-import { uid } from "utils/main"
+import { uid } from "@lib/utils"
 import { useCallback, useRef } from "react"
-import { Type } from "esi-store/types"
+import { Type } from "@lib/esiStore/types"
 import { parseQuickbar, stringifyQuickbar, mergeQuickbar } from "@lib/quickbarUtils"
 
 export interface QuickbarState {

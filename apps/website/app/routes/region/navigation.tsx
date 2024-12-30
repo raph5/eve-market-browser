@@ -1,4 +1,4 @@
-import type { MarketGroup, Type } from "esi-store/types"
+import type { MarketGroup, Type } from "@lib/esiStore/types"
 import "@scss/navigation.scss"
 import { Tab, TabRef, TabsRoot } from "@components/tabs"
 import { MarketTree } from "./marketTree"
