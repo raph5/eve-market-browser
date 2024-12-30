@@ -36,15 +36,10 @@ func runOrdersHoardling(ctx context.Context) {
 			metrics.OrderStatus.Set(1)
       log.Print("orders hoardling: up to date")
 
-      timer := time.NewTimer(delta)
-			select {
-      case <-timer.C:
+      err := sleep(ctx, delta)
+      if err == nil {
 				metrics.OrderStatus.Set(0)
-			case <-ctx.Done():
-        if !timer.Stop() {
-          <-timer.C
-        }
-			}
+      }
 			continue
 		}
 
@@ -57,6 +52,8 @@ func runOrdersHoardling(ctx context.Context) {
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
+      log.Print("order hoardling: 2 minutes backoff")
+      sleep(ctx, 2 * time.Minute)
 			continue
 		}
 
@@ -105,15 +102,10 @@ func runHistoriesHoardling(ctx context.Context) {
 			metrics.HistoryStatus.Set(1)
       log.Print("histories hoardling: up to date")
 
-      timer := time.NewTimer(delta)
-			select {
-      case <-timer.C:
+      err := sleep(ctx, delta)
+      if err == nil {
 				metrics.OrderStatus.Set(0)
-			case <-ctx.Done():
-        if !timer.Stop() {
-          <-timer.C
-        }
-			}
+      }
 			continue
 		}
 
@@ -135,6 +127,8 @@ func runHistoriesHoardling(ctx context.Context) {
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
+      log.Print("histories hoardling: 5 minutes backoff")
+      sleep(ctx, 5 * time.Minute)
 			continue
 		}
 
@@ -164,4 +158,17 @@ func runHistoriesHoardling(ctx context.Context) {
 	}
 
   log.Print("orders hoardling: stopping")
+}
+
+func sleep(ctx context.Context, duration time.Duration) error {
+  timer := time.NewTimer(duration)
+  select {
+  case <-timer.C:
+    return nil
+  case <-ctx.Done():
+    if !timer.Stop() {
+      <-timer.C
+    }
+    return ctx.Err()
+  }
 }
