@@ -39,8 +39,8 @@ Build remix app `npm run build`
 - Improve search experience
 - Test quickbar exports
 - Fix market group icons
+- Fix market tree
 - Add log size limit for nginx, remix.log and store.log
-- Add backoff to go-store hoardlings
 
 
 ## Ports
