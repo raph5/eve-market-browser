@@ -12,19 +12,6 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
 )
 
-type dbHistoryDay struct {
-	Date           string  `json:"date"`
-	Average        float64 `json:"average"`
-	Average5d      float64 `json:"average5d"`
-	Average20d     float64 `json:"average20d"`
-	Highest        float64 `json:"highest"`
-	Lowest         float64 `json:"lowest"`
-	OrderCount     int     `json:"orderCount"`
-	Volume         int     `json:"volume"`
-	DonchianTop    float64 `json:"donchianTop"`
-	DonchianBottom float64 `json:"donchianBottom"`
-}
-
 const chunkSize = 100
 
 func Download(ctx context.Context) error {
@@ -138,7 +125,7 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
     }
   }
   deltaDays := int(lastDate.Sub(firstDate).Hours() / 24)
-  globalEsiHistory := make([]esiHistoryDay, deltaDays)
+  globalEsiHistoryDays := make([]esiHistoryDay, deltaDays)
 
   offsets := make([]int, regions)
   for i, d := 0, firstDate; i < deltaDays; i, d = i+1, d.AddDate(0, 0, 1) {
@@ -157,7 +144,7 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
         continue
       }
 
-      gDay := &globalEsiHistory[i]
+      gDay := &globalEsiHistoryDays[i]
       if gDay.Date == "" {
         *gDay = day
       } else {
@@ -179,12 +166,21 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
     }
   }
 
-  globalHistory, err := esiToDbHistory(globalEsiHistory, 0, typeId)
+  globalHistoryDays, err := esiToDbHistoryDays(globalEsiHistoryDays)
   if err != nil {
-    return fmt.Errorf("esiToDbHistory: %w", err)
+    return fmt.Errorf("esi to db history: %w", err)
+  }
+  globalHistoryDaysJson, err := json.Marshal(globalHistoryDays)
+  if err != nil {
+    return fmt.Errorf("history marshal: %w", err)
+  }
+  globalHistory := dbHistory{
+    history: globalHistoryDaysJson,
+    regionId: 0,
+    typeId: typeId,
   }
 
-  err = dbInsertHistory(ctx, *globalHistory)
+  err = dbInsertHistory(ctx, globalHistory)
   if err != nil {
     return fmt.Errorf("can't insert history: %w", err)
   }

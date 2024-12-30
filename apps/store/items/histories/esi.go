@@ -71,20 +71,28 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 
 func fetchHistory(ctx context.Context, regionId int, typeId int) (*dbHistory, error) {
 	uri := fmt.Sprintf("/markets/%d/history?type_id=%d", regionId, typeId)
-	esiHistory, err := esi.EsiFetch[[]esiHistoryDay](ctx, "GET", uri, nil, 3, 12)
+	esiHistoryDays, err := esi.EsiFetch[[]esiHistoryDay](ctx, "GET", uri, nil, 3, 12)
 	if err != nil {
 		return nil, fmt.Errorf("fetching esi history: %w", err)
 	}
-  dbHistory, err := esiToDbHistory(*esiHistory, regionId, typeId)
+  dbHistoryDays, err := esiToDbHistoryDays(*esiHistoryDays)
   if err != nil {
     return nil, fmt.Errorf("esi to db history: %w", err)
   }
-	return dbHistory, nil
+  dbHistoryDaysJson, err := json.Marshal(dbHistoryDays)
+  if err != nil {
+    return nil, fmt.Errorf("marshal history: %w", err)
+  }
+	return &dbHistory{
+    history: dbHistoryDaysJson,
+    regionId: regionId,
+    typeId: typeId,
+  }, nil
 }
 
-func esiToDbHistory(esiHistoryDays []esiHistoryDay, regionId int, typeId int) (*dbHistory, error) {
+func esiToDbHistoryDays(esiHistoryDays []esiHistoryDay) ([]dbHistoryDay, error) {
   if len(esiHistoryDays) == 0 {
-    return &dbHistory{history: []byte("[]"), regionId: regionId, typeId: typeId}, nil
+    return make([]dbHistoryDay, 0), nil
   }
 
   firstDate, err := time.Parse(esi.DateLayout, esiHistoryDays[0].Date)
@@ -105,7 +113,7 @@ func esiToDbHistory(esiHistoryDays []esiHistoryDay, regionId int, typeId int) (*
   j := 0
   for i, d := 0, firstDate; i < len(historyDays); i, d = i+1, d.AddDate(0, 0, 1) {
     if j >= len(esiHistoryDays) {
-      return nil, fmt.Errorf("messed up date order on type %d in region %d: %w", typeId, regionId, ErrInvalidEsiData)
+      return nil, fmt.Errorf("messed up date order: %w", ErrInvalidEsiData)
     }
 
     esiDate, err := time.Parse(esi.DateLayout, esiHistoryDays[j].Date)
@@ -124,8 +132,8 @@ func esiToDbHistory(esiHistoryDays []esiHistoryDay, regionId int, typeId int) (*
     } else {
       historyDays[i].Volume = 0
       historyDays[i].Date = d.Format(esi.DateLayout)
-      historyDays[i].Lowest = esiHistoryDays[j].Lowest
-      historyDays[i].Highest = esiHistoryDays[j].Highest
+      historyDays[i].Lowest = esiHistoryDays[j].Average
+      historyDays[i].Highest = esiHistoryDays[j].Average
       historyDays[i].Average = esiHistoryDays[j].Average
       historyDays[i].OrderCount = esiHistoryDays[j].OrderCount
     }
@@ -182,15 +190,5 @@ func esiToDbHistory(esiHistoryDays []esiHistoryDay, regionId int, typeId int) (*
 		historyDays[i].DonchianBottom = dcBottom
 	}
 
-  historyDaysJson, err := json.Marshal(historyDays)
-  if err != nil {
-    return nil, fmt.Errorf("can't marshal historyDays: %w", err)
-  }
-
-  history := dbHistory{
-    history: historyDaysJson,
-    regionId: regionId,
-    typeId: typeId,
-  }
-  return &history, nil
+  return historyDays, nil
 }

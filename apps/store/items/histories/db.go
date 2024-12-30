@@ -12,6 +12,19 @@ type dbHistory struct {
 	regionId int
 }
 
+type dbHistoryDay struct {
+	Date           string  `json:"date"`
+	Average        float64 `json:"average"`
+	Average5d      float64 `json:"average5d"`
+	Average20d     float64 `json:"average20d"`
+	Highest        float64 `json:"highest"`
+	Lowest         float64 `json:"lowest"`
+	OrderCount     int     `json:"orderCount"`
+	Volume         int     `json:"volume"`
+	DonchianTop    float64 `json:"donchianTop"`
+	DonchianBottom float64 `json:"donchianBottom"`
+}
+
 func dbGetHistoriesOfType(ctx context.Context, typeId int) ([]dbHistory, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
   timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
