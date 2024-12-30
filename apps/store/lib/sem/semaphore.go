@@ -71,7 +71,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		}
 	}
 
-  for i := 0; i < 30; i++ {
+  for i := 0; i < 500; i++ {
 		ch := make(chan struct{})
 		node := &node{priority: priority, ch: ch}
 		push(&s.queue, node)
@@ -81,6 +81,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		case <-ch:
 		case <-ctx.Done():
 			s.mu.Lock()
+      close(node.ch)
 			remove(&s.queue, node)
 			s.mu.Unlock()
 			return -1, ctx.Err()
@@ -95,7 +96,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		}
 	}
 
-  panic("custom semaphore: exceeded 30 thread acquisition trails")
+  panic("custom semaphore: exceeded 500 thread acquisition trails")
 }
 
 func (s *sem) Release(thread int) {
@@ -111,6 +112,8 @@ func (s *sem) Release(thread int) {
 				ch := pop(&s.queue)
 				close(ch)
 			}
+      s.mu.Unlock()
+      return
 		}
 	}
 	s.mu.Unlock()
@@ -118,15 +121,14 @@ func (s *sem) Release(thread int) {
 
 var threadId = 0
 var threadIdMu sync.Mutex
-
 func getNewThread() int {
   threadIdMu.Lock()
-  defer threadIdMu.Unlock()
 	if threadId == -2 {
 		threadId += 2
 	} else {
 		threadId += 1
 	}
+  threadIdMu.Unlock()
 	return threadId
 }
 
@@ -166,6 +168,9 @@ func pop(queue **node) chan struct{} {
 }
 
 func remove(queue **node, node *node) {
+  if node == nil {
+		panic("custom semaphore: can't remove node nil")
+	}
 	if *queue == node {
 		*queue = node.next
 		return
