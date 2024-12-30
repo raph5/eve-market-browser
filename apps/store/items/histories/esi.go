@@ -110,26 +110,29 @@ func esiToDbHistoryDays(esiHistoryDays []esiHistoryDay) ([]dbHistoryDay, error) 
   historyDays := make([]dbHistoryDay, deltaDate+1)
 
 	// copy data from esiHistoryDays to historyDays and add missing days
-  j := 0
+  j := -1
   for i, d := 0, firstDate; i < len(historyDays); i, d = i+1, d.AddDate(0, 0, 1) {
-    if j >= len(esiHistoryDays) {
+    if j+1 >= len(esiHistoryDays) {
       return nil, fmt.Errorf("messed up date order: %w", ErrInvalidEsiData)
     }
 
-    esiDate, err := time.Parse(esi.DateLayout, esiHistoryDays[j].Date)
+    esiDate, err := time.Parse(esi.DateLayout, esiHistoryDays[j+1].Date)
     if err != nil {
       return nil, fmt.Errorf("invalid date: %w", ErrInvalidEsiData)
     }
 
     if esiDate.Equal(d) {
+      j++
       historyDays[i].Volume = esiHistoryDays[j].Volume
       historyDays[i].Date = esiHistoryDays[j].Date
       historyDays[i].Lowest = esiHistoryDays[j].Lowest
       historyDays[i].Highest = esiHistoryDays[j].Highest
       historyDays[i].Average = esiHistoryDays[j].Average
       historyDays[i].OrderCount = esiHistoryDays[j].OrderCount
-      j++
     } else {
+      if j == -1 {
+        panic("impossible point to reach");
+      }
       historyDays[i].Volume = 0
       historyDays[i].Date = d.Format(esi.DateLayout)
       historyDays[i].Lowest = esiHistoryDays[j].Average

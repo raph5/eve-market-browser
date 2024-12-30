@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
+	"github.com/raph5/eve-market-browser/apps/store/lib/security"
 )
 
 type esiOrder struct {
@@ -114,11 +115,8 @@ func esiToDbOrder(esiOrder *esiOrder, dbOrder *dbOrder, regionId int) error {
   if len(dbOrder.Issued) > 32 {
     return fmt.Errorf("invalid issued time %s: %w", dbOrder.Issued, ErrInvalidEsiData)
   }
-  for i := 0; i < len(dbOrder.Issued); i++ {
-    // check for xss injections
-    if dbOrder.Issued[i] == '<' {
-      return fmt.Errorf("invalid issued time %s: %w", dbOrder.Issued, ErrInvalidEsiData)
-    }
+  if security.ContainsXssPayload(dbOrder.Issued) {
+    return fmt.Errorf("invalid issued time %s: %w", dbOrder.Issued, ErrInvalidEsiData)
   }
   orderRange, ok := esiToDbRangeMap[esiOrder.Range]
   if !ok {

@@ -1,6 +1,11 @@
 package histories
 
-var testEsiHistory = []esiHistoryDay{
+import (
+	"fmt"
+	"testing"
+)
+
+var testEsiHistoryDays = []esiHistoryDay{
   {
     Average: 6018000,
     Date: "2024-12-25",
@@ -27,7 +32,7 @@ var testEsiHistory = []esiHistoryDay{
   },
 }
 
-var testDbHistory = []dbHistoryDay{
+var testDbHistoryDays = []dbHistoryDay{
   {
     Average: 6018000,
     Average5d: 6018000,
@@ -78,6 +83,30 @@ var testDbHistory = []dbHistoryDay{
   },
 }
 
-func TestEsiToDbHistory() {
-  
+func areDaysEqual(d1 *dbHistoryDay, d2 *dbHistoryDay) bool {
+  return d1.Average == d2.Average &&
+    d1.Average5d == d2.Average5d &&
+    d1.Average20d == d2.Average20d &&
+    d1.Date == d2.Date &&
+    d1.Highest == d2.Highest &&
+    d1.Lowest == d2.Lowest &&
+    d1.OrderCount == d2.OrderCount &&
+    d1.Volume == d2.Volume &&
+    d1.DonchianTop == d2.DonchianTop &&
+    d1.DonchianBottom == d2.DonchianBottom
+}
+
+func TestEsiToDbHistory(t *testing.T) {
+  dbHistoryDays, err := esiToDbHistoryDays(testEsiHistoryDays)
+  if err != nil {
+    t.Fatal(err)
+  }
+
+  fmt.Println(dbHistoryDays)
+
+  for i := range dbHistoryDays {
+    if !areDaysEqual(&dbHistoryDays[i], &testDbHistoryDays[i]) {
+      t.Fatalf("history day missmatch: want %v, got %v", testDbHistoryDays[i], dbHistoryDays[i])
+    }
+  }
 }
