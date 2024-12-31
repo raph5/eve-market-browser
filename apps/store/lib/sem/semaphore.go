@@ -81,7 +81,6 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		case <-ch:
 		case <-ctx.Done():
 			s.mu.Lock()
-      close(node.ch)
 			remove(&s.queue, node)
 			s.mu.Unlock()
 			return -1, ctx.Err()
