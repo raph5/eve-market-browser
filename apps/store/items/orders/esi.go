@@ -33,7 +33,7 @@ func fetchRegionOrders(ctx context.Context, regionId int) ([]dbOrder, error) {
   timeoutCtx, timeoutCancel := context.WithTimeout(ctx, 15 * time.Minute)
   defer timeoutCancel()
 
-  orders, pages, err := fetchPageOrders(timeoutCtx, regionId, 0)
+  orders, pages, err := fetchPageOrders(timeoutCtx, regionId, 1)
   if err != nil {
     return nil, err
   }
