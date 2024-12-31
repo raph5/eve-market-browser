@@ -37,6 +37,7 @@ type jsonError struct {
 }
 
 const esiRoot = "https://esi.evetech.net/latest"
+const requestTimeout = 7 * time.Second
 const DateLayout = "2006-01-02"
 const MaxConcurrentRequests = 10
 
@@ -105,7 +106,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 
 	// Run the request
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: requestTimeout,
 	}
 	response, err := client.Do(request)
 	semaphore.Release(thread)
