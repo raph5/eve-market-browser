@@ -26,7 +26,6 @@
       "@scss/*": ["./scss/*"],
       "@components/*": ["./components/*"],
       "@app/*": ["./app/*"],
-      "@utils/*": ["./utils/*"],
       "@hooks/*": ["./hooks/*"],
       "@contexts/*": ["./contexts/*"],
       "@lib/*": ["./lib/*"],

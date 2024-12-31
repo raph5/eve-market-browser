@@ -5,7 +5,7 @@ import TreeView from "react-composable-treeview";
 import { PiFolderPlusThin } from "react-icons/pi";
 import { BsArrowsCollapse } from "react-icons/bs";
 import QuickbarContext from "@contexts/quickbarContext";
-import { stringSort } from "utils/main";
+import { stringSort } from "@lib/utils";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { typeIconSrc } from "@components/eveIcon";
 import * as Dialog from "@radix-ui/react-dialog";

@@ -1,6 +1,6 @@
 import { QuickbarState } from "@hooks/useQuickbar";
 import { Type } from "@lib/esiStore/types";
-import { uid } from "utils/main";
+import { uid } from "@lib/utils";
 
 /**
  * EVE online quickbar export format :

@@ -1,4 +1,4 @@
-import { createRecord } from "utils"
+import { createRecord } from "@lib/utils"
 import { readCacheFile, writeCacheFile } from "./cache"
 import { fetchHistory, fetchMarketGroups, fetchOrders, fetchRegions, fetchTypes } from "./fetching"
 import type { MarketGroup, Region, Type, Order, HistoryDay } from "./types"

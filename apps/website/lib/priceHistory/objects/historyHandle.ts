@@ -1,4 +1,4 @@
-import { clamp } from 'utils/main'
+import { clamp } from '@lib/utils'
 import { GraphContext } from '../context'
 import { Graph } from '../index'
 import { Object2d, hitBox } from '../types'

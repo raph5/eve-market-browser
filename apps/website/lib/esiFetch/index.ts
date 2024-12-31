@@ -1,4 +1,4 @@
-import { timeout } from "utils";
+import { timeout } from "@lib/utils";
 
 type httpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
