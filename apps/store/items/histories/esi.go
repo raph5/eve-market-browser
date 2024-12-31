@@ -71,11 +71,12 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 
 func fetchHistory(ctx context.Context, regionId int, typeId int) (*dbHistory, error) {
 	uri := fmt.Sprintf("/markets/%d/history?type_id=%d", regionId, typeId)
-	esiHistoryDays, err := esi.EsiFetch[[]esiHistoryDay](ctx, "GET", uri, nil, 1, 5)
+  response, err := esi.EsiFetch[[]esiHistoryDay](ctx, "GET", uri, nil, 1, 5)
 	if err != nil {
 		return nil, fmt.Errorf("fetching esi history: %w", err)
 	}
-  dbHistoryDays, err := esiToDbHistoryDays(*esiHistoryDays)
+  esiHistoryDays := *response.Data
+  dbHistoryDays, err := esiToDbHistoryDays(esiHistoryDays)
   if err != nil {
     return nil, fmt.Errorf("esi to db history: %w", err)
   }

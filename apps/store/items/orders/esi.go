@@ -31,34 +31,29 @@ var ErrInvalidEsiData = errors.New("Invalid esi data")
 
 func fetchRegionOrders(ctx context.Context, regionId int) ([]dbOrder, error) {
   timeoutCtx, timeoutCancel := context.WithTimeout(ctx, 15 * time.Minute)
-  errorCtx, errorCancel := context.WithCancelCause(timeoutCtx)
   defer timeoutCancel()
 
+  orders, pages, err := fetchPageOrders(timeoutCtx, regionId, 0)
+  if err != nil {
+    return nil, err
+  }
+
+  errorCtx, errorCancel := context.WithCancelCause(timeoutCtx)
   var wg sync.WaitGroup
-  var noMorePages atomic.Bool
   var page atomic.Int32
   ordersCh := make(chan []dbOrder, 2 * esi.MaxConcurrentRequests)
   page.Store(1)
 
   worker := func() {
     defer wg.Done()
-    for i := 0; i < 2000; i++ {
-      if noMorePages.Load() {
-        return
-      }
-      p := page.Add(1)
-
-      pageOrders, nmp, err := fetchPageOrders(errorCtx, regionId, int(p))
+    for p := int(page.Add(1)); p < pages; p = int(page.Add(1)) {
+      pageOrders, _, err := fetchPageOrders(errorCtx, regionId, p)
       if err != nil {
         errorCancel(err)
         return
       }
-      if nmp {
-        noMorePages.Store(true)
-      }
       ordersCh <- pageOrders
     }
-    panic("orders fetcher worker: too many iterations");
   }
 
   wg.Add(esi.MaxConcurrentRequests)
@@ -71,7 +66,6 @@ func fetchRegionOrders(ctx context.Context, regionId int) ([]dbOrder, error) {
     close(ordersCh)
   }()
 
-  orders := make([]dbOrder, 0)
   for o := range ordersCh {
     orders = append(orders, o...)
   }
@@ -84,28 +78,24 @@ func fetchRegionOrders(ctx context.Context, regionId int) ([]dbOrder, error) {
   return orders, nil
 }
 
-func fetchPageOrders(ctx context.Context, regionId int, page int) ([]dbOrder, bool, error) {
+func fetchPageOrders(ctx context.Context, regionId int, page int) ([]dbOrder, int, error) {
   uri := fmt.Sprintf("/markets/%d/orders?order_type=all&page=%d", regionId, page)
-  esiOrders, err := esi.EsiFetch[[]esiOrder](ctx, "GET", uri, nil, 2, 5)
-
+  response, err := esi.EsiFetch[[]esiOrder](ctx, "GET", uri, nil, 2, 5)
   if err != nil {
-    esiError, ok := err.(*esi.EsiError)
-    if ok && esiError.Code == 404 {
-      return nil, true, nil
-    }
-    return nil, false, err
+    return nil, 0, err
   }
+  esiOrders := *response.Data
+  pages := response.Pages
 
-  dbOrders := make([]dbOrder, len(*esiOrders))
-  for i := 0; i < len(*esiOrders); i++ {
-    err = esiToDbOrder(&(*esiOrders)[i], &dbOrders[i], regionId)
+  dbOrders := make([]dbOrder, len(esiOrders))
+  for i := 0; i < len(esiOrders); i++ {
+    err = esiToDbOrder(&esiOrders[i], &dbOrders[i], regionId)
     if err != nil {
-      return  nil, false, err
+      return  nil, 0, err
     }
   }
 
-  noMorePages := len(dbOrders) < 1000
-  return dbOrders, noMorePages, nil
+  return dbOrders, pages, nil
 }
 
 func esiToDbOrder(esiOrder *esiOrder, dbOrder *dbOrder, regionId int) error {
