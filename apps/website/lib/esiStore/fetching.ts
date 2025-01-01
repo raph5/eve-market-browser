@@ -3,15 +3,6 @@ import { createRecord, stringSort } from "@lib/utils";
 import { parseCsv } from "@lib/utils/server";
 import { esiFetch } from "@lib/esiFetch";
 
-interface EsiHistoryDay {
-  date: string
-  average: number
-  highest: number
-  lowest: number
-  order_count: number
-  volume: number
-}
-
 const hubRegion = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
 const tycoonRange: Record<string, string> = {
   STATION: "Station",
