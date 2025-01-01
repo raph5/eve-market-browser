@@ -55,7 +55,7 @@ func fetchRegionOrders(ctx context.Context, regionId int) ([]dbOrder, error) {
   var pages int
   orders := make([]dbOrder, 0, 1000)
 
-  for p := 1; p < pages || p == 1; p++ {
+  for p := 1; p <= pages || p == 1; p++ {
     pageOrders, pages, err = fetchPageOrders(ctx, regionId, p)
     if err != nil {
       return nil, fmt.Errorf("fetching page %d from region %d: %w", p, regionId, err)
