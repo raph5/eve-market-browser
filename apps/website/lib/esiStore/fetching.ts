@@ -1,10 +1,19 @@
 import type { Region, MarketGroup, Type, Order, HistoryDay } from "./types";
 import { createRecord, stringSort } from "@lib/utils";
 import { parseCsv } from "@lib/utils/server";
-import esiFetch from "@lib/esiFetch";
+import { esiFetch } from "@lib/esiFetch";
 
-const HUB_REGION = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
-const TYCOON_RANGE: Record<string, string> = {
+interface EsiHistoryDay {
+  date: string
+  average: number
+  highest: number
+  lowest: number
+  order_count: number
+  volume: number
+}
+
+const hubRegion = [ 10000002, 10000043, 10000030, 10000032, 10000042 ]
+const tycoonRange: Record<string, string> = {
   STATION: "Station",
   REGION: "Region",
   SOLARSYSTEM: "Solar System",
@@ -31,14 +40,14 @@ export async function fetchRegions(): Promise<Region[]> {
     .map(({ regionID, regionName }: any) => ({ id: parseInt(regionID), name: regionName }))
 
   const minorRegions = regions
-    .filter(({ id }: any) => id != 10000004 && id != 10000017 && id != 10000019 && id < 11000000 && !HUB_REGION.includes(id))
+    .filter(({ id }: any) => id != 10000004 && id != 10000017 && id != 10000019 && id < 11000000 && !hubRegion.includes(id))
     .sort((a: Region, b: Region) => {
       if(a.name == b.name) return 0
       if(a.name < b.name) return -1
       return 1
     })
 
-  const hubRegions = HUB_REGION
+  const hubRegions = hubRegion
     .map(hubId => {
       const region = regions.find((r: Region) => r.id == hubId)
       if(!region) throw new Error("cant find hub in region dump")
@@ -159,7 +168,7 @@ export async function fetchOrders(typeId: number, regionId: number): Promise<Ord
 
   const orders = data.orders
   orders.forEach((o: any) => {
-    o.range = TYCOON_RANGE[o.range]
+    o.range = tycoonRange[o.range]
     o.location = data.stationNames[o.locationId] || data.structureNames[o.locationId] || "Unknown Player Structure"
     delete o.locationId
   })
@@ -168,8 +177,8 @@ export async function fetchOrders(typeId: number, regionId: number): Promise<Ord
 }
 
 export async function fetchHistory(typeId: number, regionId: number): Promise<HistoryDay[]> {
-  const history = await esiFetch(`/markets/${regionId}/history`, { type_id: typeId.toString() })
-  if(history.error) throw new Error(`esi error : ${history.error}`)
+  const response = await esiFetch<any>("GET", `/markets/${regionId}/history?type_id=${typeId}`)
+  const history = response.data
 
   // set orderCount
   for(const day of history) {

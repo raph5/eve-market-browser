@@ -11,10 +11,6 @@ export interface Tree extends Record<any, any> {
   childs: Record<string|number, Tree>
 }
 
-export function timeout(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 export function createRecord<T=any>(array: T[], keyField: string) {
   const record: Record<string, T> = {}
   for(let i=0; i<array.length; i++) {
