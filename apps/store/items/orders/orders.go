@@ -25,7 +25,7 @@ func Download(ctx context.Context) error {
   for _, region := range regions.Regions {
     go func() {
       defer wg.Done()
-      err := downloadRegion(ctx, region)
+      err := downloadRegion(errorCtx, region)
       if err != nil {
         errorCancel(err)
         return

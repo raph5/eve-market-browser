@@ -50,7 +50,7 @@ var semaphore = sem.New(MaxConcurrentRequests)
 var esiTimeout time.Time
 var esiTimeoutMu sync.Mutex
 
-func EsiFetch[T any](ctx context.Context, method string, uri string, body any, priority int, trails int,) (EsiResponse[T], error) {
+func EsiFetch[T any](ctx context.Context, method string, uri string, body any, priority int, trails int) (EsiResponse[T], error) {
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	// If no tries left, fail the request
