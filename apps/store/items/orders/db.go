@@ -95,3 +95,57 @@ func dbReplaceOrdersFromRegion(ctx context.Context, regionId int, orders []dbOrd
 
   return err
 }
+
+func dbReplaceAllOrders(ctx context.Context, ordersCh <-chan []dbOrder) error {
+  writeDB := ctx.Value("writeDB").(*sql.DB)
+  timeoutCtx, cancel := context.WithTimeout(ctx, 10 * time.Minute)
+  defer cancel()
+  
+	tx, err := writeDB.BeginTx(timeoutCtx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(timeoutCtx, "DELETE FROM `Order`")
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+  for orders := range ordersCh {
+    for _, o := range orders {
+      _, err := stmt.ExecContext(
+        timeoutCtx,
+        o.OrderId,
+        o.RegionId,
+        o.Duration,
+        o.IsBuyOrder,
+        o.Issued,
+        o.LocationId,
+        o.MinVolume,
+        o.Price,
+        o.Range,
+        o.SystemId,
+        o.TypeId,
+        o.VolumeRemain,
+        o.VolumeTotal,
+      )
+      if err != nil {
+        return err
+      }
+    }
+  }
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+  return err
+}
