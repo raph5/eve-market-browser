@@ -23,7 +23,9 @@ type dbOrder struct {
 	VolumeTotal  int
 }
 
-// TODO: add an intermediate representation for ranges as int for tighter storage
+// NOTE: I could add an intermediate representation for ranges as int for
+// tighter storage. But the orders weight only ~200mb against ~10gb for the
+// price histories which is quite negligible.
 var esiToDbRangeMap = map[string]string{
 	"station":     "Station",
 	"region":      "Region",
@@ -40,8 +42,8 @@ var esiToDbRangeMap = map[string]string{
 }
 
 func dbReplaceOrdersFromRegion(ctx context.Context, regionId int, orders []dbOrder) error {
-	writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
+  writeDB := ctx.Value("writeDB").(*sql.DB)
+  timeoutCtx, cancel := context.WithTimeout(ctx, 10 * time.Minute)
   defer cancel()
   
 	tx, err := writeDB.BeginTx(timeoutCtx, nil)
