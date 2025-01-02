@@ -3,6 +3,7 @@ package orders
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 )
 
@@ -52,10 +53,12 @@ func dbReplaceOrdersFromRegion(ctx context.Context, regionId int, orders []dbOrd
 	}
 	defer tx.Rollback()
 
+  start := time.Now()
 	_, err = tx.ExecContext(timeoutCtx, "DELETE FROM `Order` WHERE RegionId = ?", regionId)
 	if err != nil {
 		return err
 	}
+  log.Printf("delte: %v", time.Since(start))
 
 	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
