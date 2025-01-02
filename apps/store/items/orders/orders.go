@@ -3,7 +3,6 @@ package orders
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/regions"
 )
@@ -16,34 +15,53 @@ import (
 // Though the first approach was more simple to write it turned out to be
 // significantly slower (~7min against ~3min for the second approach).
 // Here I implemented the second approach
+
+// func Download(ctx context.Context) error {
+//   errorCtx, errorCancel := context.WithCancelCause(ctx)
+//   var wg sync.WaitGroup
+//   ordersCh := make(chan []dbOrder, len(regions.Regions))
+
+//   wg.Add(len(regions.Regions))
+//   for _, region := range regions.Regions {
+//     go func() {
+//       defer wg.Done()
+//       orders, err := fetchRegionOrders(errorCtx, region)
+//       if err != nil {
+//         errorCancel(err)
+//         return
+//       }
+//       ordersCh <- orders
+//     }()
+//   }
+
+//   wg.Wait()
+//   close(ordersCh)
+//   if err := context.Cause(errorCtx); err != nil {
+//     return err
+//   }
+//   errorCancel(nil)
+
+//   err := dbReplaceAllOrders(ctx, ordersCh)
+//   if err != nil {
+//     return err
+//   }
+
+//   return nil
+// }
+
 func Download(ctx context.Context) error {
-  errorCtx, errorCancel := context.WithCancelCause(ctx)
-  var wg sync.WaitGroup
-  ordersCh := make(chan []dbOrder, len(regions.Regions))
+  for _, regionId := range regions.Regions {
+    orders, err := fetchRegionOrders(ctx, regionId)
+    if err != nil {
+      // TODO: wrapping
+      return err
+    }
 
-  wg.Add(len(regions.Regions))
-  for _, region := range regions.Regions {
-    go func() {
-      defer wg.Done()
-      orders, err := fetchRegionOrders(errorCtx, region)
-      if err != nil {
-        errorCancel(err)
-        return
-      }
-      ordersCh <- orders
-    }()
-  }
-
-  wg.Wait()
-  close(ordersCh)
-  if err := context.Cause(errorCtx); err != nil {
-    return err
-  }
-  errorCancel(nil)
-
-  err := dbReplaceAllOrders(ctx, ordersCh)
-  if err != nil {
-    return err
+    err = dbReplaceOrdersFromRegion(ctx, regionId, orders)
+    if err != nil {
+      // TODO: wrapping
+      return err
+    }
   }
 
   return nil
