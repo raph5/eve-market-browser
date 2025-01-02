@@ -51,17 +51,17 @@ import (
 
 func Download(ctx context.Context) error {
   for _, regionId := range regions.Regions {
-    orders, err := fetchRegionOrders(ctx, regionId)
+    _, err := fetchRegionOrders(ctx, regionId)
     if err != nil {
       // TODO: wrapping
       return err
     }
 
-    err = dbReplaceOrdersFromRegion(ctx, regionId, orders)
-    if err != nil {
-      // TODO: wrapping
-      return err
-    }
+    // err = dbReplaceOrdersFromRegion(ctx, regionId, orders)
+    // if err != nil {
+    //   // TODO: wrapping
+    //   return err
+    // }
   }
 
   return nil
