@@ -35,8 +35,12 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 		for at := range activeMarketCh {
 			history, err := fetchHistory(errorCtx, at.RegionId, at.TypeId)
 			if err != nil {
-				errorCancel(err)
-				return
+				esiError, ok := err.(*esi.EsiError)
+				// NOTE: I can maybe handle 404, 400 errors better
+				if !ok || esiError.Code != 404 && esiError.Code != 400 {
+					errorCancel(err)
+					return
+				}
 			}
 			historyCh <- history
 		}
