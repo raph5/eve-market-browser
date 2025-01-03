@@ -122,9 +122,9 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 
 	// Implicit timeout
 	if response.StatusCode == 503 || response.StatusCode == 500 {
-		declareEsiTimeout(10 * time.Second)
+		declareEsiTimeout(20 * time.Second)
 
-		log.Printf("Esi fetch: 10s implicit esi timeout %d", response.StatusCode)
+		log.Printf("Esi fetch: 20s implicit esi timeout %d", response.StatusCode)
 		labels := prometheus.Labels{"code": response.Status, "message": ""}
 		metrics.EsiErrors.With(labels).Inc()
 		return retry(ErrImplicitTimeout)

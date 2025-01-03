@@ -20,14 +20,7 @@ func Download(ctx context.Context) error {
 		return fmt.Errorf("cant get activeMarkets count: %w", err)
 	}
 
-	// TODO: remove benchmark
-	start := time.Now()
 	for offset := 0; offset < activeMarketsCount; offset += chunkSize {
-		if offset > 1000 {
-			log.Printf("Benchmark resutls: %v", time.Until(start))
-			return nil
-		}
-
 		activeMarketsChunk, err := activemarkets.GetChunk(ctx, offset, chunkSize)
 		if err != nil {
 			return err
