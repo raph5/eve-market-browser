@@ -41,7 +41,7 @@ const requestTimeout = 7 * time.Second
 const DateLayout = "2006-01-02"
 const MaxConcurrentRequests = 10
 
-var ErrNoTrailsLeft = errors.New("Failed 5 esi fetching attempts")
+var ErrNoTrailsLeft = errors.New("No trails left")
 var ErrImplicitTimeout = errors.New("Esi implicit timeout")
 var ErrErrorRateTimeout = errors.New("Esi error rate timeout")
 var ErrExplicitTimeout = errors.New("Esi explicit timeout")
@@ -67,7 +67,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 
 		retryResponse, retryErr := EsiFetch[T](ctx, method, uri, body, priority, trails-1)
 		if errors.Is(retryErr, ErrNoTrailsLeft) {
-			return EsiResponse[T]{}, fallbackErr
+      return EsiResponse[T]{}, fmt.Errorf("no trails left: %w", fallbackErr)
 		}
 		return retryResponse, retryErr
 	}
@@ -243,7 +243,7 @@ func clearEsiTimeout(ctx context.Context) error {
 
 func declareEsiTimeout(duration time.Duration) {
   esiTimeoutMu.Lock()
-  esiTimeout = esiTimeout.Add(duration)
+  esiTimeout = time.Now().Add(duration)
   esiTimeoutMu.Unlock()
 }
 
