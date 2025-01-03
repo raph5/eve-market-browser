@@ -27,39 +27,39 @@ type dbHistoryDay struct {
 
 func dbGetHistoriesOfType(ctx context.Context, typeId int) ([]dbHistory, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
-  
-  selectQuery := `
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+
+	selectQuery := `
   SELECT HistoryJson, RegionId FROM History WHERE TypeId = ? AND RegionId != 0`
-  rows, err := readDB.QueryContext(timeoutCtx, selectQuery, typeId)
-  if err != nil {
-    return nil, err
-  }
-  defer rows.Close()
+	rows, err := readDB.QueryContext(timeoutCtx, selectQuery, typeId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-  histories := make([]dbHistory, 0)
-  for rows.Next() {
-    var h = dbHistory{typeId: typeId}
-    err = rows.Scan(&h.history, &h.regionId)
-    if err != nil {
-      return nil, err
-    }
-    histories = append(histories, h)
-  }
+	histories := make([]dbHistory, 0)
+	for rows.Next() {
+		var h = dbHistory{typeId: typeId}
+		err = rows.Scan(&h.history, &h.regionId)
+		if err != nil {
+			return nil, err
+		}
+		histories = append(histories, h)
+	}
 
-  err = rows.Err()
-  if err != nil {
-    return nil, err
-  }
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
 
-  return histories, nil
+	return histories, nil
 }
 
 func dbInsertHistories(ctx context.Context, histories []dbHistory) error {
 	writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
 	tx, err := writeDB.BeginTx(timeoutCtx, nil)
 	if err != nil {
@@ -81,19 +81,19 @@ func dbInsertHistories(ctx context.Context, histories []dbHistory) error {
 		return err
 	}
 
-  return nil
+	return nil
 }
 
 func dbInsertHistory(ctx context.Context, history dbHistory) error {
 	writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 2 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
 
-  insertQuery := "INSERT OR REPLACE INTO History VALUES (?,?,?)"
-  _, err := writeDB.ExecContext(timeoutCtx, insertQuery, history.history, history.typeId, history.regionId)
-  if err != nil {
-    return err
-  }
+	insertQuery := "INSERT OR REPLACE INTO History VALUES (?,?,?)"
+	_, err := writeDB.ExecContext(timeoutCtx, insertQuery, history.history, history.typeId, history.regionId)
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }

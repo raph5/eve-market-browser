@@ -11,7 +11,7 @@ import (
 )
 
 func initDatabase(dbPath string) (*sql.DB, *sql.DB, error) {
-	writeDB, err := sql.Open("sqlite3", dbPath + "?_txlock=immediate")
+	writeDB, err := sql.Open("sqlite3", dbPath+"?_txlock=immediate")
 	if err != nil {
 		return nil, nil, err
 	}

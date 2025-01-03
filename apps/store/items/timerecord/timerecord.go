@@ -9,10 +9,10 @@ import (
 
 func Set(ctx context.Context, key string, expTime time.Time) error {
 	writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
-  insertQuery := "INSERT OR REPLACE INTO TimeRecord VALUES (?,?)"
+	insertQuery := "INSERT OR REPLACE INTO TimeRecord VALUES (?,?)"
 	_, err := writeDB.ExecContext(timeoutCtx, insertQuery, key, expTime.Unix())
 	if err != nil {
 		return err
@@ -23,11 +23,11 @@ func Set(ctx context.Context, key string, expTime time.Time) error {
 
 func Get(ctx context.Context, key string) (time.Time, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
 	var unixTime int64
-  selectQuery := `SELECT "Time" FROM TimeRecord WHERE "Key" = ?`
+	selectQuery := `SELECT "Time" FROM TimeRecord WHERE "Key" = ?`
 	err := readDB.QueryRowContext(timeoutCtx, selectQuery, key).Scan(&unixTime)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

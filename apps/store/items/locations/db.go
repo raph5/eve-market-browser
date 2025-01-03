@@ -9,8 +9,8 @@ import (
 func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
 	unknownLocations := make([]int, 0)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
 	selectQuery := `
   SELECT DISTINCT o.LocationId FROM "Order" o
@@ -37,13 +37,13 @@ func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
 		return nil, err
 	}
 
-  return unknownLocations, nil
+	return unknownLocations, nil
 }
 
 func dbAddLocations(ctx context.Context, locations []nameAndId) error {
 	writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 10 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
 
 	tx, err := writeDB.BeginTx(timeoutCtx, nil)
 	if err != nil {
@@ -59,9 +59,9 @@ func dbAddLocations(ctx context.Context, locations []nameAndId) error {
 
 	for _, l := range locations {
 		_, err = stmt.ExecContext(timeoutCtx, l.Id, l.Name)
-    if err != nil {
-      return err
-    }
+		if err != nil {
+			return err
+		}
 	}
 
 	err = tx.Commit()
@@ -69,5 +69,5 @@ func dbAddLocations(ctx context.Context, locations []nameAndId) error {
 		return err
 	}
 
-  return nil
+	return nil
 }

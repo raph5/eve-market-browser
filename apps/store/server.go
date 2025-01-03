@@ -18,7 +18,7 @@ func runTcpServer(ctx context.Context, mux *http.ServeMux, port int) {
 	}
 
 	go func() {
-    log.Printf("TCP server: listening on http://localhost%s", server.Addr)
+		log.Printf("TCP server: listening on http://localhost%s", server.Addr)
 		err := server.ListenAndServe()
 		if err != nil {
 			errCh <- err
@@ -32,14 +32,14 @@ func runTcpServer(ctx context.Context, mux *http.ServeMux, port int) {
 		log.Printf("TCP server error: %v", err)
 	}
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {
 		log.Printf("TCP server error: %v", err)
 	}
 
-  log.Print("TCP server: not listening")
+	log.Print("TCP server: not listening")
 }
 
 func runUnixSocketServer(ctx context.Context, mux *http.ServeMux, socketPath string) {
@@ -65,7 +65,7 @@ func runUnixSocketServer(ctx context.Context, mux *http.ServeMux, socketPath str
 	}
 
 	go func() {
-    log.Printf("Unix socket server: listening on %s", socketPath)
+		log.Printf("Unix socket server: listening on %s", socketPath)
 		err := server.Serve(listener)
 		if err != nil {
 			errCh <- err
@@ -79,7 +79,7 @@ func runUnixSocketServer(ctx context.Context, mux *http.ServeMux, socketPath str
 		log.Printf("Unix socket server error: %v", err)
 	}
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 	err = os.Remove(socketPath)
 	if err != nil {
@@ -90,5 +90,5 @@ func runUnixSocketServer(ctx context.Context, mux *http.ServeMux, socketPath str
 		log.Printf("Unix socket server error: %v", err)
 	}
 
-  log.Print("Unix socket server: not listening")
+	log.Print("Unix socket server: not listening")
 }

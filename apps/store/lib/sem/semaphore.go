@@ -40,7 +40,7 @@ func (s *sem) Acquire(priority int) int {
 		}
 	}
 
-  for i := 0; i < 30; i++ {
+	for i := 0; i < 30; i++ {
 		ch := make(chan struct{})
 		node := &node{priority: priority, ch: ch}
 		push(&s.queue, node)
@@ -57,7 +57,7 @@ func (s *sem) Acquire(priority int) int {
 		}
 	}
 
-  panic("custom semaphore: exceeded 30 thread acquisition trails")
+	panic("custom semaphore: exceeded 30 thread acquisition trails")
 }
 
 func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error) {
@@ -71,7 +71,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		}
 	}
 
-  for i := 0; i < 500; i++ {
+	for i := 0; i < 500; i++ {
 		ch := make(chan struct{})
 		node := &node{priority: priority, ch: ch}
 		push(&s.queue, node)
@@ -95,7 +95,7 @@ func (s *sem) AcquireWithContext(ctx context.Context, priority int) (int, error)
 		}
 	}
 
-  panic("custom semaphore: exceeded 500 thread acquisition trails")
+	panic("custom semaphore: exceeded 500 thread acquisition trails")
 }
 
 func (s *sem) Release(thread int) {
@@ -111,8 +111,8 @@ func (s *sem) Release(thread int) {
 				ch := pop(&s.queue)
 				close(ch)
 			}
-      s.mu.Unlock()
-      return
+			s.mu.Unlock()
+			return
 		}
 	}
 	s.mu.Unlock()
@@ -120,14 +120,15 @@ func (s *sem) Release(thread int) {
 
 var threadId = 0
 var threadIdMu sync.Mutex
+
 func getNewThread() int {
-  threadIdMu.Lock()
+	threadIdMu.Lock()
 	if threadId == -2 {
 		threadId += 2
 	} else {
 		threadId += 1
 	}
-  threadIdMu.Unlock()
+	threadIdMu.Unlock()
 	return threadId
 }
 
@@ -148,12 +149,12 @@ func push(queue **node, node *node) {
 		*queue = node
 		return
 	}
-  i := 0
+	i := 0
 	for n.next != nil && node.priority <= n.next.priority {
-    if i >= maxQueueLength {
-      panic("custom semaphore: exceeded maxQueueLength")
-    }
-    i++
+		if i >= maxQueueLength {
+			panic("custom semaphore: exceeded maxQueueLength")
+		}
+		i++
 		n = n.next
 	}
 	node.next = n.next
@@ -167,19 +168,19 @@ func pop(queue **node) chan struct{} {
 }
 
 func remove(queue **node, node *node) {
-  if node == nil {
+	if node == nil {
 		panic("custom semaphore: can't remove node nil")
 	}
 	if *queue == node {
 		*queue = node.next
 		return
 	}
-  i := 0
-  for n := *queue; n != nil; n = n.next {
-    if i >= maxQueueLength {
-      panic("custom semaphore: exceeded maxQueueLength")
-    }
-    i++
+	i := 0
+	for n := *queue; n != nil; n = n.next {
+		if i >= maxQueueLength {
+			panic("custom semaphore: exceeded maxQueueLength")
+		}
+		i++
 		if n.next == node {
 			n.next = n.next.next
 			return

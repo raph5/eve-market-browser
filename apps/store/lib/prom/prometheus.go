@@ -83,7 +83,7 @@ func RunPrometheusServer(ctx context.Context, reg *prometheus.Registry) {
 		log.Printf("Prometheus server error: %v", err)
 	}
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {

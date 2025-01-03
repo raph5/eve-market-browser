@@ -20,17 +20,17 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Flags
-  var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, prometheusEnabled bool
-  var socketPath, dbPath string
-  var tcpPort int
+	var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, prometheusEnabled bool
+	var socketPath, dbPath string
+	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
-  flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
-  flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
-  flag.BoolVar(&prometheusEnabled, "prom", true, "Enable prometheus server")
-  flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
-  flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
-  flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port")
+	flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
+	flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
+	flag.BoolVar(&prometheusEnabled, "prom", true, "Enable prometheus server")
+	flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
+	flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
+	flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port")
 	flag.Parse()
 
 	// Init database
@@ -63,7 +63,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			runUnixSocketServer(ctx, mux, socketPath)
-      log.Print("Unix socket server stopped")
+			log.Print("Unix socket server stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -72,7 +72,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			runTcpServer(ctx, mux, tcpPort)
-      log.Print("Tcp server stopped")
+			log.Print("Tcp server stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -81,7 +81,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			prom.RunPrometheusServer(ctx, reg)
-      log.Print("Prometheus stopped")
+			log.Print("Prometheus stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -89,8 +89,8 @@ func main() {
 	if ordersEnabled {
 		mainWg.Add(1)
 		go func() {
-		  runOrdersHoardling(ctx)
-      log.Print("Order worker stopped")
+			runOrdersHoardling(ctx)
+			log.Print("Order worker stopped")
 			mainWg.Done()
 			cancel()
 		}()
@@ -99,7 +99,7 @@ func main() {
 		mainWg.Add(1)
 		go func() {
 			runHistoriesHoardling(ctx)
-      log.Print("History worker stopped")
+			log.Print("History worker stopped")
 			mainWg.Done()
 			cancel()
 		}()

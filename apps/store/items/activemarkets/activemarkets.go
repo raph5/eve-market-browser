@@ -13,8 +13,8 @@ type ActiveMarket struct {
 
 func Populate(ctx context.Context) error {
 	writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
 	populateQuery := `
   INSERT OR IGNORE INTO ActiveMarket
@@ -30,23 +30,23 @@ func Populate(ctx context.Context) error {
 
 func Count(ctx context.Context) (int, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
-  var count int
-  err := readDB.QueryRowContext(timeoutCtx, "SELECT COUNT(*) FROM ActiveMarket").Scan(&count)
-  if err != nil {
-    return 0, err
-  }
+	var count int
+	err := readDB.QueryRowContext(timeoutCtx, "SELECT COUNT(*) FROM ActiveMarket").Scan(&count)
+	if err != nil {
+		return 0, err
+	}
 
-  return count, nil
+	return count, nil
 }
 
 func GetTypesId(ctx context.Context) ([]int, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
 	activeMarkets := make([]int, 0, 1024)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
 	rows, err := readDB.QueryContext(timeoutCtx, "SELECT DISTINCT TypeId FROM ActiveMarket")
 	if err != nil {
@@ -73,8 +73,8 @@ func GetTypesId(ctx context.Context) ([]int, error) {
 func GetChunk(ctx context.Context, offset int, limit int) ([]ActiveMarket, error) {
 	readDB := ctx.Value("readDB").(*sql.DB)
 	activeMarkets := make([]ActiveMarket, 0, limit)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 5 * time.Minute)
-  defer cancel()
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
 	rows, err := readDB.QueryContext(timeoutCtx, "SELECT TypeId, RegionId FROM ActiveMarket LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {

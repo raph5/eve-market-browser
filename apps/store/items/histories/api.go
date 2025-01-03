@@ -34,16 +34,16 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
     `
 		err = readDB.QueryRow(historyQuery, typeId, regionId).Scan(&historyJson)
 		if err != nil && errors.Is(err, sql.ErrNoRows) {
-      log.Printf("History for type %d in region %d is not available", typeId, regionId)
-      http.Error(w, "History not available", 404)
-      return
-    } else if err != nil {
-      log.Printf("Internal server error: %v", err)
-      http.Error(w, "Internal server error", 500)
-      return
-    }
+			log.Printf("History for type %d in region %d is not available", typeId, regionId)
+			http.Error(w, "History not available", 404)
+			return
+		} else if err != nil {
+			log.Printf("Internal server error: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.Write(historyJson)
-  }
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(historyJson)
+	}
 }

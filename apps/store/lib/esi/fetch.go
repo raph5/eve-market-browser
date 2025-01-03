@@ -22,10 +22,10 @@ type EsiError struct {
 	Code    int
 }
 type EsiResponse[T any] struct {
-  Data *T
-  Pages int
-  // for pagniation purposes
-  // see https://developers.eveonline.com/blog/article/esi-concurrent-programming-and-pagination
+	Data  *T
+	Pages int
+	// for pagniation purposes
+	// see https://developers.eveonline.com/blog/article/esi-concurrent-programming-and-pagination
 }
 
 type jsonTimeoutError struct {
@@ -57,7 +57,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	if trails <= 0 {
 		labels := prometheus.Labels{"uri": uri, "result": "failure"}
 		metrics.EsiRequests.With(labels).Inc()
-    return EsiResponse[T]{}, ErrNoTrailsLeft
+		return EsiResponse[T]{}, ErrNoTrailsLeft
 	}
 
 	// Init retry function that will be called in case the request fail
@@ -67,39 +67,39 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 
 		retryResponse, retryErr := EsiFetch[T](ctx, method, uri, body, priority, trails-1)
 		if errors.Is(retryErr, ErrNoTrailsLeft) {
-      return EsiResponse[T]{}, fmt.Errorf("no trails left: %w", fallbackErr)
+			return EsiResponse[T]{}, fmt.Errorf("no trails left: %w", fallbackErr)
 		}
 		return retryResponse, retryErr
 	}
 
 	// Require premission from the semaphore
-  timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Minute)
 	thread, err := semaphore.AcquireWithContext(timeoutCtx, priority)
-  cancel()  // cancel context if AcquireWithContext end before timeout
+	cancel() // cancel context if AcquireWithContext end before timeout
 	if err != nil {
 		return EsiResponse[T]{}, fmt.Errorf("semaphore: %w", err)
 	}
 	defer semaphore.Release(thread)
 
 	// Wait for the api to be clear of any timeout
-  timeoutCtx, cancel = context.WithTimeout(ctx, 15 * time.Minute)
-  err = clearEsiTimeout(timeoutCtx)
-  cancel()
-  if err != nil {
-    return EsiResponse[T]{}, fmt.Errorf("esi timeout clearing: %w", err)
-  }
+	timeoutCtx, cancel = context.WithTimeout(ctx, 15*time.Minute)
+	err = clearEsiTimeout(timeoutCtx)
+	cancel()
+	if err != nil {
+		return EsiResponse[T]{}, fmt.Errorf("esi timeout clearing: %w", err)
+	}
 
 	// Create the request
 	var jsonBody []byte
 	if method == "POST" || method == "PUT" {
 		jsonBody, err = json.Marshal(body)
 		if err != nil {
-      return EsiResponse[T]{}, fmt.Errorf("body mashalling: %w", err)
+			return EsiResponse[T]{}, fmt.Errorf("body mashalling: %w", err)
 		}
 	}
 	request, err := http.NewRequestWithContext(ctx, method, esiRoot+uri, bytes.NewBuffer(jsonBody))
 	if err != nil {
-    return EsiResponse[T]{}, fmt.Errorf("new request: %w", err)
+		return EsiResponse[T]{}, fmt.Errorf("new request: %w", err)
 	}
 	request.Header.Set("content-type", "application/json")
 	request.Header.Set("User-Agent", "evemarketbrowser.com - contact me at raphguyader@gmail.com")
@@ -116,71 +116,71 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 			metrics.EsiRequests.With(labels).Inc()
 			return EsiResponse[T]{}, fmt.Errorf("esi request: %w", err)
 		}
-    return retry(fmt.Errorf("http request: %w", err))
+		return retry(fmt.Errorf("http request: %w", err))
 	}
 	defer response.Body.Close()
 
-  // Implicit timeout
+	// Implicit timeout
 	if response.StatusCode == 503 || response.StatusCode == 500 {
-    declareEsiTimeout(10 * time.Second)
+		declareEsiTimeout(10 * time.Second)
 
-    log.Printf("Esi fetch: 10s implicit esi timeout %d", response.StatusCode)
+		log.Printf("Esi fetch: 10s implicit esi timeout %d", response.StatusCode)
 		labels := prometheus.Labels{"code": response.Status, "message": ""}
 		metrics.EsiErrors.With(labels).Inc()
 		return retry(ErrImplicitTimeout)
 	}
 
-  // Error rate timeout
-  if response.StatusCode == 420 {
-    var timeout time.Duration
-    secs, err := strconv.Atoi(response.Header.Get("X-Esi-Error-Limit-Reset"))
-    if err != nil {
-      log.Print("Esi fetch: Can't decode X-Esi-Error-Limit-Reset")
-      timeout = 10 * time.Second
-    } else if secs < 0 || secs > 120 {
-      log.Printf("Esi fetch: X-Esi-Error-Limit-Reset out of range: %ds", secs)
-      timeout = 10 * time.Second
-    } else {
-      timeout = time.Duration(secs) * time.Second
-    }
-    declareEsiTimeout(timeout)
+	// Error rate timeout
+	if response.StatusCode == 420 {
+		var timeout time.Duration
+		secs, err := strconv.Atoi(response.Header.Get("X-Esi-Error-Limit-Reset"))
+		if err != nil {
+			log.Print("Esi fetch: Can't decode X-Esi-Error-Limit-Reset")
+			timeout = 10 * time.Second
+		} else if secs < 0 || secs > 120 {
+			log.Printf("Esi fetch: X-Esi-Error-Limit-Reset out of range: %ds", secs)
+			timeout = 10 * time.Second
+		} else {
+			timeout = time.Duration(secs) * time.Second
+		}
+		declareEsiTimeout(timeout)
 
-    log.Printf("Esi fetch: %fs error rate timeout", timeout.Seconds())
+		log.Printf("Esi fetch: %fs error rate timeout", timeout.Seconds())
 		labels := prometheus.Labels{"code": response.Status, "message": ""}
 		metrics.EsiErrors.With(labels).Inc()
 		return retry(ErrErrorRateTimeout)
-  }
+	}
 
 	decoder := json.NewDecoder(response.Body)
 	decoder.UseNumber()
-  // Explicit timeout
+	// Explicit timeout
 	if response.StatusCode == 504 {
 		var timeoutError jsonTimeoutError
-    var timeout time.Duration
+		var timeout time.Duration
 		err = decoder.Decode(&timeoutError)
-    if err != nil {
-      log.Print("Esi fetch: Can't decode esi timeout")
-      timeout = 10 * time.Second
-    } else if timeoutError.Timeout < 0 || timeoutError.Timeout > 120 {
-      log.Printf("Esi fetch: esi timeout out of range: %ds", timeoutError.Timeout)
-      timeout = 10 * time.Second
-    } else {
-      timeout = time.Duration(timeoutError.Timeout) * time.Second
-    }
-    declareEsiTimeout(timeout)
+		if err != nil {
+			log.Print("Esi fetch: Can't decode esi timeout")
+			timeout = 10 * time.Second
+		} else if timeoutError.Timeout < 0 || timeoutError.Timeout > 120 {
+			log.Printf("Esi fetch: esi timeout out of range: %ds", timeoutError.Timeout)
+			timeout = 10 * time.Second
+		} else {
+			timeout = time.Duration(timeoutError.Timeout) * time.Second
+		}
+		declareEsiTimeout(timeout)
 
-    log.Printf("Esi fetch: %fs explicit esi timeout", timeout.Seconds())
+		log.Printf("Esi fetch: %fs explicit esi timeout", timeout.Seconds())
 		labels := prometheus.Labels{"code": response.Status, "message": timeoutError.Error}
 		metrics.EsiErrors.With(labels).Inc()
 		return retry(ErrExplicitTimeout)
 	}
 
-  // Esi error
+	// Esi error
 	if response.StatusCode != 200 {
 		var error jsonError
 		err = decoder.Decode(&error)
 		if err != nil {
-      log.Printf("Esi fetch: Can't decode esi error")
+			log.Printf("Esi fetch: Can't decode esi error")
 			return retry(fmt.Errorf("decoding esi error: %w", err))
 		}
 
@@ -194,25 +194,25 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	var data T
 	err = decoder.Decode(&data)
 	if err != nil {
-    log.Print("Esi fetch: Can't decode 200 response body")
+		log.Print("Esi fetch: Can't decode 200 response body")
 		return retry(fmt.Errorf("decoding response body: %w", err))
 	}
 
-  var pages int
-  xPages := response.Header.Get("X-Pages")
-  if xPages != "" {
-    pages, err = strconv.Atoi(xPages)
-    if err != nil {
-      log.Print("Esi fetch: Can't decode X-Pages")
-    } else if pages < 0 || pages > 1000 {
-      log.Printf("Esi fetch: X-Pages out of range: %d", pages)
-    }
-  }
+	var pages int
+	xPages := response.Header.Get("X-Pages")
+	if xPages != "" {
+		pages, err = strconv.Atoi(xPages)
+		if err != nil {
+			log.Print("Esi fetch: Can't decode X-Pages")
+		} else if pages < 0 || pages > 1000 {
+			log.Printf("Esi fetch: X-Pages out of range: %d", pages)
+		}
+	}
 
-  esiResponse := EsiResponse[T]{
-    Data: &data,
-    Pages: pages,
-  }
+	esiResponse := EsiResponse[T]{
+		Data:  &data,
+		Pages: pages,
+	}
 
 	labels := prometheus.Labels{"uri": uri, "result": "success"}
 	metrics.EsiRequests.With(labels).Inc()
@@ -220,31 +220,31 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 }
 
 func clearEsiTimeout(ctx context.Context) error {
-  // This function need to be called in a timeout context
-  for {
-    esiTimeoutMu.Lock()
-    esiTimeoutCopy := esiTimeout
-    esiTimeoutMu.Unlock()
-    if time.Now().After(esiTimeoutCopy) {
-      return nil
-    }
-    timer := time.NewTimer(time.Until(esiTimeoutCopy))
-    select {
-    case <-timer.C:
-    case <-ctx.Done():
-      // NOTE: in go 1.23 it would not be necessary to drain the timer channel
-      if !timer.Stop() {
-        <-timer.C
-      }
-      return ctx.Err()
-    }
-  }
+	// This function need to be called in a timeout context
+	for {
+		esiTimeoutMu.Lock()
+		esiTimeoutCopy := esiTimeout
+		esiTimeoutMu.Unlock()
+		if time.Now().After(esiTimeoutCopy) {
+			return nil
+		}
+		timer := time.NewTimer(time.Until(esiTimeoutCopy))
+		select {
+		case <-timer.C:
+		case <-ctx.Done():
+			// NOTE: in go 1.23 it would not be necessary to drain the timer channel
+			if !timer.Stop() {
+				<-timer.C
+			}
+			return ctx.Err()
+		}
+	}
 }
 
 func declareEsiTimeout(duration time.Duration) {
-  esiTimeoutMu.Lock()
-  esiTimeout = time.Now().Add(duration)
-  esiTimeoutMu.Unlock()
+	esiTimeoutMu.Lock()
+	esiTimeout = time.Now().Add(duration)
+	esiTimeoutMu.Unlock()
 }
 
 func (e *EsiError) Error() string {

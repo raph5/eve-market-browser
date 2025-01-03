@@ -24,64 +24,63 @@ func runOrdersHoardling(ctx context.Context) {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "OrdersExpiration")
 		if err != nil {
-      msg := fmt.Sprintf("orders hoardling error: timerecord get: %v", err)
+			msg := fmt.Sprintf("orders hoardling error: timerecord get: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
-      log.Print(msg)
-      break
+			log.Print(msg)
+			break
 		}
 
 		delta := expiration.Sub(now)
 		if delta > 0 {
 			metrics.OrderStatus.Set(1)
-      log.Print("orders hoardling: up to date")
+			log.Print("orders hoardling: up to date")
 
-      err := sleep(ctx, delta)
-      if err == nil {
+			err := sleep(ctx, delta)
+			if err == nil {
 				metrics.OrderStatus.Set(0)
-      }
+			}
 			continue
 		}
 
 		metrics.OrderStatus.Set(0)
-    log.Print("orders hoardling: downloading orders and locations")
+		log.Print("orders hoardling: downloading orders and locations")
 
 		err = orders.Download(ctx)
 		if err != nil {
-      msg := fmt.Sprintf("orders hoardling error: orders download: %v", err)
+			msg := fmt.Sprintf("orders hoardling error: orders download: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-      log.Print("order hoardling: 2 minutes backoff")
-      sleep(ctx, 2 * time.Minute)
+			log.Print("order hoardling: 2 minutes backoff")
+			sleep(ctx, 2*time.Minute)
 			continue
 		}
 
 		err = locations.Populate(ctx)
 		if err != nil {
-      msg := fmt.Sprintf("orders hoardling error: locations populate: %v", err)
+			msg := fmt.Sprintf("orders hoardling error: locations populate: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
-      log.Print(msg)
-      if ctx.Err() != nil {
-        break
-      }
+			log.Print(msg)
+			if ctx.Err() != nil {
+				break
+			}
 		}
 
 		newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
 		err = timerecord.Set(ctx, "OrdersExpiration", newExpiration)
 		if err != nil {
-      msg := fmt.Sprintf("orders hoardling error: timerecord set: %v", err)
+			msg := fmt.Sprintf("orders hoardling error: timerecord set: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-      break
+			break
 		}
 	}
 
-  log.Print("orders hoardling: stopping")
+	log.Print("orders hoardling: stopping")
 }
-
 
 func runHistoriesHoardling(ctx context.Context) {
 	metrics := ctx.Value("metrics").(*prom.Metrics)
@@ -90,31 +89,31 @@ func runHistoriesHoardling(ctx context.Context) {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "HistoriesExpiration")
 		if err != nil {
-      msg := fmt.Sprintf("histories hoardling error: timerecord get: %v", err)
+			msg := fmt.Sprintf("histories hoardling error: timerecord get: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
-      log.Print(msg)
-      break
+			log.Print(msg)
+			break
 		}
 
 		delta := expiration.Sub(now)
 		if delta > 0 {
 			metrics.HistoryStatus.Set(1)
-      log.Print("histories hoardling: up to date")
+			log.Print("histories hoardling: up to date")
 
-      err := sleep(ctx, delta)
-      if err == nil {
+			err := sleep(ctx, delta)
+			if err == nil {
 				metrics.OrderStatus.Set(0)
-      }
+			}
 			continue
 		}
 
 		metrics.HistoryStatus.Set(0)
-    log.Print("histories hoardling: downloading histories")
+		log.Print("histories hoardling: downloading histories")
 
 		err = activemarkets.Populate(ctx)
 		if err != nil {
-      msg := fmt.Sprintf("histories hoardling error: active types populate: %v", err)
+			msg := fmt.Sprintf("histories hoardling error: active types populate: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -123,24 +122,24 @@ func runHistoriesHoardling(ctx context.Context) {
 
 		err = histories.Download(ctx)
 		if err != nil {
-      msg := fmt.Sprintf("histories hoardling error: histories download: %v", err)
+			msg := fmt.Sprintf("histories hoardling error: histories download: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-      log.Print("histories hoardling: 5 minutes backoff")
-      sleep(ctx, 5 * time.Minute)
+			log.Print("histories hoardling: 5 minutes backoff")
+			sleep(ctx, 5*time.Minute)
 			continue
 		}
 
 		err = histories.ComputeGobalHistories(ctx)
 		if err != nil {
-      msg := fmt.Sprintf("histories hoardling error: compute global histories: %v", err)
+			msg := fmt.Sprintf("histories hoardling error: compute global histories: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-      if ctx.Err() != nil {
-        break
-      }
+			if ctx.Err() != nil {
+				break
+			}
 		}
 
 		elevenFifteenTomorrow := time.Date(now.Year(), now.Month(), now.Day(), 11, 15, 0, 0, now.Location())
@@ -149,26 +148,26 @@ func runHistoriesHoardling(ctx context.Context) {
 		}
 		err = timerecord.Set(ctx, "HistoriesExpiration", elevenFifteenTomorrow)
 		if err != nil {
-      msg := fmt.Sprintf("orders hoardling error: timerecord set: %v", err)
+			msg := fmt.Sprintf("orders hoardling error: timerecord set: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-      break
+			break
 		}
 	}
 
-  log.Print("orders hoardling: stopping")
+	log.Print("orders hoardling: stopping")
 }
 
 func sleep(ctx context.Context, duration time.Duration) error {
-  timer := time.NewTimer(duration)
-  select {
-  case <-timer.C:
-    return nil
-  case <-ctx.Done():
-    if !timer.Stop() {
-      <-timer.C
-    }
-    return ctx.Err()
-  }
+	timer := time.NewTimer(duration)
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		if !timer.Stop() {
+			<-timer.C
+		}
+		return ctx.Err()
+	}
 }
