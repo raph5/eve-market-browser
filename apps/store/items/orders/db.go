@@ -3,7 +3,6 @@ package orders
 import (
 	"context"
 	"database/sql"
-	"log"
 	"time"
 )
 
@@ -42,64 +41,7 @@ var esiToDbRangeMap = map[string]string{
 	"40":          "40 Jumps",
 }
 
-func dbReplaceOrdersFromRegion(ctx context.Context, regionId int, orders []dbOrder) error {
-  writeDB := ctx.Value("writeDB").(*sql.DB)
-  timeoutCtx, cancel := context.WithTimeout(ctx, 10 * time.Minute)
-  defer cancel()
-  
-	tx, err := writeDB.BeginTx(timeoutCtx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-  start := time.Now()
-	_, err = tx.ExecContext(timeoutCtx, "DELETE FROM `Order` WHERE RegionId = ?", regionId)
-	if err != nil {
-		return err
-	}
-  log.Printf("delte: %v", time.Since(start))
-
-	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-  for _, o := range orders {
-    if o.RegionId != regionId {
-      panic("dbReplaceOrdersFromRegion invalid input")
-    }
-    _, err := stmt.ExecContext(
-      timeoutCtx,
-      o.OrderId,
-      o.RegionId,
-      o.Duration,
-      o.IsBuyOrder,
-      o.Issued,
-      o.LocationId,
-      o.MinVolume,
-      o.Price,
-      o.Range,
-      o.SystemId,
-      o.TypeId,
-      o.VolumeRemain,
-      o.VolumeTotal,
-    )
-    if err != nil {
-      return err
-    }
-  }
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-  return err
-}
-
-func dbReplaceAllOrders(ctx context.Context, ordersCh <-chan []dbOrder) error {
+func dbReplaceOrders(ctx context.Context, orders []dbOrder) error {
   writeDB := ctx.Value("writeDB").(*sql.DB)
   timeoutCtx, cancel := context.WithTimeout(ctx, 10 * time.Minute)
   defer cancel()
@@ -121,27 +63,25 @@ func dbReplaceAllOrders(ctx context.Context, ordersCh <-chan []dbOrder) error {
 	}
 	defer stmt.Close()
 
-  for orders := range ordersCh {
-    for _, o := range orders {
-      _, err := stmt.ExecContext(
-        timeoutCtx,
-        o.OrderId,
-        o.RegionId,
-        o.Duration,
-        o.IsBuyOrder,
-        o.Issued,
-        o.LocationId,
-        o.MinVolume,
-        o.Price,
-        o.Range,
-        o.SystemId,
-        o.TypeId,
-        o.VolumeRemain,
-        o.VolumeTotal,
-      )
-      if err != nil {
-        return err
-      }
+  for _, o := range orders {
+    _, err := stmt.ExecContext(
+      timeoutCtx,
+      o.OrderId,
+      o.RegionId,
+      o.Duration,
+      o.IsBuyOrder,
+      o.Issued,
+      o.LocationId,
+      o.MinVolume,
+      o.Price,
+      o.Range,
+      o.SystemId,
+      o.TypeId,
+      o.VolumeRemain,
+      o.VolumeTotal,
+    )
+    if err != nil {
+      return err
     }
   }
 
