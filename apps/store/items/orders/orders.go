@@ -12,7 +12,6 @@ import (
 //     the orders inside a region
 //   - fetching all regions in parallel and fetch the orders inside a region
 //     sequentially
-//
 // Though the first approach was more simple to write it turned out to be
 // significantly slower (~7min against ~3min for the second approach).
 // EDIT: Just fetching orders and regions sequentially works fine 👉👈
