@@ -36,7 +36,7 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 			history, err := fetchHistory(errorCtx, at.RegionId, at.TypeId)
 			if err != nil {
 				// NOTE: I can maybe handle 404, 400 errors better
-        var esiError *esi.EsiError
+				var esiError *esi.EsiError
 				if !errors.As(err, &esiError) || (esiError.Code != 404 && esiError.Code != 400) {
 					errorCancel(err)
 					return
