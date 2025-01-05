@@ -41,8 +41,9 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 					errorCancel(err)
 					return
 				}
+			} else {
+				historyCh <- history
 			}
-			historyCh <- history
 		}
 	}
 
