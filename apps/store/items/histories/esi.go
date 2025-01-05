@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/activemarkets"
@@ -32,12 +33,14 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 	historyCh := make(chan *dbHistory, 4)
 
 	worker := func() {
-		for at := range activeMarketCh {
-			history, err := fetchHistory(errorCtx, at.RegionId, at.TypeId)
+		for am := range activeMarketCh {
+			history, err := fetchHistory(errorCtx, am.RegionId, am.TypeId)
 			if err != nil {
-				// NOTE: I can maybe handle 404, 400 errors better
 				var esiError *esi.EsiError
-				if !errors.As(err, &esiError) || (esiError.Code != 404 && esiError.Code != 400) {
+				if errors.As(err, &esiError) && (esiError.Code == 404 || esiError.Code == 400) {
+					// NOTE: I can maybe handle 404, 400 errors better
+					log.Printf("History downloader: I cant fetch history of type %d in region %d due to a %d so I'll skip it.", am.TypeId, am.RegionId, esiError.Code)
+				} else {
 					errorCancel(err)
 					return
 				}
