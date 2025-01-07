@@ -41,7 +41,7 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 					// NOTE: I can maybe handle 404, 400 errors better
 					log.Printf("History downloader: I cant fetch history of type %d in region %d due to a %d so I'll skip it.", am.TypeId, am.RegionId, esiError.Code)
 				} else {
-					errorCancel(err)
+          errorCancel(fmt.Errorf("fetch history: %w", err))
 					return
 				}
 			} else {

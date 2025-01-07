@@ -16,8 +16,8 @@ import (
 )
 
 func main() {
-	// Init logger and diskStorage
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	// Init logger
+	log.SetFlags(log.LstdFlags)
 
 	// Flags
 	var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, prometheusEnabled bool
