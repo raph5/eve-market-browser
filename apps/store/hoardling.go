@@ -34,7 +34,7 @@ func runOrdersHoardling(ctx context.Context) {
 		delta := expiration.Sub(now)
 		if delta > 0 {
 			metrics.OrderStatus.Set(1)
-			log.Print("orders hoardling: up to date")
+			log.Print("Orders hoardling: up to date")
 
 			err := sleep(ctx, delta)
 			if err == nil {
@@ -44,22 +44,22 @@ func runOrdersHoardling(ctx context.Context) {
 		}
 
 		metrics.OrderStatus.Set(0)
-		log.Print("orders hoardling: downloading orders and locations")
+		log.Print("Orders hoardling: downloading orders and locations")
 
 		err = orders.Download(ctx)
 		if err != nil {
-			msg := fmt.Sprintf("orders hoardling error: orders download: %v", err)
+			msg := fmt.Sprintf("Orders hoardling error: orders download: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-			log.Print("order hoardling: 2 minutes backoff")
+			log.Print("Order hoardling: 2 minutes backoff")
 			sleep(ctx, 2*time.Minute)
 			continue
 		}
 
 		err = locations.Populate(ctx)
 		if err != nil {
-			msg := fmt.Sprintf("orders hoardling error: locations populate: %v", err)
+			msg := fmt.Sprintf("Orders hoardling error: locations populate: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -71,7 +71,7 @@ func runOrdersHoardling(ctx context.Context) {
 		newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
 		err = timerecord.Set(ctx, "OrdersExpiration", newExpiration)
 		if err != nil {
-			msg := fmt.Sprintf("orders hoardling error: timerecord set: %v", err)
+			msg := fmt.Sprintf("Orders hoardling error: timerecord set: %v", err)
 			labels := prometheus.Labels{"worker": "order", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -79,7 +79,7 @@ func runOrdersHoardling(ctx context.Context) {
 		}
 	}
 
-	log.Print("orders hoardling: stopping")
+	log.Print("Orders hoardling: stopping")
 }
 
 func runHistoriesHoardling(ctx context.Context) {
@@ -89,7 +89,7 @@ func runHistoriesHoardling(ctx context.Context) {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "HistoriesExpiration")
 		if err != nil {
-			msg := fmt.Sprintf("histories hoardling error: timerecord get: %v", err)
+			msg := fmt.Sprintf("Histories hoardling error: timerecord get: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -99,7 +99,7 @@ func runHistoriesHoardling(ctx context.Context) {
 		delta := expiration.Sub(now)
 		if delta > 0 {
 			metrics.HistoryStatus.Set(1)
-			log.Print("histories hoardling: up to date")
+			log.Print("Histories hoardling: up to date")
 
 			err := sleep(ctx, delta)
 			if err == nil {
@@ -109,11 +109,11 @@ func runHistoriesHoardling(ctx context.Context) {
 		}
 
 		metrics.HistoryStatus.Set(0)
-		log.Print("histories hoardling: downloading histories")
+		log.Print("Histories hoardling: downloading histories")
 
 		err = activemarkets.Populate(ctx)
 		if err != nil {
-			msg := fmt.Sprintf("histories hoardling error: active types populate: %v", err)
+			msg := fmt.Sprintf("Histories hoardling error: active types populate: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -122,18 +122,18 @@ func runHistoriesHoardling(ctx context.Context) {
 
 		err = histories.Download(ctx)
 		if err != nil {
-			msg := fmt.Sprintf("histories hoardling error: histories download: %v", err)
+			msg := fmt.Sprintf("Histories hoardling error: histories download: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
-			log.Print("histories hoardling: 5 minutes backoff")
+			log.Print("Histories hoardling: 5 minutes backoff")
 			sleep(ctx, 5*time.Minute)
 			continue
 		}
 
 		err = histories.ComputeGobalHistories(ctx)
 		if err != nil {
-			msg := fmt.Sprintf("histories hoardling error: compute global histories: %v", err)
+			msg := fmt.Sprintf("Histories hoardling error: compute global histories: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -148,7 +148,7 @@ func runHistoriesHoardling(ctx context.Context) {
 		}
 		err = timerecord.Set(ctx, "HistoriesExpiration", elevenFifteenTomorrow)
 		if err != nil {
-			msg := fmt.Sprintf("orders hoardling error: timerecord set: %v", err)
+			msg := fmt.Sprintf("Histories hoardling error: timerecord set: %v", err)
 			labels := prometheus.Labels{"worker": "history", "message": msg}
 			metrics.WorkerErrors.With(labels).Inc()
 			log.Print(msg)
@@ -156,7 +156,7 @@ func runHistoriesHoardling(ctx context.Context) {
 		}
 	}
 
-	log.Print("orders hoardling: stopping")
+	log.Print("Histories hoardling: stopping")
 }
 
 func sleep(ctx context.Context, duration time.Duration) error {
