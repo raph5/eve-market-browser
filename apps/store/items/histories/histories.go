@@ -109,6 +109,10 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 
 	var firstDate, lastDate time.Time
 	for _, ehd := range esiHistories {
+    if len(ehd) == 0 {
+      continue
+    }
+
 		fd, err := time.Parse(esi.DateLayout, ehd[0].Date)
 		if err != nil {
 			return fmt.Errorf("can't parse date: %w", err)
@@ -130,7 +134,7 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 	offsets := make([]int, regions)
 	for i, d := 0, firstDate; i < deltaDays; i, d = i+1, d.AddDate(0, 0, 1) {
 		for j := 0; j < regions; j++ {
-			if offsets[j]+i >= len(esiHistories[j]) {
+			if len(esiHistories[i]) == 0 || offsets[j]+i >= len(esiHistories[j]) {
 				continue
 			}
 
