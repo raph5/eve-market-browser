@@ -90,7 +90,7 @@ func dbInsertHistory(ctx context.Context, history dbHistory) error {
 	defer cancel()
 
 	insertQuery := "INSERT OR REPLACE INTO History VALUES (?,?,?)"
-	_, err := writeDB.ExecContext(timeoutCtx, insertQuery, history.history, history.typeId, history.regionId)
+	_, err := writeDB.ExecContext(timeoutCtx, insertQuery, history.typeId, history.regionId, history.history)
 	if err != nil {
 		return err
 	}
