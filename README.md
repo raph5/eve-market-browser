@@ -40,6 +40,7 @@ Build remix app `npm run build`
 - Test quickbar exports
 - Fix market group icons
 - Add log size limit for nginx, remix.log and store.log
+- Forward 404 from store to frontend
 
 
 ## Ports
