@@ -88,7 +88,9 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 	regions := len(histories)
 
 	if regions == 0 {
-		return fmt.Errorf("empty historiesOfType for type %d", typeId)
+		// return fmt.Errorf("empty historiesOfType for type %d", typeId)
+		// here I do not throw as in practice I get a few empty ones
+		return nil
 	}
 	if regions == 1 {
 		histories[0].regionId = 0
