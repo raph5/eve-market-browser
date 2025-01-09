@@ -109,9 +109,9 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 
 	var firstDate, lastDate time.Time
 	for _, ehd := range esiHistories {
-    if len(ehd) == 0 {
-      continue
-    }
+		if len(ehd) == 0 {
+			continue
+		}
 
 		fd, err := time.Parse(esi.DateLayout, ehd[0].Date)
 		if err != nil {
