@@ -1,3 +1,6 @@
+// Active markets are the couples type, region for which we decide to fetch the
+// history.
+
 package activemarkets
 
 import (
