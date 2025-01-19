@@ -24,10 +24,10 @@
     "baseUrl": ".",
     "paths": {
       "@scss/*": ["./scss/*"],
-      "@components/*": ["./components/*"],
+      "@components/*": ["./lib/components/*"],
       "@app/*": ["./app/*"],
-      "@hooks/*": ["./hooks/*"],
-      "@contexts/*": ["./contexts/*"],
+      "@hooks/*": ["./lib/hooks/*"],
+      "@contexts/*": ["./lib/contexts/*"],
       "@lib/*": ["./lib/*"],
       "@assets/*": ["./assets/*"]
     },

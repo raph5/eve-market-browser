@@ -8,11 +8,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@scss': path.resolve(__dirname, './scss'),
-      '@components': path.resolve(__dirname, './components'),
+      '@components': path.resolve(__dirname, './lib/components'),
       '@assets': path.resolve(__dirname, './assets'),
       '@app': path.resolve(__dirname, './app'),
-      '@hooks': path.resolve(__dirname, './hooks'),
-      '@contexts': path.resolve(__dirname, './contexts'),
+      '@hooks': path.resolve(__dirname, './lib/hooks'),
+      '@contexts': path.resolve(__dirname, './lib/contexts'),
       '@lib': path.resolve(__dirname, './lib')
     }
   },
