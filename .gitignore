@@ -1,9 +1,8 @@
+.DS_Store
+
 node_modules
-**/node_modules
 
 data.db
 data.db-*
-**/data.db
-**/data.db-*
 
 *.log
