@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "checkJs": true,
+    "allowJs": true,
+    "baseUrl": "./",
+  },
+  "include": ["./*.js"],
+}

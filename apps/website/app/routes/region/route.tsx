@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { MetaFunction, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import Navigation from "./navigation";
 import { ErrorMessage } from "@components/errorMessage";
-import { MarketGroup, Region, Type } from "esi-store/types";
+import { MarketGroup, Region, Type } from "@lib/esiStore/types";
 import Header from "./header";
 import { useQuickbar } from "@hooks/useQuickbar";
 import QuickbarContext from "@contexts/quickbarContext";
@@ -11,9 +11,7 @@ import "@scss/app.scss"
 
 export interface RegionContext {
   types: Type[]
-  typeRecord: Record<string, Type>
   marketGroups: MarketGroup[]
-  marketGroupsRecord: Record<string, MarketGroup>
   regions: Region[]
 }
 
@@ -44,34 +42,24 @@ export async function loader() {
     .catch(() => {
       throw json("Can't Find Regions", { status: 500 })
     })
-    
-  const marketGroupsRecord = await esiStore.marketGroupRecord
-    .catch(() => {
-      throw json("Can't Find Market Groups Record", { status: 500 })
-    })
-
-  const typeRecord = await esiStore.typeRecord
-    .catch(() => {
-      throw json("Can't Find Type Record", { status: 500 })
-    })
   
   return json(
-    { types, typeRecord, marketGroups, marketGroupsRecord, regions },
+    { types, marketGroups, regions },
     { headers: { "Cache-Control": `public, s-maxage=${60*60*24*7}` } }
   )
 }
 
 export default function Layout() {
-  const { types, typeRecord, marketGroups, marketGroupsRecord, regions } = useLoaderData<typeof loader>();
-  const quickbar = useQuickbar(types, typeRecord)
+  const { types, marketGroups, regions } = useLoaderData<typeof loader>();
+  const quickbar = useQuickbar(types)
 
   return (
     <QuickbarContext.Provider value={quickbar}>
       <div className="app">
         <Header regions={regions} />
-        <Navigation types={types} typeRecord={typeRecord} marketGroups={marketGroups} marketGroupRecord={marketGroupsRecord} />
+        <Navigation types={types} marketGroups={marketGroups} />
         <main>
-          <Outlet context={{ types, typeRecord, marketGroups, marketGroupsRecord, regions }} />
+          <Outlet context={{ types, marketGroups, regions }} />
         </main>
       </div>
     </QuickbarContext.Provider>

@@ -1,4 +1,3 @@
-
 const BASE_64 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+"
 
 export const DAY = 1000*60*60*24
@@ -9,10 +8,6 @@ export const SECOND = 1000
 export interface Tree extends Record<any, any> {
   value: string|number
   childs: Record<string|number, Tree>
-}
-
-export function timeout(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export function createRecord<T=any>(array: T[], keyField: string) {

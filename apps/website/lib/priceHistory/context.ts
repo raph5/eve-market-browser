@@ -1,5 +1,5 @@
-import { HistoryDay } from "esi-store/types";
-import { AverageTooltip } from "./objects/averageTooltip";
+import { HistoryDay } from "@lib/esiStore/types";
+import { Tooltip } from "./objects/averageTooltip";
 
 export class GraphContext {
 
@@ -11,6 +11,6 @@ export class GraphContext {
   endPrice = 0
 
   // @ts-ignore
-  tooltip: AverageTooltip = {}
+  tooltip: Tooltip = {}
 
 }

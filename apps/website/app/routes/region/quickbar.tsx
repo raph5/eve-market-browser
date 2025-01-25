@@ -1,12 +1,12 @@
-import { TriangleRightIcon, DownloadIcon, UploadIcon, TrashIcon, MixerHorizontalIcon } from "@radix-ui/react-icons";
-import { Type } from "esi-store/types";
+import { TriangleRightIcon, DownloadIcon, UploadIcon, TrashIcon, UnderlineIcon } from "@radix-ui/react-icons";
+import { Type } from "@lib/esiStore/types";
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
 import { PiFolderPlusThin } from "react-icons/pi";
 import { BsArrowsCollapse } from "react-icons/bs";
 import QuickbarContext from "@contexts/quickbarContext";
-import { stringSort } from "utils/main";
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { stringSort } from "@lib/utils";
+import { Link, useNavigate } from "@remix-run/react";
 import { typeIconSrc } from "@components/eveIcon";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as ContextMenu from "@radix-ui/react-context-menu"
@@ -16,7 +16,7 @@ import { usePath } from "@hooks/usePath";
 
 
 export interface QuickbarProps {
-  typeRecord: Record<string, Type>
+  types: Type[]
   treeValue: Set<string>
   onTreeValueChange: (v: Set<string>) => void
 }
@@ -36,19 +36,19 @@ interface QuickbarDataTransfer {
 
 
 interface QuickbarContextType {
-  typeRecord: Record<string, Type>
+  types: Type[]
   treeValue: Set<string>
   onTreeValueChange: (v: Set<string>) => void
 }
 
 const QuickbarComponentContext = createContext<QuickbarContextType>({
-  typeRecord: {},
+  types: [],
   treeValue: new Set(),
   onTreeValueChange: () => {}
 })
 
 
-export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarProps) {
+export function Quickbar({ types, treeValue, onTreeValueChange }: QuickbarProps) {
   const quickbar = useContext(QuickbarContext)
   const rootRef = useRef<HTMLUListElement>(null)
   const isQuickbarEmpty = Object.keys(quickbar.state).length == 1
@@ -83,7 +83,7 @@ export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarP
   }, [])
 
   return (
-    <QuickbarComponentContext.Provider value={{ typeRecord, treeValue, onTreeValueChange }}>
+    <QuickbarComponentContext.Provider value={{ types, treeValue, onTreeValueChange }}>
       <div className="quickbar">
         <div className="quickbar__header">
           <div className="quickbar__actions">
@@ -118,7 +118,7 @@ export function Quickbar({ typeRecord, treeValue, onTreeValueChange }: QuickbarP
               <QuickbarFolder folderId={folderId} key={folderId} />
             ))}
 
-            {quickbar.state.__root__.types.sort(stringSort(t => typeRecord[t].name)).map(typeId => (
+            {quickbar.state.__root__.types.sort(stringSort(t => getType(types, t).name)).map(typeId => (
               <QuickbarItem typeId={typeId} key={typeId} />
             ))}
 
@@ -278,12 +278,12 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
 }
 
 function QuickbarItem({ typeId }: QuickbarItemProps) {
-  const { typeRecord } = useContext(QuickbarComponentContext)
+  const { types } = useContext(QuickbarComponentContext)
   const quickbar = useContext(QuickbarContext)
   const navigate = useNavigate()
   const path = usePath()
-  const type = typeRecord[typeId]
   const itemRef = useRef<HTMLLIElement>(null)
+  const type = getType(types, typeId)
 
   const dragImage = useMemo(() => {
     const image = new Image(64, 64)
@@ -473,4 +473,13 @@ function ClearQuickbarButton() {
       </Dialog.Portal>
     </Dialog.Root>
   )
+}
+
+function getType(types: Type[], typeId: number): Type {
+  for(let i=0; i<types.length; i++) {
+    if(types[i].id == typeId) {
+      return types[i]
+    }
+  }
+  throw Error(`Cant find type ${typeId} in types`)
 }

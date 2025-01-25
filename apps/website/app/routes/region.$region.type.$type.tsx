@@ -8,6 +8,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
+import { MarketGroup, Type } from "@lib/esiStore/types";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -50,24 +51,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
   )
 }
 
-export default function Type() {
-  const { typeRecord, marketGroups, marketGroupsRecord } = useOutletContext<RegionContext>()
+export default function TypeComponent() {
+  const { marketGroups, types } = useOutletContext<RegionContext>()
   const { typeId, regionId } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
   const [inQuickbar, setInQuickbar] = useState(false)
   const matches = useMatches()
+  const type = getType(types, typeId)
 
-  const breadcrumbs = useMemo(() => {
-    const bc: string[] = []
-    let group = marketGroups.find(g => g.types.includes(typeId))
-    if(!group) return []
-    while(group.parentId) {
-      bc.unshift(group.name)
-      group = marketGroupsRecord[group.parentId]
-    }
-    bc.unshift(group.name)
-    return bc
-  }, [typeId])
+  const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
 
   // To avoid hydration errors
   useEffect(() => {
@@ -80,10 +72,10 @@ export default function Type() {
   return (
     <div className="item-page">
       <div className="item-header">
-        <EveIcon className="item-header__icon" alt={`${typeRecord[typeId]} icon`} src={typeIconSrc(typeId)} />
+        <EveIcon className="item-header__icon" alt={`${type.name} icon`} src={typeIconSrc(typeId)} />
         <div className="item-header__info">
           <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
-          <h2 className="item-header__name">{typeRecord[typeId].name}</h2>
+          <h2 className="item-header__name">{type.name}</h2>
         </div>
         <div className="item-header__action">
           {inQuickbar ? (
@@ -120,4 +112,30 @@ export default function Type() {
 export function ErrorBoundary() {
   const error = useRouteError()  
   return <ErrorMessage error={error} />
+}
+
+function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): string[] {
+  const bc: string[] = []
+
+  let group = marketGroups.find(g => g.types.includes(typeId))
+  if(group === undefined) return []
+
+  while(group.parentId !== undefined) {
+    bc.unshift(group.name)
+    // @ts-ignore
+    group = marketGroups.find(g => g.id === group.parentId)
+    if(group === undefined) return []
+  }
+  bc.unshift(group.name)
+
+  return bc
+}
+
+function getType(types: Type[], typeId: number): Type {
+  for(let i=0; i<types.length; i++) {
+    if(types[i].id == typeId) {
+      return types[i]
+    }
+  }
+  throw Error(`Cant find type ${typeId} in types`)
 }

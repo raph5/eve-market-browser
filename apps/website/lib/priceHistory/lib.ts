@@ -1,5 +1,5 @@
 import { GraphContext } from "./context"
-import { HistoryDay } from "esi-store/types";
+import { HistoryDay } from "@lib/esiStore/types";
 import { GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "./var"
 import { hitBox } from "./types"
 
