@@ -1,12 +1,9 @@
 {
   "name": "static-store",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
   "type": "commonjs",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "dependencies": {
+    "async-csv": "^2.1.3"
   }
 }
