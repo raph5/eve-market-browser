@@ -49,20 +49,6 @@
 const csv = require("async-csv")
 
 const hubRegion = [10000002, 10000043, 10000030, 10000032, 10000042]
-const tycoonRange = {
-  STATION: "Station",
-  REGION: "Region",
-  SOLARSYSTEM: "Solar System",
-  _1: "1 Jumps",
-  _2: "2 Jumps",
-  _3: "3 Jumps",
-  _4: "4 Jumps",
-  _5: "5 Jumps",
-  _10: "10 Jumps",
-  _20: "20 Jumps",
-  _30: "30 Jumps",
-  _40: "40 Jumps"
-}
 
 /**
  * @returns {Promise<Region[]>}

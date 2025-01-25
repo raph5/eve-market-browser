@@ -1,4 +1,3 @@
-
 const BASE_64 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+"
 
 export const DAY = 1000*60*60*24

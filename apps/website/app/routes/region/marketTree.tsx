@@ -3,7 +3,7 @@ import TreeView from "react-composable-treeview"
 import { MixerHorizontalIcon, TriangleRightIcon, DrawingPinIcon, DrawingPinFilledIcon } from "@radix-ui/react-icons"
 import EveIcon, { iconSrc } from "@components/eveIcon"
 import classNames from "classnames"
-import { Type, MarketGroup as MarketGroupType } from "@lib/esiStore/types"
+import { Type, MarketGroup as MarketGroupType, MarketGroup } from "@lib/esiStore/types"
 import { createContext } from "react"
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react"
 import { Meta } from "@app/meta"
@@ -20,52 +20,46 @@ import { usePath } from "@hooks/usePath"
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
   types: Type[]
-  typeRecord: Record<string, Type>
   marketGroups: MarketGroupType[]
-  marketGroupRecord: Record<string, MarketGroupType>
   treeValue: Set<string>
   onTreeValueChange: (v: Set<string>) => void
 }
 
 interface MarketGroupProps {
-  groupId: number
+  group: MarketGroup
 }
 
 interface MarketMetaGroupProps {
   children: React.ReactNode
-  groupId: Number
+  group: MarketGroup
   meta: Meta
 }
 
 interface MarketItemProps {
-  typeId: number
+  type: Type
 }
 
 interface MarketTypeProps {
-  typeId: number
+  type: Type
 }
 
 
 interface MarketTreeContextType {
   region: string
-  typeRecord: Record<string, Type>
+  types: Type[]
   marketGroups: MarketGroupType[]
-  marketGroupRecord: Record<string, MarketGroupType>
 }
 
 const MarketTreeContext = createContext<MarketTreeContextType>({
   region: '0',
-  typeRecord: {},
+  types: [],
   marketGroups: [],
-  marketGroupRecord: {},
 })
 
 
 export function MarketTree({
   types,
-  typeRecord,
   marketGroups,
-  marketGroupRecord,
   className,
   treeValue,
   onTreeValueChange,
@@ -82,7 +76,7 @@ export function MarketTree({
   }
 
   return (
-    <MarketTreeContext.Provider value={{ typeRecord, marketGroupRecord, marketGroups, region }}>
+    <MarketTreeContext.Provider value={{ types, marketGroups, region }}>
       <div className="market-tree">
         <div className="market-tree__header">
           <SearchBar
@@ -107,14 +101,14 @@ export function MarketTree({
             {...props}
           >
             {rootGroups.map(group => (
-              <MarketGroup groupId={group.id} key={group.id} />
+              <MarketGroup group={group} key={group.id} />
             ))}
           </TreeView.Root>
 
-          {search.length > 3 && 
+          {search.length > 3 &&
             <ul className="market-tree__results">
               {results.map(type => (
-                <MarketType typeId={type.id} key={type.id} />
+                <MarketType type={type} key={type.id} />
               ))}
             </ul>
           }
@@ -124,16 +118,15 @@ export function MarketTree({
   )
 }
 
-function MarketGroup({ groupId }: MarketGroupProps) {
-  const { marketGroupRecord, typeRecord } = useContext(MarketTreeContext)
-  const group = marketGroupRecord[groupId]
+function MarketGroup({ group }: MarketGroupProps) {
+  const { types, marketGroups } = useContext(MarketTreeContext)
 
   const [metaGroups, mainMetaRarity] = useMemo(() => {
     const metaGroups: Record<string, number[]> = {}  // rarity to typeId array record
     let mainMetaRarity: number = -1
 
     for (const typeId of group.types) {
-      const type = typeRecord[typeId]
+      const type = getType(types, typeId)
       const meta = getMeta(type.metaLevel)
 
       if (mainMetaRarity == -1 || meta.rarity < mainMetaRarity) {
@@ -149,7 +142,7 @@ function MarketGroup({ groupId }: MarketGroupProps) {
     }
 
     return [metaGroups, mainMetaRarity]
-  }, [groupId])
+  }, [group])
 
   return (
     <TreeView.Group value={`group:${group.id}`} className="market-group">
@@ -161,18 +154,18 @@ function MarketGroup({ groupId }: MarketGroupProps) {
       <TreeView.Content className="market-group__content">
 
         {group.childsId.map(groupId => (
-          <MarketGroup groupId={groupId} key={groupId} />
+          <MarketGroup group={getMarketGroup(marketGroups, groupId)} key={groupId} />
         ))}
 
         {metaGroups[mainMetaRarity] && metaGroups[mainMetaRarity].map(typeId => (
-          <MarketItem typeId={typeId} key={typeId} />
+          <MarketItem type={getType(types, typeId)} key={typeId} />
         ))}
 
         {Object.keys(metaGroups).filter(rarity => parseInt(rarity) != mainMetaRarity).map(rarity => (
-          <MarketMetaGroup groupId={group.id} meta={RARITY_TO_META[rarity]} key={rarity}>
+          <MarketMetaGroup group={group} meta={RARITY_TO_META[rarity]} key={rarity}>
 
             {metaGroups[rarity].map(typeId => (
-              <MarketItem typeId={typeId} key={typeId} />
+              <MarketItem type={getType(types, typeId)} key={typeId} />
             ))}
 
           </MarketMetaGroup>
@@ -183,10 +176,10 @@ function MarketGroup({ groupId }: MarketGroupProps) {
   )
 }
 
-function MarketMetaGroup({ meta, groupId, children }: MarketMetaGroupProps) {
+function MarketMetaGroup({ meta, group, children }: MarketMetaGroupProps) {
 
   return (
-    <TreeView.Group value={`group:${groupId}:meta:${meta.name}`} className="market-group market-group--meta">
+    <TreeView.Group value={`group:${group.id}:meta:${meta.name}`} className="market-group market-group--meta">
       <TreeView.Trigger className="market-group__trigger">
         <TriangleRightIcon className="market-group_triangle" />
         <EveIcon src={meta.iconSrc} alt={`${meta.name} icon`} className="market-group__icon" />
@@ -199,15 +192,13 @@ function MarketMetaGroup({ meta, groupId, children }: MarketMetaGroupProps) {
   )
 }
 
-function MarketItem({ typeId }: MarketItemProps) {
+function MarketItem({ type }: MarketItemProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
-  const { typeRecord } = useContext(MarketTreeContext)
-  const type = typeRecord[typeId]
   const quickbar = useContext(QuickbarContext)
-  const inQuickbar = useMemo(() => quickbar.has(typeId), [typeId, quickbar.state])
-  const [linkHref, setLinkHref] = useState(path.setTypeId(typeId))
+  const inQuickbar = useMemo(() => quickbar.has(type.id), [type, quickbar.state])
+  const [linkHref, setLinkHref] = useState(path.setTypeId(type.id))
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
@@ -216,7 +207,7 @@ function MarketItem({ typeId }: MarketItemProps) {
   }
 
   // NOTE: The cost of the useEffect may be big
-  useEffect(() => setLinkHref(path.setTypeId(typeId)), [location])
+  useEffect(() => setLinkHref(path.setTypeId(type.id)), [location])
 
   return (
     <ContextMenu.Root>
@@ -226,11 +217,11 @@ function MarketItem({ typeId }: MarketItemProps) {
             {type.name}
           </Link>
           {inQuickbar ? (
-            <button onClick={e => { quickbar.removeItem(typeId); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
+            <button onClick={e => { quickbar.removeItem(type.id); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
               <DrawingPinFilledIcon className="market-item__button-icon" />
             </button>
           ) : (
-            <button onClick={e => { quickbar.addItem(typeId); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
+            <button onClick={e => { quickbar.addItem(type.id); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
               <DrawingPinIcon className="market-item__button-icon" />
             </button>
           )}
@@ -240,11 +231,11 @@ function MarketItem({ typeId }: MarketItemProps) {
         <ContextMenu.Content className="context-menu">
 
           {inQuickbar ? (
-            <ContextMenu.Item onClick={() => quickbar.removeItem(typeId)} className="context-menu__item">
+            <ContextMenu.Item onClick={() => quickbar.removeItem(type.id)} className="context-menu__item">
               Remove from quickbar
             </ContextMenu.Item>
           ) : (
-            <ContextMenu.Item onClick={() => quickbar.addItem(typeId)} className="context-menu__item">
+            <ContextMenu.Item onClick={() => quickbar.addItem(type.id)} className="context-menu__item">
               Add to quickbar
             </ContextMenu.Item>
           )}
@@ -255,15 +246,13 @@ function MarketItem({ typeId }: MarketItemProps) {
   )
 }
 
-function MarketType({ typeId }: MarketTypeProps) {
+function MarketType({ type }: MarketTypeProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
-  const { typeRecord } = useContext(MarketTreeContext)
-  const type = typeRecord[typeId]
   const quickbar = useContext(QuickbarContext)
-  const inQuickbar = useMemo(() => quickbar.has(typeId), [typeId, quickbar.state])
-  const [linkHref, setLinkHref] = useState(path.setTypeId(typeId))
+  const inQuickbar = useMemo(() => quickbar.has(type.id), [type.id, quickbar.state])
+  const [linkHref, setLinkHref] = useState(path.setTypeId(type.id))
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
@@ -272,7 +261,7 @@ function MarketType({ typeId }: MarketTypeProps) {
   }
 
   // NOTE: The cost of the useEffect may be big
-  useEffect(() => setLinkHref(path.setTypeId(typeId)), [location])
+  useEffect(() => setLinkHref(path.setTypeId(type.id)), [location])
 
   return (
     <ContextMenu.Root>
@@ -282,11 +271,11 @@ function MarketType({ typeId }: MarketTypeProps) {
             {type.name}
           </Link>
           {inQuickbar ? (
-            <button onClick={e => { quickbar.removeItem(typeId); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
+            <button onClick={e => { quickbar.removeItem(type.id); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
               <DrawingPinFilledIcon className="market-item__button-icon" />
             </button>
           ) : (
-            <button onClick={e => { quickbar.addItem(typeId); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
+            <button onClick={e => { quickbar.addItem(type.id); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
               <DrawingPinIcon className="market-item__button-icon" />
             </button>
           )}
@@ -296,11 +285,11 @@ function MarketType({ typeId }: MarketTypeProps) {
         <ContextMenu.Content className="context-menu">
 
           {inQuickbar ? (
-            <ContextMenu.Item onClick={() => quickbar.removeItem(typeId)} className="context-menu__item">
+            <ContextMenu.Item onClick={() => quickbar.removeItem(type.id)} className="context-menu__item">
               Remove from quickbar
             </ContextMenu.Item>
           ) : (
-            <ContextMenu.Item onClick={() => quickbar.addItem(typeId)} className="context-menu__item">
+            <ContextMenu.Item onClick={() => quickbar.addItem(type.id)} className="context-menu__item">
               Add to quickbar
             </ContextMenu.Item>
           )}
@@ -309,4 +298,22 @@ function MarketType({ typeId }: MarketTypeProps) {
       </ContextMenu.Portal>
     </ContextMenu.Root>
   )
+}
+
+function getType(types: Type[], typeId: number): Type {
+  for (let i = 0; i < types.length; i++) {
+    if (types[i].id == typeId) {
+      return types[i]
+    }
+  }
+  throw Error(`Cant find type ${typeId} in types`)
+}
+
+function getMarketGroup(groups: MarketGroup[], groupId: number): MarketGroup {
+  for (let i = 0; i < groups.length; i++) {
+    if (groups[i].id == groupId) {
+      return groups[i]
+    }
+  }
+  throw Error(`Cant find group ${groupId} in market groups`)
 }
