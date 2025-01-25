@@ -8,7 +8,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
-import { MarketGroup, Type } from "@lib/esiStore/types";
+import { MarketGroup, Type as EsiType } from "@lib/esiStore/types";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -51,7 +51,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   )
 }
 
-export default function TypeComponent() {
+export default function Type() {
   const { marketGroups, types } = useOutletContext<RegionContext>()
   const { typeId, regionId } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
@@ -63,8 +63,9 @@ export default function TypeComponent() {
 
   // To avoid hydration errors
   useEffect(() => {
+    console.log("ma man")
     setInQuickbar(quickbar.has(typeId))
-  }, [quickbar.state])
+  }, [typeId, quickbar.state])
 
   const dataTabState = (matches.at(-1)?.id == "routes/region.$region.type.$type._index") ? "active" : ""
   const historyTabState = (matches.at(-1)?.id == "routes/region.$region.type.$type.history") ? "active" : ""
@@ -120,7 +121,7 @@ function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): string
   let group = marketGroups.find(g => g.types.includes(typeId))
   if(group === undefined) return []
 
-  while(group.parentId !== undefined) {
+  while(group.parentId) {
     bc.unshift(group.name)
     // @ts-ignore
     group = marketGroups.find(g => g.id === group.parentId)
@@ -131,7 +132,7 @@ function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): string
   return bc
 }
 
-function getType(types: Type[], typeId: number): Type {
+function getType(types: EsiType[], typeId: number): EsiType {
   for(let i=0; i<types.length; i++) {
     if(types[i].id == typeId) {
       return types[i]
