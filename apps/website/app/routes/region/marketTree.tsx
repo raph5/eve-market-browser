@@ -3,7 +3,7 @@ import TreeView from "react-composable-treeview"
 import { MixerHorizontalIcon, TriangleRightIcon, DrawingPinIcon, DrawingPinFilledIcon } from "@radix-ui/react-icons"
 import EveIcon, { iconSrc } from "@components/eveIcon"
 import classNames from "classnames"
-import { Type, MarketGroup as MarketGroupType, MarketGroup } from "@lib/esiStore/types"
+import { Type, MarketGroup as EsiMarketGroup } from "@lib/esiStore/types"
 import { createContext } from "react"
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react"
 import { Meta } from "@app/meta"
@@ -20,18 +20,18 @@ import { usePath } from "@hooks/usePath"
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
   types: Type[]
-  marketGroups: MarketGroupType[]
+  marketGroups: EsiMarketGroup[]
   treeValue: Set<string>
   onTreeValueChange: (v: Set<string>) => void
 }
 
 interface MarketGroupProps {
-  group: MarketGroup
+  group: EsiMarketGroup
 }
 
 interface MarketMetaGroupProps {
   children: React.ReactNode
-  group: MarketGroup
+  group: EsiMarketGroup
   meta: Meta
 }
 
@@ -47,7 +47,7 @@ interface MarketTypeProps {
 interface MarketTreeContextType {
   region: string
   types: Type[]
-  marketGroups: MarketGroupType[]
+  marketGroups: EsiMarketGroup[]
 }
 
 const MarketTreeContext = createContext<MarketTreeContextType>({
@@ -309,7 +309,7 @@ function getType(types: Type[], typeId: number): Type {
   throw Error(`Cant find type ${typeId} in types`)
 }
 
-function getMarketGroup(groups: MarketGroup[], groupId: number): MarketGroup {
+function getMarketGroup(groups: EsiMarketGroup[], groupId: number): EsiMarketGroup {
   for (let i = 0; i < groups.length; i++) {
     if (groups[i].id == groupId) {
       return groups[i]

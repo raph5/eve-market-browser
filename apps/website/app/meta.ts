@@ -44,8 +44,8 @@ export function getMeta(metaType: number): Meta {
     case 2 : return T2
     case 3 : return FACTION_STORYLINE
     case 4 : return FACTION_STORYLINE
-    case 5 : return DEADSPACE
-    case 6 : return OFFICER
+    case 5 : return OFFICER
+    case 6 : return DEADSPACE
     default : return T1
   }
 }
