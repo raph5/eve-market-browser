@@ -249,6 +249,7 @@ export class Graph {
   }
 
   private handleWheel(event: WheelEvent) {
+    event.preventDefault()
     for(let i=this.object2dStack.length-1; i>=0; i--) {
       if(
         this.object2dStack[i].hitBox != undefined &&
