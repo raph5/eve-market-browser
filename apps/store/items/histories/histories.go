@@ -126,8 +126,8 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 		if firstDate.IsZero() || fd.Before(firstDate) {
 			firstDate = fd
 		}
-		if lastDate.IsZero() || ld.Before(lastDate) {
-			lastDate = fd
+		if lastDate.IsZero() || ld.After(lastDate) {
+			lastDate = ld
 		}
 	}
 	deltaDays := int(lastDate.Sub(firstDate).Hours() / 24)
