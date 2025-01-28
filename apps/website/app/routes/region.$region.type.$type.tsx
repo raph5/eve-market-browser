@@ -63,7 +63,6 @@ export default function Type() {
 
   // To avoid hydration errors
   useEffect(() => {
-    console.log("ma man")
     setInQuickbar(quickbar.has(typeId))
   }, [typeId, quickbar.state])
 

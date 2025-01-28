@@ -6,7 +6,6 @@ import classNames from "classnames"
 import { Type, MarketGroup as EsiMarketGroup } from "@lib/esiStore/types"
 import { createContext } from "react"
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react"
-import { Meta } from "@app/meta"
 import { useTypeSearch } from "@hooks/useTypeSearch"
 import { SearchBar } from "@components/searchBar"
 import { BsArrowsCollapse } from "react-icons/bs"
@@ -14,7 +13,7 @@ import QuickbarContext from "@contexts/quickbarContext"
 import { stringSort } from "@lib/utils"
 import * as ContextMenu from "@radix-ui/react-context-menu"
 import "@scss/market-tree.scss"
-import { getMeta, RARITY_TO_META } from "@app/meta"
+import { getRarityIcon, getRarityName, getMetaRarity } from "@app/meta"
 import { usePath } from "@hooks/usePath"
 
 
@@ -29,10 +28,10 @@ interface MarketGroupProps {
   group: EsiMarketGroup
 }
 
-interface MarketMetaGroupProps {
+interface MarketRarityGroupProps {
   children: React.ReactNode
   group: EsiMarketGroup
-  meta: Meta
+  rarity: number
 }
 
 interface MarketItemProps {
@@ -121,28 +120,19 @@ export function MarketTree({
 function MarketGroup({ group }: MarketGroupProps) {
   const { types, marketGroups } = useContext(MarketTreeContext)
 
-  const [metaGroups, mainMetaRarity] = useMemo(() => {
-    const metaGroups: Record<string, number[]> = {}  // rarity to typeId array record
-    let mainMetaRarity: number = -1
-
-    for (const typeId of group.types) {
-      const type = getType(types, typeId)
-      const meta = getMeta(type.metaLevel)
-
-      if (mainMetaRarity == -1 || meta.rarity < mainMetaRarity) {
-        mainMetaRarity = meta.rarity
-      }
-
-      if (!metaGroups[meta.rarity]) {
-        metaGroups[meta.rarity] = [type.id]
-      }
-      else {
-        metaGroups[meta.rarity].push(type.id)
-      }
+  let rarityGroupCount = 0
+  const rarityGroups: Type[][] = []
+  for(const typeId of group.types) {
+    const type = getType(types, typeId)
+    const rarity = getMetaRarity(type.meta)
+    if(rarityGroups[rarity] === undefined) {
+      rarityGroups[rarity] = [type]
+      rarityGroupCount++
     }
-
-    return [metaGroups, mainMetaRarity]
-  }, [group])
+    else {
+      rarityGroups[rarity].push(type)
+    }
+  }
 
   return (
     <TreeView.Group value={`group:${group.id}`} className="market-group">
@@ -157,18 +147,22 @@ function MarketGroup({ group }: MarketGroupProps) {
           <MarketGroup group={getMarketGroup(marketGroups, groupId)} key={groupId} />
         ))}
 
-        {metaGroups[mainMetaRarity] && metaGroups[mainMetaRarity].map(typeId => (
-          <MarketItem type={getType(types, typeId)} key={typeId} />
+        {rarityGroupCount == 1 && rarityGroups.flat().map(type => (
+          <MarketItem type={type} key={type.id} />
         ))}
 
-        {Object.keys(metaGroups).filter(rarity => parseInt(rarity) != mainMetaRarity).map(rarity => (
-          <MarketMetaGroup group={group} meta={RARITY_TO_META[rarity]} key={rarity}>
-
-            {metaGroups[rarity].map(typeId => (
-              <MarketItem type={getType(types, typeId)} key={typeId} />
-            ))}
-
-          </MarketMetaGroup>
+        {rarityGroupCount > 1 && rarityGroups[0] && rarityGroups[0].map(type => (
+          <MarketItem type={type} key={type.id} />
+        ))}
+        {rarityGroupCount > 1 && rarityGroups[1] && rarityGroups[1].map(type => (
+          <MarketItem type={type} key={type.id} />
+        ))}
+        {rarityGroupCount > 1 && rarityGroups.map((rarityGroup, rarity) => (
+          rarity != 0 && rarity != 1 && (
+            <MarketRarityGroup group={group} rarity={rarity} key={rarity}>
+              {rarityGroup.map(type => <MarketItem type={type} key={type.id} />)}
+            </MarketRarityGroup>
+          )
         ))}
 
       </TreeView.Content>
@@ -176,14 +170,16 @@ function MarketGroup({ group }: MarketGroupProps) {
   )
 }
 
-function MarketMetaGroup({ meta, group, children }: MarketMetaGroupProps) {
+function MarketRarityGroup({ rarity, group, children }: MarketRarityGroupProps) {
+  const name = getRarityName(rarity)
+  const iconSrc = getRarityIcon(rarity)
 
   return (
-    <TreeView.Group value={`group:${group.id}:meta:${meta.name}`} className="market-group market-group--meta">
+    <TreeView.Group value={`group:${group.id}:meta:${name}`} className="market-group market-group--meta">
       <TreeView.Trigger className="market-group__trigger">
         <TriangleRightIcon className="market-group_triangle" />
-        <EveIcon src={meta.iconSrc} alt={`${meta.name} icon`} className="market-group__icon" />
-        <span className="market-group__label">{meta.name}</span>
+        <EveIcon src={iconSrc} alt={`${name} icon`} className="market-group__icon" />
+        <span className="market-group__label">{name}</span>
       </TreeView.Trigger>
       <TreeView.Content className="market-group__content">
         {children}
@@ -301,8 +297,8 @@ function MarketType({ type }: MarketTypeProps) {
 }
 
 function getType(types: Type[], typeId: number): Type {
-  for (let i = 0; i < types.length; i++) {
-    if (types[i].id == typeId) {
+  for(let i=0; i<types.length; i++) {
+    if(types[i].id == typeId) {
       return types[i]
     }
   }
@@ -310,8 +306,8 @@ function getType(types: Type[], typeId: number): Type {
 }
 
 function getMarketGroup(groups: EsiMarketGroup[], groupId: number): EsiMarketGroup {
-  for (let i = 0; i < groups.length; i++) {
-    if (groups[i].id == groupId) {
+  for(let i=0; i<groups.length; i++) {
+    if(groups[i].id == groupId) {
       return groups[i]
     }
   }

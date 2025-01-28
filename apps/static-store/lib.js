@@ -2,7 +2,7 @@
  * @typedef {Object} Type
  * @property {number} id
  * @property {string} name
- * @property {number} metaLevel
+ * @property {number} meta
  *
  * @typedef {Object} Region
  * @property {number} id
@@ -160,10 +160,7 @@ async function fetchTypes(marketGroups) {
   const metaRecord = {}
   typeDump.forEach((t) => nameRecord[t.typeID] = t.typeName)
   metaTypeDump.forEach((t) => {
-    const metaGroup = parseInt(t.metaGroupID)
-    if(metaGroup == 14) metaRecord[t.typeID] = 2
-    else if(metaGroup > 6) metaRecord[t.typeID] = 1
-    else metaRecord[t.typeID] = metaGroup
+    metaRecord[t.typeID] = parseInt(t.metaGroupID)
   })
 
   const types = []
@@ -172,7 +169,7 @@ async function fetchTypes(marketGroups) {
       types.push({
         id: typeId,
         name: nameRecord[typeId] ?? 'Unknown',
-        metaLevel: metaRecord[typeId] ?? 1
+        meta: metaRecord[typeId] ?? 1
       })
     }
   }
@@ -205,7 +202,7 @@ function createRecord(array, keyField) {
 
 /**
  * @param {(v: any) => string} getValue
- * @returns {(a: any, b: any) => }
+ * @returns {(a: any, b: any) => number}
  */
 function stringSort(getValue = (v => v)) {
   return (a, b) => getValue(a).localeCompare(getValue(b))
