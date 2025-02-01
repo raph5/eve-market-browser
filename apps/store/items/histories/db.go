@@ -86,7 +86,7 @@ func dbInsertHistories(ctx context.Context, histories []dbHistory) error {
 
 func dbInsertHistory(ctx context.Context, history dbHistory) error {
 	writeDB := ctx.Value("writeDB").(*sql.DB)
-	timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 4*time.Minute)
 	defer cancel()
 
 	insertQuery := "INSERT OR REPLACE INTO History VALUES (?,?,?)"
