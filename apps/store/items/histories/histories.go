@@ -170,6 +170,19 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 				gDay.Volume += day.Volume
 			}
 		}
+		if globalEsiHistoryDays[i].Date == "" {
+			if i == 0 {
+				panic("impossible point to reach")
+			}
+			// NOTE: It might be a good idea to set OrderCount to -1 and display
+			// "Unknown OrderCount" in the ui
+			globalEsiHistoryDays[i].Volume = 0
+			globalEsiHistoryDays[i].OrderCount = 0
+			globalEsiHistoryDays[i].Date = d.Format(esi.DateLayout)
+			globalEsiHistoryDays[i].Lowest = globalEsiHistoryDays[i-1].Average
+			globalEsiHistoryDays[i].Highest = globalEsiHistoryDays[i-1].Average
+			globalEsiHistoryDays[i].Average = globalEsiHistoryDays[i-1].Average
+		}
 	}
 
 	globalHistoryDays, err := esiToDbHistoryDays(globalEsiHistoryDays)
