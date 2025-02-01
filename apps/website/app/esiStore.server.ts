@@ -1,4 +1,4 @@
-import EsiStore from "@lib/esiStore"
+import EsiStore from "@app/esiStore"
 
 if(process.env.ESI_CACHE == undefined) {
   throw new Error("environnement variable ESI_CACHE is not defined")

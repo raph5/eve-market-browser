@@ -1,4 +1,4 @@
-import { HistoryDay } from "@lib/esiStore/types"
+import { HistoryDay } from "@app/esiStore/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Object2d, ObjectHtml, hitBox } from "./types"

@@ -1,11 +1,11 @@
 import { TriangleRightIcon, DownloadIcon, UploadIcon, TrashIcon, UnderlineIcon } from "@radix-ui/react-icons";
-import { Type } from "@lib/esiStore/types";
+import { Type } from "@app/esiStore/types";
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
 import { PiFolderPlusThin } from "react-icons/pi";
 import { BsArrowsCollapse } from "react-icons/bs";
 import QuickbarContext from "@contexts/quickbarContext";
-import { stringSort } from "@lib/utils";
+import { stringSort } from "@app/utils";
 import { Link, useNavigate } from "@remix-run/react";
 import { typeIconSrc } from "@components/eveIcon";
 import * as Dialog from "@radix-ui/react-dialog";

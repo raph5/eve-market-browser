@@ -8,7 +8,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
-import { MarketGroup, Type as EsiType } from "@lib/esiStore/types";
+import { MarketGroup, Type as EsiType } from "@app/esiStore/types";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {

@@ -1,4 +1,4 @@
-import { clamp } from "@lib/utils";
+import { clamp } from "@app/utils";
 import { Graph } from "..";
 import { GraphContext } from "../context";
 import { Object2d, hitBox } from "../types";

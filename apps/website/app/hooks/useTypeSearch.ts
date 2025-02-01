@@ -1,4 +1,4 @@
-import { Type } from "@lib/esiStore/types";
+import { Type } from "@app/esiStore/types";
 import { useMemo, useState } from "react";
 
 async function getMatchingIndex(search: string, data: string[]) {
