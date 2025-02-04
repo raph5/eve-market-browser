@@ -131,10 +131,10 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 		}
 	}
 	deltaDays := int(lastDate.Sub(firstDate).Hours() / 24)
-	globalEsiHistoryDays := make([]esiHistoryDay, deltaDays)
+	globalEsiHistoryDays := make([]esiHistoryDay, deltaDays+1)
 
 	offsets := make([]int, regions)
-	for i, d := 0, firstDate; i < deltaDays; i, d = i+1, d.AddDate(0, 0, 1) {
+	for i, d := 0, firstDate; i < deltaDays+1; i, d = i+1, d.AddDate(0, 0, 1) {
 		for j := 0; j < regions; j++ {
 			if len(esiHistories[j]) == 0 || offsets[j]+i >= len(esiHistories[j]) {
 				continue
