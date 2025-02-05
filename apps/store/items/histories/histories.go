@@ -85,6 +85,8 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 	if err != nil {
 		return fmt.Errorf("can't get histories of type %d: %w", typeId, err)
 	}
+
+	histories = filterOutEmptyHistories(histories)
 	regions := len(histories)
 
 	if regions == 0 {
@@ -111,10 +113,6 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 
 	var firstDate, lastDate time.Time
 	for _, ehd := range esiHistories {
-		if len(ehd) == 0 {
-			continue
-		}
-
 		fd, err := time.Parse(esi.DateLayout, ehd[0].Date)
 		if err != nil {
 			return fmt.Errorf("can't parse date: %w", err)
@@ -136,7 +134,7 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 	offsets := make([]int, regions)
 	for i, d := 0, firstDate; i < deltaDays+1; i, d = i+1, d.AddDate(0, 0, 1) {
 		for j := 0; j < regions; j++ {
-			if len(esiHistories[j]) == 0 || offsets[j]+i >= len(esiHistories[j]) {
+			if offsets[j]+i >= len(esiHistories[j]) {
 				continue
 			}
 
@@ -205,4 +203,14 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 	}
 
 	return nil
+}
+
+func filterOutEmptyHistories(histories []dbHistory) []dbHistory {
+	filteredHistories := make([]dbHistory, 0, len(histories))
+	for i := range histories {
+		if string(histories[i].history) != "[]" {
+			filteredHistories = append(filteredHistories, histories[i])
+		}
+	}
+	return filteredHistories
 }
