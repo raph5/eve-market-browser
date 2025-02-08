@@ -1,0 +1,9 @@
+{
+  "name": "static-store",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "index.js",
+  "dependencies": {
+    "async-csv": "^2.1.3"
+  }
+}

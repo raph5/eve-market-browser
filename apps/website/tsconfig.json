@@ -1,15 +1,37 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/.server/**/*.ts",
+    "**/.server/**/*.tsx",
+    "**/.client/**/*.ts",
+    "**/.client/**/*.tsx"
+  ],
   "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["@remix-run/node", "vite/client"],
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "target": "ES2022",
+    "strict": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
     "paths": {
-      "@scss/*": ["./apps/website/scss/*"],
-      "@components/*": ["./apps/website/components/*"],
-      "@app/*": ["./apps/website/app/*"],
-      "@utils/*": ["./apps/website/utils/*"],
-      "@hooks/*": ["./apps/website/hooks/*"],
-      "@contexts/*": ["./apps/website/contexts/*"],
-      "@lib/*": ["./apps/website/lib/*"],
-      "@assets/*": ["./apps/website/assets/*"]
-    }
+      "@scss/*": ["./scss/*"],
+      "@components/*": ["./app/components/*"],
+      "@app/*": ["./app/*"],
+      "@hooks/*": ["./app/hooks/*"],
+      "@contexts/*": ["./app/contexts/*"],
+      "@assets/*": ["./assets/*"]
+    },
+
+    // Vite takes care of building everything, not tsc.
+    "noEmit": true
   }
 }

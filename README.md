@@ -41,6 +41,7 @@ Build remix app `npm run build`
 - Fix market group icons
 - Fix market tree
 - Add log size limit for nginx, remix.log and store.log
+- Forward 404 from store to frontend
 
 
 ## Ports

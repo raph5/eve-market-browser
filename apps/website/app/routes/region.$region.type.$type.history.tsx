@@ -1,9 +1,9 @@
 import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
-import { Graph } from "@lib/priceHistory"
+import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { json, useLoaderData, useRouteError } from "@remix-run/react"
-import { HistoryDay } from "libs/esi-store/types"
+import { HistoryDay } from "@app/esiStore/types"
 import { useEffect, useRef } from "react"
 
 export async function loader({ params }: LoaderFunctionArgs) {

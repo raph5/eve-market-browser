@@ -1,4 +1,4 @@
-import type { MarketGroup, Type } from "esi-store/types"
+import type { MarketGroup, Type } from "@app/esiStore/types"
 import "@scss/navigation.scss"
 import { Tab, TabRef, TabsRoot } from "@components/tabs"
 import { MarketTree } from "./marketTree"
@@ -14,12 +14,10 @@ export interface QuickItem {
 
 export interface NavigationProps {
   types: Type[]
-  typeRecord: Record<string, Type>
   marketGroups: MarketGroup[]
-  marketGroupRecord: Record<string, MarketGroup>
 }
 
-export default function Navigation({ types, typeRecord, marketGroups, marketGroupRecord }: NavigationProps) {
+export default function Navigation({ types, marketGroups }: NavigationProps) {
   const quickbar = useContext(QuickbarContext)
   const tabsRef = useRef<TabRef>(null)
   const [marketTreeValue, setMarketTreeValue] = useState<Set<string>>(new Set())
@@ -40,16 +38,14 @@ export default function Navigation({ types, typeRecord, marketGroups, marketGrou
         <Tab className="nav__tab" value="browse">
           <MarketTree
             types={types}
-            typeRecord={typeRecord}
             marketGroups={marketGroups}
-            marketGroupRecord={marketGroupRecord}
             treeValue={marketTreeValue}
             onTreeValueChange={setMarketTreeValue}
           />
         </Tab>
         <Tab className="nav__tab" value="quickbar">
           <Quickbar
-            typeRecord={typeRecord}
+            types={types}
             treeValue={quickbarTreeValue}
             onTreeValueChange={setQuickbarTreeValue}
           />
