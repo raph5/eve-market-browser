@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+  "time"
 )
 
 // NOTE: even though I could split the fonction in two api and db function,
@@ -15,6 +16,9 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 	readDB := ctx.Value("readDB").(*sql.DB)
 
 	return func(w http.ResponseWriter, r *http.Request) {
+    timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+
 		query := r.URL.Query()
 		typeId, err := strconv.Atoi(query.Get("type"))
 		if err != nil {
@@ -32,7 +36,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
     SELECT HistoryJson FROM History
       WHERE TypeId = ? AND RegionId = ?;
     `
-		err = readDB.QueryRow(historyQuery, typeId, regionId).Scan(&historyJson)
+		err = readDB.QueryRowContext(timeoutCtx, historyQuery, typeId, regionId).Scan(&historyJson)
 		if err != nil && errors.Is(err, sql.ErrNoRows) {
 			log.Printf("History for type %d in region %d is not available", typeId, regionId)
 			http.Error(w, "History not available", 404)

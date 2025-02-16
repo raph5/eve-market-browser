@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+  "time"
 )
 
 // orders type that the store will return
@@ -33,6 +34,9 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 	readDB := ctx.Value("readDB").(*sql.DB)
 
 	return func(w http.ResponseWriter, r *http.Request) {
+    timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+
 		query := r.URL.Query()
 		typeId, err := strconv.Atoi(query.Get("type"))
 		if err != nil {
@@ -51,13 +55,13 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
       SELECT * FROM "Order"
         WHERE TypeId = ?;
       `
-			rows, err = readDB.Query(orderQuery, typeId)
+			rows, err = readDB.QueryContext(timeoutCtx, orderQuery, typeId)
 		} else {
 			orderQuery := `
       SELECT * FROM "Order"
         WHERE TypeId = ? AND RegionId = ?;
       `
-			rows, err = readDB.Query(orderQuery, typeId, regionId)
+			rows, err = readDB.QueryContext(timeoutCtx, orderQuery, typeId, regionId)
 		}
 		if err != nil {
 			log.Printf("Internal server error: %v", err)
