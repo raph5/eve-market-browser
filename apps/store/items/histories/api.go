@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-  "time"
+	"time"
 )
 
 // NOTE: even though I could split the fonction in two api and db function,
@@ -16,8 +16,8 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 	readDB := ctx.Value("readDB").(*sql.DB)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-    timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-    defer cancel()
+		timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
 
 		query := r.URL.Query()
 		typeId, err := strconv.Atoi(query.Get("type"))
