@@ -1,6 +1,7 @@
 import http from "http"
 import type { Order, HistoryDay } from "./types"
 
+export class NotFoundError extends Error {}
 export interface ErrnoException extends Error {
   errno?: number;
   code?: string;
@@ -26,8 +27,10 @@ export function requestStoreOrders(typeId: number, regionId: number): Promise<Or
       response.on('end', () => {
         if(response.statusCode == 200) {
           res(JSON.parse(data))
+        } else if (response.statusCode == 404) {
+          rej(new NotFoundError("Go store 404"))
         } else {
-          rej(`Go store request failed with code ${response.statusCode}: ${data}`)
+          rej(new Error(`Go store request failed with code ${response.statusCode}: ${data}`))
         }
       })
     })
@@ -59,7 +62,7 @@ export function requestStoreHistory(typeId: number, regionId: number): Promise<H
         if(response.statusCode == 200) {
           res(JSON.parse(data))
         } else {
-          rej(`Go store request failed with code ${response.statusCode}: ${data}`)
+          rej(new Error(`Go store request failed with code ${response.statusCode}: ${data}`))
         }
       })
     })

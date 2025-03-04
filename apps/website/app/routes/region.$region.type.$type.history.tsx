@@ -3,8 +3,9 @@ import { ErrorMessage } from "@components/errorMessage"
 import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { json, useLoaderData, useRouteError } from "@remix-run/react"
-import { HistoryDay } from "@app/esiStore/types"
 import { useEffect, useRef } from "react"
+import { NotFoundError } from "@app/esiStore/goStore"
+import { HistoryDay } from "@app/esiStore/types"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
@@ -26,7 +27,16 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const history = await esiStore.getHistory(typeId, regionId)
+  let history: HistoryDay[]
+  try {
+    history = await esiStore.getHistory(typeId, regionId)
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      history = []
+    } else {
+      throw error
+    }
+  }
 
   return json({
     typeId,
