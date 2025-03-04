@@ -72,8 +72,8 @@ export class Graph {
     this.context = new GraphContext()
     this.context.history = history
     this.context.tooltip = tooltip
-    this.context.startDay = this.context.history.length-1 -
-      Math.min(Math.ceil(0.1 * this.canvas.offsetWidth), 80)
+    this.context.startDay = Math.max(0, this.context.history.length-1 -
+      Math.min(Math.ceil(0.1 * this.canvas.offsetWidth), 80))
     this.context.endDay = this.context.history.length-1
     const [startPrice, endPrice] = getStartEndPrice(history, this.context.startDay, this.context.endDay)
     this.context.startPrice = startPrice * 0.8

@@ -72,7 +72,6 @@ export function formatDate(date: Date) {
     return `${year}.${month}.${day}`;
 }
 
-// TODO: fix this buggy function, see https://evemarketbrowser.com/region/0/type/85447/history
 export function getStartEndPrice(history: HistoryDay[], startDay: number, endDay: number) {
   console.assert(startDay < endDay)
   const margin = Math.floor(0.1 * (endDay - startDay))
