@@ -17,7 +17,7 @@ export interface MarketGroup {
   name: string
   description: string
   types: number[]
-  iconFile: string
+  iconId: number
   iconAlt: string
 }
 

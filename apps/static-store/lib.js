@@ -15,7 +15,7 @@
  * @property {string} name
  * @property {string} description
  * @property {number[]} types
- * @property {string} iconFile
+ * @property {number} iconId
  * @property {string} iconAlt
  *
  * @typedef {Object} HistoryDay
@@ -113,7 +113,7 @@ async function fetchMarketGroups() {
       types: [],
       name: group.marketGroupName,
       description: group.description,
-      iconFile: iconsDumpRecord[group.iconID] ? iconsDumpRecord[group.iconID].iconFile.split('/').at(-1) : '7_64_15.png',
+      iconId: group.iconID ?? 0,
       iconAlt: iconsDumpRecord[group.iconID] ? iconsDumpRecord[group.iconID].description : 'Unknown'
     }
   }
