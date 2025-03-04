@@ -27,8 +27,6 @@ export function requestStoreOrders(typeId: number, regionId: number): Promise<Or
       response.on('end', () => {
         if(response.statusCode == 200) {
           res(JSON.parse(data))
-        } else if (response.statusCode == 404) {
-          rej(new NotFoundError("Go store 404"))
         } else {
           rej(new Error(`Go store request failed with code ${response.statusCode}: ${data}`))
         }
@@ -61,6 +59,8 @@ export function requestStoreHistory(typeId: number, regionId: number): Promise<H
       response.on('end', () => {
         if(response.statusCode == 200) {
           res(JSON.parse(data))
+        } else if (response.statusCode == 404) {
+          rej(new NotFoundError("Go store 404"))
         } else {
           rej(new Error(`Go store request failed with code ${response.statusCode}: ${data}`))
         }

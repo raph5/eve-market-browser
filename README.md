@@ -35,12 +35,12 @@ Build remix app `npm run build`
 
 ## TODO
 
-- Remove type from activeTypes if history == []
 - Improve search experience
 - Test quickbar exports
 - Fix market group icons
-- Fix market tree
 - Add log size limit for nginx, remix.log and store.log
+- Find a way to reduce the rate of database locks
+- Try to start and grafana prometheus
 
 
 ## Ports
