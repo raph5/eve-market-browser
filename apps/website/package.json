@@ -28,7 +28,7 @@
     "isbot": "^4.1.0",
     "morgan": "^1.10.0",
     "react": "^18.2.0",
-    "react-composable-treeview": "^1.0.15",
+    "react-composable-treeview": "^1.0.16",
     "react-dom": "^18.2.0",
     "react-icons": "^5.1.0"
   },
