@@ -58,6 +58,8 @@ func InitPrometheus() (*prometheus.Registry, *Metrics) {
 }
 
 func RunPrometheusServer(ctx context.Context, reg *prometheus.Registry) {
+	// TODO: create a new mux to avoid conflicts with http.DefaultServeMux
+
 	errCh := make(chan error)
 	server := &http.Server{
 		Addr: ":2112",
