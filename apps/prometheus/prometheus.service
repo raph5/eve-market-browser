@@ -1,0 +1,18 @@
+[Unit]
+Description=Prometheus Server
+Documentation=https://prometheus.io/docs/introduction/overview/
+After=network-online.target
+
+[Service]
+User=raph
+Restart=on-failure
+CPUWeight=20
+CPUQuota=60%
+IOWeight=20
+ExecStart=/etc/prometheus/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/etc/prometheus/data \
+  --storage.tsdb.retention.time=30d
+
+[Install]
+WantedBy=multi-user.target

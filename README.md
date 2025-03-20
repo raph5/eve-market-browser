@@ -39,6 +39,7 @@ Build remix app `npm run build`
 - Test quickbar exports
 - Find a way to reduce the rate of database locks
 - Make the breadcrumbs clickable
+- Document this installation procedure better
 
 
 ## Ports

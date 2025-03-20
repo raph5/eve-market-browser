@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 
-# This is the installation prometheus
-# See https://prometheus.io/docs/introduction/first_steps/ and
-# https://grafana.com/oss/prometheus/exporters/go-exporter/?tab=installation
-# for the docs
+prom_dir=/etc/promtheus
+prom_bin=https://github.com/prometheus/prometheus/releases/download/v2.54.0/prometheus-2.54.0.linux-amd64.tar.gz
+prom_user=raph
 
-curl -L https://github.com/prometheus/prometheus/releases/download/v2.54.0/prometheus-2.54.0.linux-amd64.tar.gz \
-  -o prometheus-2.54.0.linux-amd64.tar.gz
-tar xvfz prometheus-2.54.0.linux-amd64.tar.gz prometheus-2.54.0.linux-amd64/prometheus
-cp prometheus-2.54.0.linux-amd64/prometheus .
+# create dir
+mkdir -p $prom_dir
+chown $prom_user:$prom_user $prom_dir
 
-rm prometheus-2.54.0.linux-amd64.tar.gz
-rm -r prometheus-2.54.0.linux-amd64
+# download
+curl -L $prom_bin -o prometheus-bin.tar.gz
+tar xvfz prometheus-bin.tar.gz prometheus-bin/prometheus
+cp prometheus-bin/prometheus $prom_dir
+rm -r prometheus-bin.tar.gz prometheus-bin
+
+# config
+cp prometheus.yml $prom_dir
+
+# systemd
+cp prometheus.service $prom_dir
+ln -s $prom_dir/prometheus.service /etc/systemd/system/prometheus.service
+systemctl daemon-reload
