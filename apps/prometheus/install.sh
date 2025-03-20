@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+set -e
 
-prom_dir=/etc/promtheus
+prom_dir=/etc/prometheus
 prom_bin=https://github.com/prometheus/prometheus/releases/download/v2.54.0/prometheus-2.54.0.linux-amd64.tar.gz
 prom_user=raph
 
@@ -9,10 +10,10 @@ mkdir -p $prom_dir
 chown $prom_user:$prom_user $prom_dir
 
 # download
-curl -L $prom_bin -o prometheus-bin.tar.gz
-tar xvfz prometheus-bin.tar.gz prometheus-bin/prometheus
-cp prometheus-bin/prometheus $prom_dir
-rm -r prometheus-bin.tar.gz prometheus-bin
+curl -L $prom_bin -o prometheus-2.54.0.linux-amd64.tar.gz
+tar xvfz prometheus-2.54.0.linux-amd64.tar.gz prometheus-2.54.0.linux-amd64/prometheus
+cp prometheus-2.54.0.linux-amd64/prometheus $prom_dir
+rm -r prometheus-2.54.0.linux-amd64.tar.gz prometheus-2.54.0.linux-amd64
 
 # config
 cp prometheus.yml $prom_dir
