@@ -297,10 +297,10 @@ func reportTransactionRollback(metrics *prom.Metrics, success bool, start time.T
 	duration := strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64)
 	if success {
 		labels := prometheus.Labels{"status": "rollback_success", "duration": duration}
-		metrics.SqliteRequests.With(labels).Inc()
+		metrics.SqliteTransactions.With(labels).Inc()
 	} else {
 		labels := prometheus.Labels{"status": "rollback_failure", "duration": duration}
-		metrics.SqliteRequests.With(labels).Inc()
+		metrics.SqliteTransactions.With(labels).Inc()
 	}
 }
 
@@ -308,9 +308,9 @@ func reportTransactionCommit(metrics *prom.Metrics, success bool, start time.Tim
 	duration := strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64)
 	if success {
 		labels := prometheus.Labels{"status": "commit_success", "duration": duration}
-		metrics.SqliteRequests.With(labels).Inc()
+		metrics.SqliteTransactions.With(labels).Inc()
 	} else {
 		labels := prometheus.Labels{"status": "commit_failure", "duration": duration}
-		metrics.SqliteRequests.With(labels).Inc()
+		metrics.SqliteTransactions.With(labels).Inc()
 	}
 }
