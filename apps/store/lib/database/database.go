@@ -131,7 +131,7 @@ func (db *DB) Query(ctx context.Context, query string, args ...any) (*sql.Rows, 
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	rows, err := db.read.QueryContext(ctx, query, args)
+	rows, err := db.read.QueryContext(ctx, query, args...)
 	reportRequest(metrics, err != nil, query, start)
 	return rows, err
 }
@@ -143,12 +143,12 @@ func (db *DB) QueryRow(ctx context.Context, query string, args ...any) *dbRow {
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	row := db.read.QueryRowContext(ctx, query, args)
+	row := db.read.QueryRowContext(ctx, query, args...)
 	return &dbRow{start: start, metrics: metrics, query: query, row: row}
 }
 
 func (dbRow *dbRow) Scan(dest ...any) error {
-	err := dbRow.row.Scan(dest)
+	err := dbRow.row.Scan(dest...)
 	// NOTE: if a query is not scanned *directly* then the duration label sent to
 	// prometheus might be wrong
 	reportRequest(dbRow.metrics, err != nil, dbRow.query, dbRow.start)
@@ -162,7 +162,7 @@ func (db *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, 
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	result, err := db.write.ExecContext(ctx, query, args)
+	result, err := db.write.ExecContext(ctx, query, args...)
 	reportRequest(metrics, err != nil, query, start)
 	return result, err
 }
@@ -197,7 +197,7 @@ func (dbStmt *dbStmt) Query(ctx context.Context, args ...any) (*sql.Rows, error)
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	rows, err := dbStmt.stmt.QueryContext(ctx, args)
+	rows, err := dbStmt.stmt.QueryContext(ctx, args...)
 	reportRequest(metrics, err != nil, dbStmt.query, start)
 	return rows, err
 }
@@ -212,7 +212,7 @@ func (dbStmt *dbStmt) QueryRow(ctx context.Context, args ...any) *dbRow {
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	row := dbStmt.stmt.QueryRowContext(ctx, args)
+	row := dbStmt.stmt.QueryRowContext(ctx, args...)
 	return &dbRow{start: start, metrics: metrics, query: dbStmt.query, row: row}
 }
 
@@ -226,7 +226,7 @@ func (dbStmt *dbStmt) Exec(ctx context.Context, args ...any) (sql.Result, error)
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	result, err := dbStmt.stmt.ExecContext(ctx, args)
+	result, err := dbStmt.stmt.ExecContext(ctx, args...)
 	reportRequest(metrics, err != nil, dbStmt.query, start)
 	return result, err
 }
@@ -261,7 +261,7 @@ func (dbTx *dbTx) Exec(ctx context.Context, query string, args ...any) (sql.Resu
 	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
-	result, err := dbTx.tx.ExecContext(ctx, query, args)
+	result, err := dbTx.tx.ExecContext(ctx, query, args...)
 	reportRequest(metrics, err != nil, query, start)
 	return result, err
 }
