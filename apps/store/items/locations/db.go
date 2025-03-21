@@ -2,12 +2,13 @@ package locations
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
 func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
-	readDB := ctx.Value("readDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	unknownLocations := make([]int, 0)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
@@ -18,7 +19,7 @@ func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
     WHERE l.Id IS NULL
     AND o.LocationId >= 60000000 AND o.LocationId <= 64000000;
   `
-	rows, err := readDB.QueryContext(timeoutCtx, selectQuery)
+	rows, err := db.Query(timeoutCtx, selectQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -41,24 +42,26 @@ func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
 }
 
 func dbAddLocations(ctx context.Context, locations []nameAndId) error {
-	writeDB := ctx.Value("writeDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
-	tx, err := writeDB.BeginTx(timeoutCtx, nil)
+	// NOTE: the transaction here is not strictly necessary, if it lock the db
+	// for too long I may to remove it.
+	tx, err := db.Begin(timeoutCtx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO Location VALUES (?,?)")
+	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, l := range locations {
-		_, err = stmt.ExecContext(timeoutCtx, l.Id, l.Name)
+		_, err = stmt.Exec(timeoutCtx, l.Id, l.Name)
 		if err != nil {
 			return err
 		}

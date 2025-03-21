@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
 // orders type that the store will return
@@ -31,7 +33,7 @@ type apiOrder struct {
 // NOTE: even though I could split the fonction in two api and db function,
 // I don't do it for the sake of performance.
 func CreateHandler(ctx context.Context) http.HandlerFunc {
-	readDB := ctx.Value("readDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -55,13 +57,13 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
       SELECT * FROM "Order"
         WHERE TypeId = ?;
       `
-			rows, err = readDB.QueryContext(timeoutCtx, orderQuery, typeId)
+			rows, err = db.Query(timeoutCtx, orderQuery, typeId)
 		} else {
 			orderQuery := `
       SELECT * FROM "Order"
         WHERE TypeId = ? AND RegionId = ?;
       `
-			rows, err = readDB.QueryContext(timeoutCtx, orderQuery, typeId, regionId)
+			rows, err = db.Query(timeoutCtx, orderQuery, typeId, regionId)
 		}
 		if err != nil {
 			log.Printf("Internal server error: %v", err)
@@ -70,7 +72,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 		}
 		defer rows.Close()
 
-		locationStmt, err := readDB.Prepare("SELECT Name FROM Location WHERE Id = ?")
+		locationStmt, err := db.PrepareRead(timeoutCtx, "SELECT Name FROM Location WHERE Id = ?")
 		if err != nil {
 			log.Printf("Internal server error: %v", err)
 			http.Error(w, "Internal server error", 500)
@@ -103,7 +105,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 				return
 			}
 
-			err = locationStmt.QueryRow(locationId).Scan(&order.Location)
+			err = locationStmt.QueryRow(timeoutCtx, locationId).Scan(&order.Location)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Printf("Internal server error: %v", err)
 				http.Error(w, "Internal server error", 500)

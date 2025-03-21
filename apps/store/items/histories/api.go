@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
 // NOTE: even though I could split the fonction in two api and db function,
 // I don't do it for the sake of performance.
 func CreateHandler(ctx context.Context) http.HandlerFunc {
-	readDB := ctx.Value("readDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -36,7 +38,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
     SELECT HistoryJson FROM History
       WHERE TypeId = ? AND RegionId = ?;
     `
-		err = readDB.QueryRowContext(timeoutCtx, historyQuery, typeId, regionId).Scan(&historyJson)
+		err = db.QueryRow(timeoutCtx, historyQuery, typeId, regionId).Scan(&historyJson)
 		if err != nil && errors.Is(err, sql.ErrNoRows) {
 			log.Printf("History for type %d in region %d is not available", typeId, regionId)
 			http.Error(w, "History not available", 404)

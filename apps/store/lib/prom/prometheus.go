@@ -12,18 +12,28 @@ import (
 )
 
 type Metrics struct {
-	EsiRequests   *prometheus.CounterVec
-	EsiErrors     *prometheus.CounterVec
-	WorkerErrors  *prometheus.CounterVec
-	OrderStatus   prometheus.Gauge
-	HistoryStatus prometheus.Gauge
+	SqliteRequests     *prometheus.CounterVec
+	SqliteTransactions *prometheus.CounterVec
+	EsiRequests        *prometheus.CounterVec
+	EsiErrors          *prometheus.CounterVec
+	WorkerErrors       *prometheus.CounterVec
+	OrderStatus        prometheus.Gauge
+	HistoryStatus      prometheus.Gauge
 }
 
 func InitPrometheus() (*prometheus.Registry, *Metrics) {
 	metrics := &Metrics{
+		SqliteRequests: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "store_sqlite_request_total",
+			Help: "Number of sqlite requests performed (the duration is expimed in seconds)",
+		}, []string{"query", "status", "duration"}),
+		SqliteTransactions: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "store_sqlite_transaction_total",
+			Help: "Number of sqlite transactions performed (the duration is expimed in seconds)",
+		}, []string{"status", "duration"}),
 		EsiRequests: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "store_esi_request_total",
-			Help: "Number of esi request performed",
+			Help: "Number of esi requests performed",
 		}, []string{"uri", "result"}),
 		EsiErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "store_esi_error_total",

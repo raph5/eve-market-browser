@@ -12,6 +12,7 @@ import (
 
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 	"github.com/raph5/eve-market-browser/apps/store/lib/prom"
 )
 
@@ -34,20 +35,18 @@ func main() {
 	flag.Parse()
 
 	// Init database
-	writeDB, readDB, err := initDatabase(dbPath)
+	db, err := database.Init(dbPath)
 	if err != nil {
 		log.Fatalf("Can't start up the database: %v", err)
 	}
-	defer writeDB.Close()
-	defer readDB.Close()
+	defer db.Close()
 
 	// Init prometheus
 	reg, metrics := prom.InitPrometheus()
 
 	// Init context
 	ctx, cancel := context.WithCancel(context.Background())
-	ctx = context.WithValue(ctx, "writeDB", writeDB)
-	ctx = context.WithValue(ctx, "readDB", readDB)
+	ctx = context.WithValue(ctx, "db", db)
 	ctx = context.WithValue(ctx, "metrics", metrics)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)

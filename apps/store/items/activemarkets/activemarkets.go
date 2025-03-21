@@ -5,8 +5,9 @@ package activemarkets
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
 type ActiveMarket struct {
@@ -15,7 +16,7 @@ type ActiveMarket struct {
 }
 
 func Populate(ctx context.Context) error {
-	writeDB := ctx.Value("writeDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
@@ -23,7 +24,7 @@ func Populate(ctx context.Context) error {
   INSERT OR IGNORE INTO ActiveMarket
     SELECT DISTINCT TypeId, RegionId FROM "Order";
   `
-	_, err := writeDB.ExecContext(timeoutCtx, populateQuery)
+	_, err := db.Exec(timeoutCtx, populateQuery)
 	if err != nil {
 		return err
 	}
@@ -32,12 +33,12 @@ func Populate(ctx context.Context) error {
 }
 
 func Count(ctx context.Context) (int, error) {
-	readDB := ctx.Value("readDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
 	var count int
-	err := readDB.QueryRowContext(timeoutCtx, "SELECT COUNT(*) FROM ActiveMarket").Scan(&count)
+	err := db.QueryRow(timeoutCtx, "SELECT COUNT(*) FROM ActiveMarket").Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -46,12 +47,12 @@ func Count(ctx context.Context) (int, error) {
 }
 
 func GetTypesId(ctx context.Context) ([]int, error) {
-	readDB := ctx.Value("readDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	activeMarkets := make([]int, 0, 1024)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	rows, err := readDB.QueryContext(timeoutCtx, "SELECT DISTINCT TypeId FROM ActiveMarket")
+	rows, err := db.Query(timeoutCtx, "SELECT DISTINCT TypeId FROM ActiveMarket")
 	if err != nil {
 		return nil, err
 	}
@@ -74,12 +75,12 @@ func GetTypesId(ctx context.Context) ([]int, error) {
 }
 
 func GetChunk(ctx context.Context, offset int, limit int) ([]ActiveMarket, error) {
-	readDB := ctx.Value("readDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	activeMarkets := make([]ActiveMarket, 0, limit)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	rows, err := readDB.QueryContext(timeoutCtx, "SELECT TypeId, RegionId FROM ActiveMarket LIMIT ? OFFSET ?", limit, offset)
+	rows, err := db.Query(timeoutCtx, "SELECT TypeId, RegionId FROM ActiveMarket LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		return nil, err
 	}

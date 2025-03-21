@@ -2,8 +2,9 @@ package orders
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
 // how orders are stored in db
@@ -42,29 +43,29 @@ var esiToDbRangeMap = map[string]string{
 }
 
 func dbReplaceOrders(ctx context.Context, orders []dbOrder) error {
-	writeDB := ctx.Value("writeDB").(*sql.DB)
+	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
-	tx, err := writeDB.BeginTx(timeoutCtx, nil)
+	tx, err := db.Begin(timeoutCtx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(timeoutCtx, "DELETE FROM `Order`")
+	_, err = tx.Exec(timeoutCtx, "DELETE FROM `Order`")
 	if err != nil {
 		return err
 	}
 
-	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT OR REPLACE INTO `Order` VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, o := range orders {
-		_, err := stmt.ExecContext(
+		_, err := stmt.Exec(
 			timeoutCtx,
 			o.OrderId,
 			o.RegionId,
