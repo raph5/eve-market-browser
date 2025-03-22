@@ -7,8 +7,8 @@ Type=simple
 User=raph
 ExecStart=/etc/emb/start.sh
 Restart=always
+CPUAccounting=1
 CPUWeight=90
-IOWeight=90
 
 [Install]
 WantedBy=multi-user.target
