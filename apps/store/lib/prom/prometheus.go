@@ -55,6 +55,8 @@ func InitPrometheus() (*prometheus.Registry, *Metrics) {
 
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(
+		metrics.SqliteRequests,
+		metrics.SqliteTransactions,
 		metrics.EsiRequests,
 		metrics.EsiErrors,
 		metrics.WorkerErrors,
@@ -68,14 +70,14 @@ func InitPrometheus() (*prometheus.Registry, *Metrics) {
 }
 
 func RunPrometheusServer(ctx context.Context, reg *prometheus.Registry) {
-	// TODO: create a new mux to avoid conflicts with http.DefaultServeMux
-
 	errCh := make(chan error)
+	mux := http.NewServeMux()
 	server := &http.Server{
-		Addr: ":2112",
+		Addr:    ":2112",
+		Handler: mux,
 	}
 
-	http.Handle(
+	mux.Handle(
 		"/metrics",
 		promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}),
 	)
