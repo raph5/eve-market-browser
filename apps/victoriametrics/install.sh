@@ -12,12 +12,13 @@ chown $victoria_user:$victoria_user $victoria_dir
 # download
 curl -L $victoria_bin -o victoria-bin.tar.gz
 tar xvfz victoria-bin.tar.gz
-mv victoria-metrics-prod $victoria_dir/victoria
+cp victoria-metrics-prod $victoria_dir/victoria
+rm victoria-metrics-prod victoria-bin.tar.gz
 
 # config
-cp prometheus.yml $prom_dir
+cp prometheus.yml $victoria_dir
 
 # systemd
-cp victoria.service $prom_dir
-ln -s $prom_dir/victoria.service /etc/systemd/system/victoria.service
+cp victoria.service $victoria_dir
+ln -s $victoria_dir/victoria.service /etc/systemd/system/victoria.service
 systemctl daemon-reload
