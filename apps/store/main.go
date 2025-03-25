@@ -21,14 +21,14 @@ func main() {
 	log.SetFlags(log.LstdFlags)
 
 	// Flags
-	var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, prometheusEnabled bool
+	var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
 	var socketPath, dbPath string
 	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
 	flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
 	flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
-	flag.BoolVar(&prometheusEnabled, "prom", true, "Enable prometheus server")
+	flag.BoolVar(&victoriaEnabled, "victoria", true, "Enable victoria metric server")
 	flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
 	flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
 	flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port")
@@ -72,7 +72,7 @@ func main() {
 			cancel()
 		}()
 	}
-	if prometheusEnabled {
+	if victoriaEnabled {
 		mainWg.Add(1)
 		go func() {
 			victoria.RunVicotriaServer(ctx)
