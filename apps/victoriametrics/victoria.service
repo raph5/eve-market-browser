@@ -11,10 +11,10 @@ CPUQuota=60%
 MemoryAccounting=1
 MemoryHigh=750M
 MemoryMax=1000M
-ExecStart=/etc/prometheus/prometheus \
-  --config.file=/etc/prometheus/prometheus.yml \
-  --storage.tsdb.path=/etc/prometheus/data \
-  --storage.tsdb.retention.time=30d
+ExecStart=/etc/victoria/victoria \
+  --promscrape.config=/etc/victoria/prometheus.yml \
+  --storageDataPath=/etc/victoria/data \
+  --retentionPeriod=30d
 
 [Install]
 WantedBy=multi-user.target
