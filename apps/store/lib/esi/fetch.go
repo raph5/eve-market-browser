@@ -12,8 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/raph5/eve-market-browser/apps/store/lib/prom"
+	"github.com/VictoriaMetrics/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/lib/sem"
 )
 
@@ -51,20 +50,15 @@ var esiTimeout time.Time
 var esiTimeoutMu sync.Mutex
 
 func EsiFetch[T any](ctx context.Context, method string, uri string, body any, priority int, trails int) (EsiResponse[T], error) {
-	metrics := ctx.Value("metrics").(*prom.Metrics)
-
 	// If no tries left, fail the request
 	if trails <= 0 {
-		labels := prometheus.Labels{"uri": uri, "result": "failure"}
-		metrics.EsiRequests.With(labels).Inc()
+		reportEsiRequest(uri, "failure")
 		return EsiResponse[T]{}, ErrNoTrailsLeft
 	}
 
 	// Init retry function that will be called in case the request fail
 	retry := func(fallbackErr error) (EsiResponse[T], error) {
-		labels := prometheus.Labels{"uri": uri, "result": "retry"}
-		metrics.EsiRequests.With(labels).Inc()
-
+		reportEsiRequest(uri, "retry")
 		retryResponse, retryErr := EsiFetch[T](ctx, method, uri, body, priority, trails-1)
 		if errors.Is(retryErr, ErrNoTrailsLeft) {
 			return EsiResponse[T]{}, fmt.Errorf("no trails left: %w", fallbackErr)
@@ -112,8 +106,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	semaphore.Release(thread)
 	if err != nil {
 		if errors.Is(err, ctx.Err()) {
-			labels := prometheus.Labels{"uri": uri, "result": "failure"}
-			metrics.EsiRequests.With(labels).Inc()
+			reportEsiRequest(uri, "failure")
 			return EsiResponse[T]{}, fmt.Errorf("esi request: %w", err)
 		}
 		return retry(fmt.Errorf("http request: %w", err))
@@ -125,8 +118,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 		declareEsiTimeout(20 * time.Second)
 
 		log.Printf("Esi fetch: 20s implicit esi timeout %d", response.StatusCode)
-		labels := prometheus.Labels{"code": response.Status, "message": ""}
-		metrics.EsiErrors.With(labels).Inc()
+		reportEsiError(response.StatusCode, "")
 		return retry(ErrImplicitTimeout)
 	}
 
@@ -146,8 +138,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 		declareEsiTimeout(timeout)
 
 		log.Printf("Esi fetch: %fs error rate timeout", timeout.Seconds())
-		labels := prometheus.Labels{"code": response.Status, "message": ""}
-		metrics.EsiErrors.With(labels).Inc()
+		reportEsiError(response.StatusCode, "")
 		return retry(ErrErrorRateTimeout)
 	}
 
@@ -170,8 +161,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 		declareEsiTimeout(timeout)
 
 		log.Printf("Esi fetch: %fs explicit esi timeout", timeout.Seconds())
-		labels := prometheus.Labels{"code": response.Status, "message": timeoutError.Error}
-		metrics.EsiErrors.With(labels).Inc()
+		reportEsiError(response.StatusCode, timeoutError.Error)
 		return retry(ErrExplicitTimeout)
 	}
 
@@ -184,10 +174,8 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 			return retry(fmt.Errorf("decoding esi error: %w", err))
 		}
 
-		labels := prometheus.Labels{"code": response.Status, "message": error.Error}
-		metrics.EsiErrors.With(labels).Inc()
-		labels = prometheus.Labels{"uri": uri, "result": "failure"}
-		metrics.EsiRequests.With(labels).Inc()
+		reportEsiError(response.StatusCode, error.Error)
+		reportEsiRequest(uri, "failure")
 		return EsiResponse[T]{}, &EsiError{Message: error.Error, Code: response.StatusCode}
 	}
 
@@ -214,8 +202,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 		Pages: pages,
 	}
 
-	labels := prometheus.Labels{"uri": uri, "result": "success"}
-	metrics.EsiRequests.With(labels).Inc()
+	reportEsiRequest(uri, "success")
 	return esiResponse, nil
 }
 
@@ -249,4 +236,14 @@ func declareEsiTimeout(duration time.Duration) {
 
 func (e *EsiError) Error() string {
 	return fmt.Sprintf("Esi error %d : %s", e.Code, e.Message)
+}
+
+func reportEsiRequest(uri string, result string) {
+	esiRequestMetric := fmt.Sprintf(`store_esi_request_total{uri="%s",status="%s"}`, uri, result)
+	metrics.GetOrCreateCounter(esiRequestMetric).Inc()
+}
+
+func reportEsiError(code int, message string) {
+	esiErrorMetric := fmt.Sprintf(`store_esi_error_total{code="%d",message="%s"}`, code, message)
+	metrics.GetOrCreateCounter(esiErrorMetric).Inc()
 }

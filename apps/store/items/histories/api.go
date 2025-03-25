@@ -18,6 +18,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 	db := ctx.Value("db").(*database.DB)
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: try reducing the timeout to 3s
 		timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 

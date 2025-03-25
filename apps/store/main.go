@@ -13,7 +13,7 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
-	"github.com/raph5/eve-market-browser/apps/store/lib/prom"
+	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
 )
 
 func main() {
@@ -41,13 +41,9 @@ func main() {
 	}
 	defer db.Close()
 
-	// Init prometheus
-	reg, metrics := prom.InitPrometheus()
-
 	// Init context
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, "db", db)
-	ctx = context.WithValue(ctx, "metrics", metrics)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -79,7 +75,7 @@ func main() {
 	if prometheusEnabled {
 		mainWg.Add(1)
 		go func() {
-			prom.RunPrometheusServer(ctx, reg)
+			victoria.RunVicotriaServer(ctx)
 			log.Print("Prometheus stopped")
 			mainWg.Done()
 			cancel()

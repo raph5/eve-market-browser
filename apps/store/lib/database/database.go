@@ -7,12 +7,12 @@ package database
 import (
 	"context"
 	"database/sql"
-	"strconv"
+	"fmt"
+	"log"
 	"time"
 
+	"github.com/VictoriaMetrics/metrics"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/raph5/eve-market-browser/apps/store/lib/prom"
 )
 
 type DB struct {
@@ -21,16 +21,14 @@ type DB struct {
 }
 
 type dbRow struct {
-	start   time.Time
-	query   string
-	metrics *prom.Metrics
-	row     *sql.Row
+	duration time.Duration
+	query    string
+	row      *sql.Row
 }
 
 type dbTx struct {
-	start   time.Time
-	metrics *prom.Metrics
-	tx      *sql.Tx
+	start time.Time
+	tx    *sql.Tx
 }
 
 type dbStmt struct {
@@ -128,11 +126,10 @@ func (db *DB) Query(ctx context.Context, query string, args ...any) (*sql.Rows, 
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	rows, err := db.read.QueryContext(ctx, query, args...)
-	reportRequest(metrics, err != nil, query, start)
+	reportRequest(err, query, time.Since(start))
 	return rows, err
 }
 
@@ -140,18 +137,15 @@ func (db *DB) QueryRow(ctx context.Context, query string, args ...any) *dbRow {
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	row := db.read.QueryRowContext(ctx, query, args...)
-	return &dbRow{start: start, metrics: metrics, query: query, row: row}
+	return &dbRow{row: row, query: query, duration: time.Since(start)}
 }
 
 func (dbRow *dbRow) Scan(dest ...any) error {
 	err := dbRow.row.Scan(dest...)
-	// NOTE: if a query is not scanned *directly* then the duration label sent to
-	// prometheus might be wrong
-	reportRequest(dbRow.metrics, err != nil, dbRow.query, dbRow.start)
+	reportRequest(err, dbRow.query, dbRow.duration)
 	return err
 }
 
@@ -159,11 +153,10 @@ func (db *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, 
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	result, err := db.write.ExecContext(ctx, query, args...)
-	reportRequest(metrics, err != nil, query, start)
+	reportRequest(err, query, time.Since(start))
 	return result, err
 }
 
@@ -194,11 +187,10 @@ func (dbStmt *dbStmt) Query(ctx context.Context, args ...any) (*sql.Rows, error)
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	rows, err := dbStmt.stmt.QueryContext(ctx, args...)
-	reportRequest(metrics, err != nil, dbStmt.query, start)
+	reportRequest(err, dbStmt.query, time.Since(start))
 	return rows, err
 }
 
@@ -209,11 +201,10 @@ func (dbStmt *dbStmt) QueryRow(ctx context.Context, args ...any) *dbRow {
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	row := dbStmt.stmt.QueryRowContext(ctx, args...)
-	return &dbRow{start: start, metrics: metrics, query: dbStmt.query, row: row}
+	return &dbRow{row: row, duration: time.Since(start), query: dbStmt.query}
 }
 
 func (dbStmt *dbStmt) Exec(ctx context.Context, args ...any) (sql.Result, error) {
@@ -223,34 +214,32 @@ func (dbStmt *dbStmt) Exec(ctx context.Context, args ...any) (sql.Result, error)
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	result, err := dbStmt.stmt.ExecContext(ctx, args...)
-	reportRequest(metrics, err != nil, dbStmt.query, start)
+	reportRequest(err, dbStmt.query, time.Since(start))
 	return result, err
 }
 
 // WARN: Transactions are blocking: avoid long transactions
 func (db *DB) Begin(ctx context.Context) (*dbTx, error) {
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 	start := time.Now()
 	tx, err := db.write.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &dbTx{start: start, metrics: metrics, tx: tx}, nil
+	return &dbTx{tx: tx, start: start}, nil
 }
 
 func (dbTx *dbTx) Rollback() error {
 	err := dbTx.tx.Rollback()
-	reportTransactionRollback(dbTx.metrics, err != nil, dbTx.start)
+	reportTransactionRollback(err, time.Since(dbTx.start))
 	return err
 }
 
 func (dbTx *dbTx) Commit() error {
 	err := dbTx.tx.Commit()
-	reportTransactionCommit(dbTx.metrics, err != nil, dbTx.start)
+	reportTransactionCommit(err, time.Since(dbTx.start))
 	return err
 }
 
@@ -258,11 +247,10 @@ func (dbTx *dbTx) Exec(ctx context.Context, query string, args ...any) (sql.Resu
 	if _, ok := ctx.Deadline(); !ok {
 		panic("DB: your are required to wrap your database call in context with a deadline")
 	}
-	metrics := ctx.Value("metrics").(*prom.Metrics)
 
 	start := time.Now()
 	result, err := dbTx.tx.ExecContext(ctx, query, args...)
-	reportRequest(metrics, err != nil, query, start)
+	reportRequest(err, query, time.Since(start))
 	return result, err
 }
 
@@ -282,35 +270,42 @@ func (dbTx *dbTx) PrepareWrite(ctx context.Context, query string) (*dbStmt, erro
 	return &dbStmt{stmt: stmt, query: query, read: false}, nil
 }
 
-func reportRequest(metrics *prom.Metrics, success bool, query string, start time.Time) {
-	duration := strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64)
-	if success {
-		labels := prometheus.Labels{"query": query, "status": "success", "duration": duration}
-		metrics.SqliteRequests.With(labels).Inc()
+func reportRequest(err error, query string, duration time.Duration) {
+	requestDuration := fmt.Sprintf(`store_sqlite_request_duration{query="%s"}`, query)
+	var requestCount string
+	if err == nil {
+		requestCount = fmt.Sprintf(`store_sqlite_request_total{query="%s",status="success"}`, query)
 	} else {
-		labels := prometheus.Labels{"query": query, "status": "failure", "duration": duration}
-		metrics.SqliteRequests.With(labels).Inc()
+		requestCount = fmt.Sprintf(`store_sqlite_request_total{query="%s",status="failure"}`, query)
+		log.Printf("Database: %v", err)
 	}
+	// NOTE: GetOrCreateCounter perform a global mutex lock. If this is a
+	// bottleneck I can split different metrics into diffrent metrics sets to
+	// only lock the mutex of the set.
+	metrics.GetOrCreateCounter(requestCount).Inc()
+	metrics.GetOrCreateFloatCounter(requestDuration).Add(duration.Seconds())
 }
 
-func reportTransactionRollback(metrics *prom.Metrics, success bool, start time.Time) {
-	duration := strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64)
-	if success {
-		labels := prometheus.Labels{"status": "rollback_success", "duration": duration}
-		metrics.SqliteTransactions.With(labels).Inc()
+func reportTransactionRollback(err error, duration time.Duration) {
+	transactionDuration := `store_sqlite_transaction_duration`
+	var transactionCount string
+	if err == nil {
+		transactionCount = `store_sqlite_transaction_total{status="rollback_success"}`
 	} else {
-		labels := prometheus.Labels{"status": "rollback_failure", "duration": duration}
-		metrics.SqliteTransactions.With(labels).Inc()
+		transactionCount = `store_sqlite_transaction_total{status="rollback_failure"}`
 	}
+	metrics.GetOrCreateCounter(transactionCount).Inc()
+	metrics.GetOrCreateFloatCounter(transactionDuration).Add(duration.Seconds())
 }
 
-func reportTransactionCommit(metrics *prom.Metrics, success bool, start time.Time) {
-	duration := strconv.FormatFloat(time.Since(start).Seconds(), 'f', 2, 64)
-	if success {
-		labels := prometheus.Labels{"status": "commit_success", "duration": duration}
-		metrics.SqliteTransactions.With(labels).Inc()
+func reportTransactionCommit(err error, duration time.Duration) {
+	transactionDuration := `store_sqlite_transaction_duration`
+	var transactionCount string
+	if err == nil {
+		transactionCount = `store_sqlite_transaction_total{status="commit_success"}`
 	} else {
-		labels := prometheus.Labels{"status": "commit_failure", "duration": duration}
-		metrics.SqliteTransactions.With(labels).Inc()
+		transactionCount = `store_sqlite_transaction_total{status="commit_failure"}`
 	}
+	metrics.GetOrCreateCounter(transactionCount).Inc()
+	metrics.GetOrCreateFloatCounter(transactionDuration).Add(duration.Seconds())
 }
