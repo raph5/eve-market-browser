@@ -14,6 +14,7 @@ import (
 
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/lib/sem"
+	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
 )
 
 type EsiError struct {
@@ -244,6 +245,6 @@ func reportEsiRequest(uri string, result string) {
 }
 
 func reportEsiError(code int, message string) {
-	esiErrorMetric := fmt.Sprintf(`store_esi_error_total{code="%d",message="%s"}`, code, message)
+	esiErrorMetric := fmt.Sprintf(`store_esi_error_total{code="%d",message="%s"}`, code, victoria.Escape(message))
 	metrics.GetOrCreateCounter(esiErrorMetric).Inc()
 }

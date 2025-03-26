@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/VictoriaMetrics/metrics"
@@ -42,4 +43,9 @@ func RunVicotriaServer(ctx context.Context) {
 	if err != nil {
 		log.Printf("Prometheus server error: %v", err)
 	}
+}
+
+// escape label value
+func Escape(value string) string {
+	return strings.ReplaceAll(value, `"`, `\"`)
 }

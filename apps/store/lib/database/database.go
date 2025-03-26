@@ -9,10 +9,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/VictoriaMetrics/metrics"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
 )
 
 type DB struct {
@@ -271,6 +273,7 @@ func (dbTx *dbTx) PrepareWrite(ctx context.Context, query string) (*dbStmt, erro
 }
 
 func reportRequest(err error, query string, duration time.Duration) {
+	query = victoria.Escape(query)
 	requestDuration := fmt.Sprintf(`store_sqlite_request_duration{query="%s"}`, query)
 	var requestCount string
 	if err == nil {
