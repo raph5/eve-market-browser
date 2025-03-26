@@ -10,7 +10,7 @@ import (
 	"github.com/VictoriaMetrics/metrics"
 )
 
-func RunVicotriaServer(ctx context.Context) {
+func RunVictoriaServer(ctx context.Context) {
 	errCh := make(chan error)
 	mux := http.NewServeMux()
 	server := &http.Server{
@@ -23,7 +23,7 @@ func RunVicotriaServer(ctx context.Context) {
 	})
 
 	go func() {
-		log.Print("Prometheus server up")
+		log.Print("VictoriaMetrics server up")
 		err := server.ListenAndServe()
 		if err != nil {
 			errCh <- err
@@ -34,14 +34,14 @@ func RunVicotriaServer(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 	case err := <-errCh:
-		log.Printf("Prometheus server error: %v", err)
+		log.Printf("VictoriaMetrics server error: %v", err)
 	}
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {
-		log.Printf("Prometheus server error: %v", err)
+		log.Printf("VictoriaMetrics server error: %v", err)
 	}
 }
 

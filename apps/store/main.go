@@ -75,8 +75,8 @@ func main() {
 	if victoriaEnabled {
 		mainWg.Add(1)
 		go func() {
-			victoria.RunVicotriaServer(ctx)
-			log.Print("Prometheus stopped")
+			victoria.RunVictoriaServer(ctx)
+			log.Print("VictoriaMetrics stopped")
 			mainWg.Done()
 			cancel()
 		}()
