@@ -7,6 +7,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -275,7 +276,7 @@ func reportRequest(err error, query string, duration time.Duration) {
 	query = victoria.Escape(query)
 	requestDuration := fmt.Sprintf(`store_sqlite_request_duration{query="%s"}`, query)
 	var requestCount string
-	if err == nil {
+	if err == nil || errors.Is(err, sql.ErrNoRows) {
 		requestCount = fmt.Sprintf(`store_sqlite_request_total{query="%s",status="success"}`, query)
 	} else {
 		requestCount = fmt.Sprintf(`store_sqlite_request_total{query="%s",status="failure"}`, query)
