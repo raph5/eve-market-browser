@@ -295,6 +295,7 @@ func reportTransactionRollback(err error, duration time.Duration) {
 		transactionCount = `store_sqlite_transaction_total{status="rollback_success"}`
 	} else {
 		transactionCount = `store_sqlite_transaction_total{status="rollback_failure"}`
+		log.Printf("Database: %v", err)
 	}
 	metrics.GetOrCreateCounter(transactionCount).Inc()
 	metrics.GetOrCreateFloatCounter(transactionDuration).Add(duration.Seconds())
@@ -307,6 +308,7 @@ func reportTransactionCommit(err error, duration time.Duration) {
 		transactionCount = `store_sqlite_transaction_total{status="commit_success"}`
 	} else {
 		transactionCount = `store_sqlite_transaction_total{status="commit_failure"}`
+		log.Printf("Database: %v", err)
 	}
 	metrics.GetOrCreateCounter(transactionCount).Inc()
 	metrics.GetOrCreateFloatCounter(transactionDuration).Add(duration.Seconds())
