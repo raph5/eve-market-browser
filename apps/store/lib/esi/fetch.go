@@ -53,13 +53,13 @@ var esiTimeoutMu sync.Mutex
 func EsiFetch[T any](ctx context.Context, method string, uri string, body any, priority int, trails int) (EsiResponse[T], error) {
 	// If no tries left, fail the request
 	if trails <= 0 {
-		reportEsiRequest(uri, "failure")
+		reportEsiRequest("failure")
 		return EsiResponse[T]{}, ErrNoTrailsLeft
 	}
 
 	// Init retry function that will be called in case the request fail
 	retry := func(fallbackErr error) (EsiResponse[T], error) {
-		reportEsiRequest(uri, "retry")
+		reportEsiRequest("retry")
 		retryResponse, retryErr := EsiFetch[T](ctx, method, uri, body, priority, trails-1)
 		if errors.Is(retryErr, ErrNoTrailsLeft) {
 			return EsiResponse[T]{}, fmt.Errorf("no trails left: %w", fallbackErr)
@@ -107,7 +107,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	semaphore.Release(thread)
 	if err != nil {
 		if errors.Is(err, ctx.Err()) {
-			reportEsiRequest(uri, "failure")
+			reportEsiRequest("failure")
 			return EsiResponse[T]{}, fmt.Errorf("esi request: %w", err)
 		}
 		return retry(fmt.Errorf("http request: %w", err))
@@ -176,7 +176,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 		}
 
 		reportEsiError(response.StatusCode, error.Error)
-		reportEsiRequest(uri, "failure")
+		reportEsiRequest("failure")
 		return EsiResponse[T]{}, &EsiError{Message: error.Error, Code: response.StatusCode}
 	}
 
@@ -203,7 +203,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 		Pages: pages,
 	}
 
-	reportEsiRequest(uri, "success")
+	reportEsiRequest("success")
 	return esiResponse, nil
 }
 
@@ -239,8 +239,8 @@ func (e *EsiError) Error() string {
 	return fmt.Sprintf("Esi error %d : %s", e.Code, e.Message)
 }
 
-func reportEsiRequest(uri string, result string) {
-	esiRequestMetric := fmt.Sprintf(`store_esi_request_total{uri="%s",status="%s"}`, uri, result)
+func reportEsiRequest(result string) {
+	esiRequestMetric := fmt.Sprintf(`store_esi_request_total{status="%s"}`, result)
 	metrics.GetOrCreateCounter(esiRequestMetric).Inc()
 }
 
