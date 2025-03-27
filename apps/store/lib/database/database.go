@@ -292,7 +292,7 @@ func reportRequest(err error, query string, duration time.Duration) {
 func reportTransactionRollback(err error, duration time.Duration) {
 	transactionDuration := `store_sqlite_transaction_duration`
 	var transactionCount string
-	if err == nil {
+	if err == nil || errors.Is(err, sql.ErrTxDone) {
 		transactionCount = `store_sqlite_transaction_total{status="rollback_success"}`
 	} else {
 		transactionCount = `store_sqlite_transaction_total{status="rollback_failure"}`
@@ -305,7 +305,7 @@ func reportTransactionRollback(err error, duration time.Duration) {
 func reportTransactionCommit(err error, duration time.Duration) {
 	transactionDuration := `store_sqlite_transaction_duration`
 	var transactionCount string
-	if err == nil {
+	if err == nil || errors.Is(err, sql.ErrTxDone) {
 		transactionCount = `store_sqlite_transaction_total{status="commit_success"}`
 	} else {
 		transactionCount = `store_sqlite_transaction_total{status="commit_failure"}`
