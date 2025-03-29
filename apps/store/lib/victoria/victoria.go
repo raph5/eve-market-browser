@@ -47,7 +47,7 @@ func RunVictoriaServer(ctx context.Context) {
 
 // escape label value
 func Escape(value string) string {
-  value = strings.ReplaceAll(value, `"`, `\"`)
+	value = strings.ReplaceAll(value, `"`, `\"`)
 	value = strings.ReplaceAll(value, "\n", "")
-  return value
+	return value
 }
