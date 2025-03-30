@@ -18,8 +18,8 @@ export function getRarityName(rarity: number) {
     case 0 : return "Tech 1"
     case 1 : return "Tech 2"
     case 2 : return "Faction & Storyline"
-    case 3 : return "Officer" 
-    case 4 : return "Deadspace"
+    case 3 : return "Deadspace" 
+    case 4 : return "Officer"
     default : throw "unreachable place"
   }
 }
