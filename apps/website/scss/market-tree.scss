@@ -4,7 +4,7 @@
   height: 100%;
   display: grid;
   grid-template-rows: max-content auto;
-  
+
   &__header {
     padding-right: 4px;
     display: flex;
@@ -35,6 +35,12 @@
     &:hover {
       color: white;
     }
+
+    &-icon {
+      width: 16px;
+      height: 16px;
+      @include icon-color;
+    }
   }
   &__results {
     margin: 0;
@@ -61,7 +67,7 @@
   font-size: 14px;
   font-weight: normal;
   color: $font-color;
-  
+
   &:focus-visible {
     outline: ridge $primary 2px;
   }
@@ -163,6 +169,11 @@
     opacity: 0;
     background-color: $primary-3;
 
+    &-icon {
+      width: 16px;
+      height: 16px;
+      @include icon-color;
+    }
     &::after {
       content: '';
       position: absolute;

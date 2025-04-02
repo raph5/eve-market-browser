@@ -34,6 +34,12 @@
     &:hover {
       color: white;
     }
+
+    &-icon {
+        width: 16px;
+        height: 16px;
+        @include icon-color;
+    }
   }
   &__empty {
     margin: 150px auto 0 auto;
@@ -54,7 +60,7 @@
   font-weight: normal;
   color: $font-color;
   background-color: $background-2;
-  
+
   @for $i from 1 through 20 {
     &[data-depth="#{$i}"] {
       --depth: #{$i};
@@ -86,9 +92,9 @@
     transition: background-color 100ms;
     white-space: nowrap;
     overflow: hidden;
-    
+
     &:hover {
-      background-color: $primary-3;
+      background-color: $primary-2;
     }
   }
   &__label {
@@ -128,7 +134,7 @@
   }
   &--drag {
     background-color: transparent !important;
-    
+
     .quickbar-item__link {
       color: $font-color-light;
     }

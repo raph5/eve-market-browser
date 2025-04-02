@@ -1,9 +1,6 @@
-import { TriangleRightIcon, DownloadIcon, UploadIcon, TrashIcon, UnderlineIcon } from "@radix-ui/react-icons";
 import { Type } from "@app/esiStore/types";
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
-import { PiFolderPlusThin } from "react-icons/pi";
-import { BsArrowsCollapse } from "react-icons/bs";
 import QuickbarContext from "@contexts/quickbarContext";
 import { stringSort } from "@app/utils";
 import { Link, useNavigate } from "@remix-run/react";
@@ -11,6 +8,14 @@ import { typeIconSrc } from "@components/eveIcon";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as ContextMenu from "@radix-ui/react-context-menu"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
+import triangleRightIcon from "@assets/triangle-right.png"
+import downloadIcon from "@assets/download.png"
+import uploadIcon from "@assets/upload.png"
+import trashIcon from "@assets/trash.png"
+import newFolderIcon from "@assets/new-folder.png"
+import collapseIcon from "@assets/collapse.png"
+import warnIcon from "@assets/warn.png"
+import folderIcon from "@assets/folder.png"
 import "@scss/quickbar.scss";
 import { usePath } from "@hooks/usePath";
 
@@ -94,7 +99,7 @@ export function Quickbar({ types, treeValue, onTreeValueChange }: QuickbarProps)
           </div>
           <div className="quickbar__options">
             <button className="quickbar__button" title="Colse all folders" onClick={() => onTreeValueChange(new Set())}>
-              <BsArrowsCollapse className="quickbar__button-icon" />
+              <img src={collapseIcon} className="quickbar__button-icon" />
             </button>
           </div>
         </div>
@@ -201,7 +206,7 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
         <ContextMenu.Root>
           <ContextMenu.Trigger asChild>
             <TreeView.Trigger className="quickbar-folder__trigger">
-              <TriangleRightIcon className="quickbar-folder__triangle"/>
+              <img src={triangleRightIcon} className="quickbar-folder__triangle"/>
               <span className="quickbar-folder__label">
                 {quickbar.state[folderId].name}
               </span>
@@ -209,7 +214,7 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
           </ContextMenu.Trigger>
           <ContextMenu.Portal>
             <ContextMenu.Content className="context-menu">
-              
+
               <Dialog.Trigger asChild>
                 <ContextMenu.Item className="context-menu__item">
                   Rename folder
@@ -359,12 +364,13 @@ function CreateFolderButton() {
   return (
     <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
       <Dialog.Trigger className="quickbar__button" title="Create Folder">
-        <PiFolderPlusThin className="quickbar__button-icon" />
+        <img src={newFolderIcon} className="quickbar__button-icon" />
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog__overlay" />
         <Dialog.Content className="dialog">
           <div className="dialog__header">
+            <img src={folderIcon} className="dialog__icon"/>
             <Dialog.Title className="dialog__title">New folder name</Dialog.Title>
             <Dialog.Description className="dialog__description">
               Enter the name of the quickbar folder you want to create
@@ -407,7 +413,7 @@ function ImportQuickbarButton() {
   return (
     <DropdownMenu.Root modal>
       <DropdownMenu.Trigger className="quickbar__button" title="Import quickbar">
-        <DownloadIcon className="quickbar__button-icon" />
+        <img src={downloadIcon} className="quickbar__button-icon" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content align="start" className="dropdown">
@@ -430,7 +436,7 @@ function ExportQuickbarButton() {
   return (
     <DropdownMenu.Root modal>
       <DropdownMenu.Trigger className="quickbar__button" title="Export quickbar">
-        <UploadIcon className="quickbar__button-icon" />
+        <img src={uploadIcon} className="quickbar__button-icon" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content align="start" className="dropdown">
@@ -449,12 +455,13 @@ function ClearQuickbarButton() {
   return (
     <Dialog.Root>
       <Dialog.Trigger className="quickbar__button" title="Remove all items from quickbar">
-        <TrashIcon className="quickbar__button-icon" />
+        <img src={trashIcon} className="quickbar__button-icon" />
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog__overlay" />
         <Dialog.Content className="dialog">
           <div className="dialog__header">
+            <img src={warnIcon} className="dialog__icon"/>
             <Dialog.Title className="dialog__title">Clear quickbar</Dialog.Title>
             <Dialog.Description className="dialog__description">
               Remove all items from quickbar

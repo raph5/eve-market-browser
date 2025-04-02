@@ -1,6 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react"
 import TreeView from "react-composable-treeview"
-import { MixerHorizontalIcon, TriangleRightIcon, DrawingPinIcon, DrawingPinFilledIcon } from "@radix-ui/react-icons"
 import EveIcon, { iconSrc } from "@components/eveIcon"
 import classNames from "classnames"
 import { Type, MarketGroup as EsiMarketGroup } from "@app/esiStore/types"
@@ -8,10 +7,13 @@ import { createContext } from "react"
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react"
 import { useTypeSearch } from "@hooks/useTypeSearch"
 import { SearchBar } from "@components/searchBar"
-import { BsArrowsCollapse } from "react-icons/bs"
 import QuickbarContext from "@contexts/quickbarContext"
 import { stringSort } from "@app/utils"
 import * as ContextMenu from "@radix-ui/react-context-menu"
+import triangleRightIcon from "@assets/triangle-right.png"
+import collapseIcon from "@assets/collapse.png"
+import pinIcon from "@assets/pin.png"
+import unpinIcon from "@assets/unpin.png"
 import "@scss/market-tree.scss"
 import { getRarityIcon, getRarityName, getMetaRarity } from "@app/meta"
 import { usePath } from "@hooks/usePath"
@@ -85,11 +87,8 @@ export function MarketTree({
             placeholder="Search"
             focusShortcut />
           <button onClick={collapseTree} className="market-tree__button" title="Collapse all folders">
-            <BsArrowsCollapse className="market-tree__button-icon" />
+            <img src={collapseIcon} className="market-tree__button-icon" />
           </button>
-          {/* <button className="market-tree__button" title="Filters">
-            <MixerHorizontalIcon className="market-tree__button-icon" />
-          </button> */}
         </div>
         <div className="market-tree__body">
           <TreeView.Root
@@ -137,7 +136,7 @@ function MarketGroup({ group }: MarketGroupProps) {
   return (
     <TreeView.Group value={`group:${group.id}`} className="market-group">
       <TreeView.Trigger className="market-group__trigger">
-        <TriangleRightIcon className="market-group__triangle" />
+        <img src={triangleRightIcon} className="market-group__triangle" />
         <EveIcon src={iconSrc(group.iconId)} alt="" className="market-group__icon" />
         <span className="market-group__label">{group.name}</span>
       </TreeView.Trigger>
@@ -214,11 +213,11 @@ function MarketItem({ type }: MarketItemProps) {
           </Link>
           {inQuickbar ? (
             <button onClick={e => { quickbar.removeItem(type.id); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
-              <DrawingPinFilledIcon className="market-item__button-icon" />
+              <img src={unpinIcon} className="market-item__button-icon" />
             </button>
           ) : (
             <button onClick={e => { quickbar.addItem(type.id); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
-              <DrawingPinIcon className="market-item__button-icon" />
+              <img src={pinIcon} className="market-item__button-icon" />
             </button>
           )}
         </TreeView.Item>
@@ -268,11 +267,11 @@ function MarketType({ type }: MarketTypeProps) {
           </Link>
           {inQuickbar ? (
             <button onClick={e => { quickbar.removeItem(type.id); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
-              <DrawingPinFilledIcon className="market-item__button-icon" />
+              <img src={unpinIcon} className="market-item__button-icon" />
             </button>
           ) : (
             <button onClick={e => { quickbar.addItem(type.id); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
-              <DrawingPinIcon className="market-item__button-icon" />
+              <img src={pinIcon} className="market-item__button-icon" />
             </button>
           )}
         </li>

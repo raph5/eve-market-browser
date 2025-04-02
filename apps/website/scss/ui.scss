@@ -57,7 +57,7 @@
   min-height: 200px;
   display: flex;
   flex-direction: column;
-  
+
   &::after {
     content: "";
     position: absolute;
@@ -69,15 +69,35 @@
     box-shadow: 0 0 2px $primary-0;
   }
 
+  &__header {
+    display: grid;
+    row-gap: 8px;
+    grid-template-columns: 0 auto;
+    grid-template-areas: "icon title"
+                         "desc desc";
+
+    &:has(.dialog__icon) {
+        grid-template-columns: 32px auto;
+        column-gap: 8px;
+    }
+  }
   &__body {
     margin: 0;
   }
+  &__icon {
+    grid-area: icon;
+    width: 32px;
+    height: 32px;
+  }
   &__title {
+    grid-area: title;
     font-size: 20px;
     margin: 0;
-    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
   }
   &__description {
+    grid-area: desc;
     font-size: 14px;
     margin: 4px 0;
   }

@@ -72,6 +72,10 @@ $mobile-width: 500px;
   }
 }
 
+@mixin icon-color() {
+  filter: brightness(0) saturate(100%) invert(90%) sepia(5%) saturate(44%) hue-rotate(167deg) brightness(96%) contrast(95%);
+}
+
 @mixin skeleton-bg($color: $background-2) {
   background-color: $color;
   background: linear-gradient(90deg, lighten($color, 1) 8%, lighten($color, 3) 18%, lighten($color, 1) 33%) $color;
@@ -88,7 +92,7 @@ $mobile-width: 500px;
 @mixin glow() {
   background-color: $primary-2;
 }
-  
+
 @mixin handle-data-depth($step: 16px, $offset: 0px) {
   @for $depth from 0 to 10 {
     &[data-depth="#{$depth}"] {
