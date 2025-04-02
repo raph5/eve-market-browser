@@ -176,7 +176,7 @@ function MarketRarityGroup({ rarity, group, children }: MarketRarityGroupProps) 
   return (
     <TreeView.Group value={`group:${group.id}:meta:${name}`} className="market-group market-group--meta">
       <TreeView.Trigger className="market-group__trigger">
-        <TriangleRightIcon className="market-group_triangle" />
+        <img src={triangleRightIcon} className="market-group_triangle" />
         <EveIcon src={iconSrc} alt={`${name} icon`} className="market-group__icon" />
         <span className="market-group__label">{name}</span>
       </TreeView.Trigger>
