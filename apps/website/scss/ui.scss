@@ -14,7 +14,7 @@
   }
 
   &:hover, &:focus {
-    background-color: $primary-2;
+    background-color: lighten($primary-3, 4);
   }
 
   &__icon {
@@ -23,10 +23,10 @@
 
   &--primary {
     background-color: $primary-2;
-    border-color: $primary;
+    border-color: $primary-0;
 
     &:hover, &:focus {
-      background-color: $primary-1;
+      background-color: lighten($primary-2, 4);
     }
   }
   &--text-center {
@@ -36,7 +36,7 @@
     @include sharp-border-radius-right(1px, 10px, $primary-1);
 
     &.button--primary {
-      @include sharp-border-radius-right(1px, 10px, $primary);
+      @include sharp-border-radius-right(1px, 10px, $primary-0);
     }
   }
   &--corner-left {
@@ -50,9 +50,9 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: $background-2;
+  background-color: $background-1;
   border: solid 1px $border-1;
-  padding: 8px;
+  padding: 12px;
   width: 350px;
   min-height: 200px;
   display: flex;
@@ -65,16 +65,17 @@
     left: -1px;
     right: -1px;
     height: 1px;
-    background-color: $accent;
-    box-shadow: 0 0 4px $accent;
+    background-color: $primary-0;
+    box-shadow: 0 0 2px $primary-0;
   }
 
   &__body {
-    margin: 8px 0;
+    margin: 0;
   }
   &__title {
     font-size: 20px;
-    margin: 4px 0;
+    margin: 0;
+    margin-bottom: 16px;
   }
   &__description {
     font-size: 14px;
@@ -85,7 +86,7 @@
     border: solid 1px $border-1;
     padding: 4px;
     width: 100%;
-    margin-top: 8px;
+    margin: 4px 0;
     box-sizing: border-box;
     font-size: 14px;
   }

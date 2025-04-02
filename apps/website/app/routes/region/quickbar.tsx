@@ -462,7 +462,7 @@ function ClearQuickbarButton() {
           </div>
 
           <div className="dialog__footer">
-            <Dialog.Close autoFocus className="button button--corner-left button--text-center">
+            <Dialog.Close className="button button--corner-left button--text-center">
               Cancel
             </Dialog.Close>
             <Dialog.Close onClick={() => quickbar.clear()} className="button button--primary button--corner-right button--text-center">
