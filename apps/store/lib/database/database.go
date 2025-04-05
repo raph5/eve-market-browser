@@ -92,9 +92,29 @@ func Init(dbPath string) (*DB, error) {
     PRIMARY KEY (TypeId, RegionId)
   );
 
+  CREATE TABLE IF NOT EXISTS HotTypeMetric (
+    TypeId INTEGER,
+    Time INTEGER,  -- Epoch Seconds
+    BuyPrice REAL,
+    SellPrice REAL
+    -- No primary key here as data integrity is not a big concern
+  );
+  CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, Time DESC);
+  CREATE TABLE IF NOT EXISTS DayTypeMetric (
+    TypeId INTEGER,
+    Year INTEGER,
+    Day INTEGER,  -- Day Of The Year (ISO 8601)
+    BuyPrice REAL,
+    SellPrice REAL,
+    BuyVolume REAL,
+    SellVolume REAL,
+    PRIMARY KEY (Year, Day, TypeId)
+  );
+  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, year DESC, date DESC);
+
   CREATE TABLE IF NOT EXISTS TimeRecord (
     "Key" TEXT PRIMARY KEY,
-    "Time" INTEGER
+    Time INTEGER  -- Epoch Seconds
   );`
 	_, err = dbWrite.Exec(createTablesAndIndexs)
 	if err != nil {
