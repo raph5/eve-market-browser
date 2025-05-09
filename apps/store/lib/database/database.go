@@ -114,7 +114,7 @@ func Init(dbPath string) (*DB, error) {
     -- will represent the total volume and SellVolume will be equal to -1 to
     -- signal that change.
   );
-  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, year DESC, date DESC);
+  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Year DESC, Day DESC);
 
   CREATE TABLE IF NOT EXISTS TimeRecord (
     "Key" TEXT PRIMARY KEY,
