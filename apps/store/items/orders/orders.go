@@ -3,7 +3,10 @@ package orders
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
 
+	"github.com/raph5/eve-market-browser/apps/store/items/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/items/regions"
 )
 
@@ -17,7 +20,7 @@ import (
 // significantly slower (~7min against ~3min for the second approach).
 // EDIT: Just fetching orders and regions sequentially works fine 👉👈
 func Download(ctx context.Context) error {
-	orders := make([]dbOrder, 0, 1000)
+	orders := make([]dbOrder, 0, 1024)
 
 	for _, regionId := range regions.Regions {
 		var pageOrders []dbOrder
@@ -34,7 +37,13 @@ func Download(ctx context.Context) error {
 		}
 	}
 
-	err := dbReplaceOrders(ctx, orders)
+  retrivalTime := time.Now()
+  err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
+  if err != nil {
+    log.Printf("CreateHotDataPoints: %v", err)
+  }
+
+	err = dbReplaceOrders(ctx, orders)
 	if err != nil {
 		return fmt.Errorf("replacing orders: %w", err)
 	}

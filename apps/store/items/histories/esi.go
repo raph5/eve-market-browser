@@ -9,17 +9,11 @@ import (
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/activemarkets"
+	"github.com/raph5/eve-market-browser/apps/store/items/shared"
 	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
 )
 
-type esiHistoryDay struct {
-	Average    float64 `json:"average"`
-	Date       string  `json:"date"`
-	Highest    float64 `json:"highest"`
-	Lowest     float64 `json:"lowest"`
-	OrderCount int     `json:"order_count"`
-	Volume     int     `json:"volume"`
-}
+type esiHistoryDay = shared.EsiHistoryDay
 
 var ErrInvalidEsiData = errors.New("Invalid esi data")
 
@@ -96,9 +90,9 @@ func fetchHistory(ctx context.Context, regionId int, typeId int) (*dbHistory, er
 		return nil, fmt.Errorf("marshal history: %w", err)
 	}
 	return &dbHistory{
-		history:  dbHistoryDaysJson,
-		regionId: regionId,
-		typeId:   typeId,
+		History:  dbHistoryDaysJson,
+		RegionId: regionId,
+		TypeId:   typeId,
 	}, nil
 }
 

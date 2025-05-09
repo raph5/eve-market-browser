@@ -2,46 +2,117 @@
 // retrive time series metrics that are computes using data available in db (no
 // external request a priori)
 //
-// Storage of metics will appen in two tables: HotTypeMetric and DayTypeMetric
-// HotTypeMetric will handle metrics with frequent new data points (like every 10
-// minutes)
-// DayTypeMetric will handle metrics that will get a new data point every day (like
-// average of some HotMetrics for example)
+// Storage of metics will happen in two tables: HotTypeMetric and DayTypeMetric
+// HotTypeMetric will handle metrics with frequent new data points (like every
+// 10 minutes)
+// DayTypeMetric will handle metrics that will get a new data point every day
+// (like average of some HotMetrics for example)
 // HotTypeMetric table will be burned to the ground every 1 to 2 days to avoid
 // exessive memory consumption
 //
 // If I latter need to add global metrics they will be added under the
 // HotGlobalMetric and DayGlobalMetric tables
+//
+// NOTE: DayTypeMetric is a bit of a diplicate of History. One day I could
+// perhaps merge this two tables
 
 package metrics
 
 import (
-	"time"
+	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
+	"time"
+
+	"github.com/raph5/eve-market-browser/apps/store/items/shared"
+	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
 )
 
-type hotTypeDataPoint struct {
+type dbOrder = shared.DbOrder
+type dbHistory = shared.DbHistory
+type esiHistoryDay = shared.EsiHistoryDay
+
+type hotDataPoint struct {
 	typeId int
+	regionId int
 	time time.Time
-	sellPrice float32
-	buyPrice float32
+	sellPrice float64
+	buyPrice float64
 }
 
-type dayTypeDataPoint struct {
+type dayDataPoint struct {
 	typeId int
+	regionId int
 	date time.Time
-	sellPrice float32
-	buyPrice float32
-	sellVolume float32
-	buyVolume float32
+	sellPrice float64
+	buyPrice float64
+	volume int64
 }
 
-// dpTime is the time at wich the data was up to date
-// ordersCh is meant to retrive all fetched orders from orders.Download
-// WARN: orders must be grouped by regions
-func ComputeHotDataPoints(ctx context.Context, retrivalTime time.Time, ordersCh <-chan []dbOrder) error {
-	orders := <-ordersCh
+// Compute and store HotDataPoints relative and ordersList
+// retrivalTime is the time at wich the data was up to date
+// This function is meant to be called during the orders download process
+func CreateHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []dbOrder) error {
+  dataPoints := computeHotDataPoints(retrivalTime, orders)
+	err := dbInsertHotDataPoints(ctx, dataPoints)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func ClearHotDataPoints(ctx context.Context, day time.Time) error {
+  elevenToday := elevenThatDay(day)
+	return dbClearHotTypeDataPoints(ctx, elevenToday)
+}
+
+// histories contains all histories of a typeId
+// This function is meant to be called during the global histories computation
+func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day time.Time) error {
+  if len(histories) == 0 {
+    return nil
+  }
+  typeId := histories[0].TypeId
+
+  elevenToday := elevenThatDay(day)
+  elevenYesterday := elevenTheDayBefore(day)
+  // hotDataPoints of typeId for all regions sorted by regionId
+  hotDataPoints, err := dbGetHotDataPointOfTypeId(ctx, typeId, elevenYesterday, elevenToday)
+  if err != nil {
+    return fmt.Errorf("get day dp: %w", err)
+  }
+
+  dayDataPoints := make([]dayDataPoint, 0, len(histories)+1)
+	for _, history := range histories {
+    if history.TypeId != typeId {
+      panic("histories are not of the same typeId")
+    }
+
+    regionDataPoints := getRegionDataPoints(hotDataPoints, history.RegionId)
+    if len(regionDataPoints) > 0 {
+      regionDataPoint, err := computeRegionDayDataPointOfType(regionDataPoints, history, day)
+      if err != nil {
+        return fmt.Errorf("compute day dp: %w", err)
+      }
+      dayDataPoints = append(dayDataPoints, *regionDataPoint)
+    }
+	}
+  if len(dayDataPoints) > 0 {
+    globalDataPoint := computeGlobalDayDataPointOfType(dayDataPoints, day, typeId)
+    dayDataPoints = append(dayDataPoints, globalDataPoint)
+  }
+
+  err = dbInsertDayDataPoints(ctx, dayDataPoints)
+  if err != nil {
+    return fmt.Errorf("insert dps: %w", err)
+  }
+
+	return nil
+}
+
+func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoint {
+  assertOrdersAreOrderedByRegion(orders)
 	dataPoints := make([]hotDataPoint, 0, 1024)
 	ordersPtr := make([]*dbOrder, len(orders))
 	for i := range orders {
@@ -49,18 +120,22 @@ func ComputeHotDataPoints(ctx context.Context, retrivalTime time.Time, ordersCh 
 	}
 
 	regionStart := 0
-	for _, regionId := range regions.Regions {
+	for regionStart < len(ordersPtr) {
+    regionId := orders[regionStart].RegionId
 		regionEnd := getRegionEnd(orders, regionId, regionStart)
 		if regionEnd == regionStart {
-			continue
+      panic("hummmmm")
 		}
+
 		regionOrders := ordersPtr[regionStart:regionEnd]
 		sortOrders(regionOrders)
-
 		typeStart := 0
-		for typeStart < regionEnd {
+		for typeStart < len(regionOrders) {
 			typeId := regionOrders[typeStart].TypeId
-			typeSellStart, typeEnd := getTypeSellStartAndEnd(orders, typeId, typeStart)
+			typeSellStart, typeEnd := getTypeSellStartAndEnd(regionOrders, typeId, typeStart)
+      if typeSellStart < typeStart || typeSellStart > typeEnd || typeEnd == typeStart {
+        panic("hummmmmm")
+      }
 			buyOrders := regionOrders[typeStart:typeSellStart]
 			sellOrders := regionOrders[typeSellStart:typeEnd]
 			buyPrice := computeBuyPriceFromOrders(buyOrders)
@@ -76,149 +151,185 @@ func ComputeHotDataPoints(ctx context.Context, retrivalTime time.Time, ordersCh 
 
 			typeStart = typeEnd
 		}
+
+    regionStart = regionEnd
 	}
 
-	err := dbInsertHotDataPoints(ctx, dataPoints)
+  return dataPoints
+}
+
+func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history dbHistory, day time.Time) (*dayDataPoint, error) {
+  if len(regionDataPoints) == 0 {
+    panic("empty regionDataPoints")
+  }
+
+  historyDay, err := getHistoryDay(history, day)
+  if err != nil {
+    return nil, fmt.Errorf("getHostiryDay: %w", err)
+  }
+
+  var sellPrice, buyPrice float64 = 0, 0
+  for _, dp := range regionDataPoints {
+    sellPrice += dp.sellPrice
+    buyPrice += dp.buyPrice
+  }
+  sellPrice /= float64(len(regionDataPoints))
+  buyPrice /= float64(len(regionDataPoints))
+
+  return &dayDataPoint{
+    typeId: history.RegionId,
+    regionId: history.TypeId,
+    date: day,
+    volume: historyDay.Volume,
+    sellPrice: sellPrice,
+    buyPrice: buyPrice,
+  }, nil
+}
+
+func computeGlobalDayDataPointOfType(dayDataPoints []dayDataPoint, day time.Time, typeId int) dayDataPoint {
+  var sellPrice, buyPrice float64 = 0, 0
+  var volume float64 = 0
+
+  // weighted average
+  for _, dp := range dayDataPoints {
+    if dp.volume > 0 {
+      sellPrice = (volume * sellPrice + dp.sellPrice * float64(dp.volume)) / (volume + float64(dp.volume))
+      buyPrice = (volume * buyPrice + dp.buyPrice * float64(dp.volume)) / (volume + float64(dp.volume))
+      volume += float64(dp.volume)
+    }
+  }
+
+  return dayDataPoint{
+    typeId: typeId,
+    regionId: 0,
+    date: day,
+    volume: int64(volume),
+    sellPrice: sellPrice,
+    buyPrice: buyPrice,
+  }
+}
+
+// WARN: dataPoints most be sorted by regionId
+func getRegionDataPoints(dataPoints []hotDataPoint, regionId int) []hotDataPoint {
+  var start, end int
+  for start = 0; start < len(dataPoints); start++ {
+    if dataPoints[start].regionId == regionId {
+      break
+    }
+  }
+  for end = start+1; end < len(dataPoints); end++ {
+    if dataPoints[end].regionId != regionId {
+      break
+    }
+  }
+  return dataPoints[start:end]
+}
+
+func unmarshalHistory(history []byte) ([]esiHistoryDay, error) {
+	var esiHistory []esiHistoryDay
+	err := json.Unmarshal(history, &esiHistory)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	return esiHistory, nil
+}
+
+// return nil history day if not found
+func getHistoryDay(history dbHistory, day time.Time) (*esiHistoryDay, error) {
+	unmarshaledHistory, err := unmarshalHistory(history.History)
+	if err != nil {
+		return nil, fmt.Errorf("invalid json from db: %w", err)
 	}
 
-	return nil
-}
-
-func ClearHotDataPoints(ctx context.Context, before time.Time) error {
-	return dbClearHotTypeDataPoints(ctx, before)
-}
-
-// historiesCh is meant to recive histories packed by typeId from
-// histories.ComputeGobalHistories
-func ComputeDayDataPoints(ctx context.Context, after time.Time, before time.Time, historiesCh <-chan []dbHistory) error {
-	for histories := range historiesCh {
-		typeId := histories[0].TypeId
-
-		hotDataPoints, err := dbGetHotDataPointOfTypeId(ctx, typeId, after, before)
-		if err != nil {
-			return err
-		}
-		dayDataPoints := computeDayDataPointsOfType(ctx, typeId, hotDataPoints, histories)
-		err = dbInsertDayDataPoints(ctx, dayDataPoints)
-		if err != nil {
-			return err
+	esiDay := day.Format(esi.DateLayout)
+	for i := len(unmarshaledHistory)-1; i >= 0; i++ {
+		if unmarshaledHistory[i].Date == esiDay {
+			historyDay := unmarshaledHistory[i]  // to allow the gc to free unmarshaledHistory
+			return &historyDay, nil
 		}
 	}
-
-	return nil
-}
-
-func computeDayDataPointsOfType(ctx context.Context, typeId int, dataPoints []hotDataPoint, histories []dbHistory) []dayDataPoint {
-	dayDataPoints := make([]dayDataPoint, 0, 16)
-
-	regionStart := 0
-	for regionStart < len(dataPoints) {
-		dbHistory := getHistoryOfRegion(histories)
-		unmarshaledHistory := histories.UnmarshalHistory(histories)
-		regionId := dataPoints[regionStart].regionId
-		regionEnd := dataPointsGetRegionEnd(dataPoints, regionId, regionStart)
-		regionDataPoints := dataPoints[regionStart:regionEnd]
-	}
-
-	return nil
-}
-
-func getHistoryOfRegion(histories []dbHistory, regionId int) dbHistory {
-	for _, historiy := range histories {
-		if historiy.RegionId == regionId {
-			return historiy
-		}
-	}
-	panic("I could not find the history you asked for 😔")
+	return nil, nil
 }
 
 func getRegionEnd(orders []dbOrder, regionId int, regionStart int) int {
-	var regionEnd int
-	for regionEnd = regionStart; regionEnd < len(orders); regionEnd++ {
-		if orders[regionEnd].RegionId != regionId {
+  regionEnd := regionStart
+  for i := regionStart; i < len(orders); i++ {
+		if orders[i].RegionId != regionId {
 			break
 		}
+    regionEnd++
 	}
 	return regionEnd
 }
 
-func getTypeSellStartAndEnd(orders []dbOrder, typeId int, typeStart int) (int, int) {
-	var typeEnd int
-	var typeSellStart = typeStart
-	for typeEnd = typeStart; typeEnd < len(orders); typeEnd++ {
-		if orders[typeEnd].IsBuyOrder {
-			typeSellStart++
-		}
+func getTypeSellStartAndEnd(orders []*dbOrder, typeId int, typeStart int) (int, int) {
+  typeEnd := typeStart
+  typeSellStart := typeStart
+	for i := typeStart; i < len(orders); i++ {
 		if orders[typeEnd].TypeId != typeId {
 			break
 		}
+		if orders[typeEnd].IsBuyOrder {
+			typeSellStart++
+		}
+    typeEnd++
 	}
 	return typeSellStart, typeEnd
 }
 
-func dataPointsGetRegionEnd(dataPoints []hotDataPoint, regionId int, regionStart int) int {
-	var regionEnd int
-	for regionEnd = regionStart; regionEnd < len(dataPoints); regionEnd++ {
-		if dataPoints[regionEnd].regionId != regionId {
-			break
-		}
-	}
-	return regionEnd
+// highest buy
+func computeBuyPriceFromOrders(orders []*dbOrder) float64 {
+  if len(orders) == 0 || !orders[0].IsBuyOrder {
+    panic("hummm")
+  }
+  lowest := orders[0].Price
+  for _, o := range orders {
+    if !o.IsBuyOrder {
+      panic("hummmm")
+    }
+    if o.Price > lowest {
+      lowest = o.Price
+    }
+  }
+  return lowest
 }
 
-// 5% volume weighted buy price
-func computeBuyPriceFromOrders(orders []*dbOrder) float32 {
-	var totalVolume float32 = 0
-	for _, o := range orders {
-		totalVolume += float32(o.VolumeRemain)
-	}
-
-	var volume float32 = 0
-	for i := len(orders)-1; i >= 0; i++ {
-		volume += float32(orders[i].VolumeRemain)
-		if volume > 0.05 * totalVolume {
-			return float32(orders[i].Price)
-		}
-	}
-
-	panic("how did you end here 🤭")
+// lowest sell
+func computeSellPriceFromOrders(orders []*dbOrder) float64 {
+  if len(orders) == 0 || orders[0].IsBuyOrder {
+    panic("hummm")
+  }
+  lowest := orders[0].Price
+  for _, o := range orders {
+    if o.IsBuyOrder {
+      panic("hummmm")
+    }
+    if o.Price < lowest {
+      lowest = o.Price
+    }
+  }
+  return lowest
 }
 
-// 5% volume weighted sell price
-func computeSellPriceFromOrders(orders []*dbOrder) float32 {
-	var totalVolume float32 = 0
-	for _, o := range orders {
-		totalVolume += float32(o.VolumeRemain)
-	}
+// NOTE: We can assert dataPoints to contain at least one element
+// func computeSellPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
 
-	var volume float32 = 0
-	for i := range orders {
-		volume += float32(orders[i].VolumeRemain)
-		if volume > 0.05 * totalVolume {
-			return float32(orders[i].Price)
-		}
-	}
+// func computeBuyPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
 
-	panic("how did you end here 🤭")
-}
-
-// NOTE: Here we assume an homogeneous repartition of the volume of trades over
-// the day (which is not the case)
-func computeSellPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
-
-// NOTE: Here we assume an homogeneous repartition of the volume of trades over
-// the day (which is not the case)
-func computeBuyPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
-
-// natural sort of orders over (TypeId, IsBuyOrder, Price)
+// natural sort of orders over (TypeId, IsBuyOrder)
 func sortOrders(orders []*dbOrder) {
 	sort.Slice(orders, func(i, j int) bool {
 		return (orders[i].TypeId < orders[j].TypeId ||
-			orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder && !orders[j].IsBuyOrder ||
-			orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder == orders[j].IsBuyOrder && orders[i].Price < orders[j].Price)
+			orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder && !orders[j].IsBuyOrder)
 	})
+}
+
+func assertOrdersAreOrderedByRegion(orders []dbOrder) {
+  for i := 0; i < len(orders)-1; i++ {
+    if orders[i].RegionId > orders[i+1].RegionId {
+      panic("orders are not ordered by regions")
+    }
+  }
 }
 
 func yearAndDayToDate(year int, day int) time.Time {
@@ -232,4 +343,12 @@ func yearAndDayToDate(year int, day int) time.Time {
 
 func dateToYearAndDay(date time.Time) (int, int) {
 	return date.Year(), date.YearDay()
+}
+
+func elevenThatDay(date time.Time) time.Time {
+	return time.Date(date.Year(), date.Month(), date.Day(), 11, 0, 0, 0, date.Location())
+}
+
+func elevenTheDayBefore(date time.Time) time.Time {
+	return time.Date(date.Year(), date.Month(), date.Day()-1, 11, 0, 0, 0, date.Location())
 }

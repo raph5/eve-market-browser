@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/activemarkets"
+	"github.com/raph5/eve-market-browser/apps/store/items/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
 )
 
-const chunkSize = 100
+const chunkSize = 128
 
 func Download(ctx context.Context) error {
 	activeMarketsCount, err := activemarkets.Count(ctx)
@@ -61,7 +62,7 @@ func Download(ctx context.Context) error {
 	return nil
 }
 
-func ComputeGobalHistories(ctx context.Context) error {
+func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 	activeMarketsId, err := activemarkets.GetTypesId(ctx)
 	if err != nil {
 		return err
@@ -71,16 +72,21 @@ func ComputeGobalHistories(ctx context.Context) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err = computeGlobalHistoryOfType(ctx, typeId)
+		err = computeGlobalHistoryOfType(ctx, typeId, day)
 		if err != nil {
 			log.Printf("Can't compute global history for type %d: %v", typeId, err)
 		}
 	}
 
+  err = metrics.ClearHotDataPoints(ctx, day)
+  if err != nil {
+    log.Printf("ClearHotDataPoints: %v\n", err)
+  }
+
 	return nil
 }
 
-func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
+func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) error {
 	histories, err := dbGetHistoriesOfType(ctx, typeId)
 	if err != nil {
 		return fmt.Errorf("can't get histories of type %d: %w", typeId, err)
@@ -94,8 +100,13 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 		// here I do not throw as in practice I get a few empty ones
 		return nil
 	}
+  err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
+  if err != nil {
+    log.Printf("CreateRegionDayDataPoints: %v\n", err)
+  }
+
 	if regions == 1 {
-		histories[0].regionId = 0
+		histories[0].RegionId = 0
 		err = dbInsertHistory(ctx, histories[0])
 		if err != nil {
 			return fmt.Errorf("can't insert history: %w", err)
@@ -105,7 +116,7 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 
 	esiHistories := make([][]esiHistoryDay, regions)
 	for i, h := range histories {
-		err := json.Unmarshal(h.history, &esiHistories[i])
+		err := json.Unmarshal(h.History, &esiHistories[i])
 		if err != nil {
 			return fmt.Errorf("can't unmarshal history: %w", err)
 		}
@@ -192,9 +203,9 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 		return fmt.Errorf("history marshal: %w", err)
 	}
 	globalHistory := dbHistory{
-		history:  globalHistoryDaysJson,
-		regionId: 0,
-		typeId:   typeId,
+		History:  globalHistoryDaysJson,
+		RegionId: 0,
+		TypeId:   typeId,
 	}
 
 	err = dbInsertHistory(ctx, globalHistory)
@@ -208,7 +219,7 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int) error {
 func filterOutEmptyHistories(histories []dbHistory) []dbHistory {
 	filteredHistories := make([]dbHistory, 0, len(histories))
 	for i := range histories {
-		if string(histories[i].history) != "[]" {
+		if string(histories[i].History) != "[]" {
 			filteredHistories = append(filteredHistories, histories[i])
 		}
 	}

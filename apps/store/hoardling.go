@@ -60,6 +60,10 @@ func runOrdersHoardling(ctx context.Context) {
 			}
 		}
 
+		// NOTE: a better approach would have been to use the `Expires`
+		// header provided by the esi.
+		// The probleme with the current implementation is that orders data can
+		// change will Im fetching the orders batch
 		newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
 		err = timerecord.Set(ctx, "OrdersExpiration", newExpiration)
 		if err != nil {
@@ -92,6 +96,7 @@ func runHistoriesHoardling(ctx context.Context) {
 			continue
 		}
 
+    day := time.Now()
 		historyStatus.Set(0)
 		log.Print("Histories hoardling: downloading histories")
 
@@ -109,7 +114,7 @@ func runHistoriesHoardling(ctx context.Context) {
 			continue
 		}
 
-		err = histories.ComputeGobalHistories(ctx)
+		err = histories.ComputeGobalHistories(ctx, day)
 		if err != nil {
 			log.Printf("Histories hoardling error: compute global histories: %v", err)
 			if ctx.Err() != nil {

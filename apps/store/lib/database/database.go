@@ -94,23 +94,27 @@ func Init(dbPath string) (*DB, error) {
 
   CREATE TABLE IF NOT EXISTS HotTypeMetric (
     TypeId INTEGER,
+    RegionId INTEGER,
     Time INTEGER,  -- Epoch Seconds
     BuyPrice REAL,
     SellPrice REAL
     -- No primary key here as data integrity is not a big concern
   );
-  CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, Time DESC);
+  CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, RegionId, Time DESC);
   CREATE TABLE IF NOT EXISTS DayTypeMetric (
     TypeId INTEGER,
+    RegionId INTEGER,
     Year INTEGER,
     Day INTEGER,  -- Day Of The Year (ISO 8601)
     BuyPrice REAL,
     SellPrice REAL,
-    BuyVolume REAL,
-    SellVolume REAL,
+    Volume INTERGER,
     PRIMARY KEY (Year, Day, TypeId)
+    -- If we are not able to compute buy/sell volume separately then BuyVolume
+    -- will represent the total volume and SellVolume will be equal to -1 to
+    -- signal that change.
   );
-  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, year DESC, date DESC);
+  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, year DESC, date DESC);
 
   CREATE TABLE IF NOT EXISTS TimeRecord (
     "Key" TEXT PRIMARY KEY,
