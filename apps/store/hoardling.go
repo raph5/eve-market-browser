@@ -96,7 +96,7 @@ func runHistoriesHoardling(ctx context.Context) {
 			continue
 		}
 
-    day := time.Now()
+		day := time.Now()
 		historyStatus.Set(0)
 		log.Print("Histories hoardling: downloading histories")
 

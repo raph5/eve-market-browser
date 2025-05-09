@@ -78,10 +78,10 @@ func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 		}
 	}
 
-  err = metrics.ClearHotDataPoints(ctx, day)
-  if err != nil {
-    log.Printf("ClearHotDataPoints: %v\n", err)
-  }
+	err = metrics.ClearHotDataPoints(ctx, day)
+	if err != nil {
+		log.Printf("ClearHotDataPoints: %v\n", err)
+	}
 
 	return nil
 }
@@ -100,10 +100,10 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) 
 		// here I do not throw as in practice I get a few empty ones
 		return nil
 	}
-  err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
-  if err != nil {
-    log.Printf("CreateRegionDayDataPoints: %v\n", err)
-  }
+	err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
+	if err != nil {
+		log.Printf("CreateRegionDayDataPoints: %v\n", err)
+	}
 
 	if regions == 1 {
 		histories[0].RegionId = 0

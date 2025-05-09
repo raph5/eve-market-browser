@@ -37,11 +37,11 @@ func Download(ctx context.Context) error {
 		}
 	}
 
-  retrivalTime := time.Now()
-  err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
-  if err != nil {
-    log.Printf("CreateHotDataPoints: %v", err)
-  }
+	retrivalTime := time.Now()
+	err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
+	if err != nil {
+		log.Printf("CreateHotDataPoints: %v", err)
+	}
 
 	err = dbReplaceOrders(ctx, orders)
 	if err != nil {
