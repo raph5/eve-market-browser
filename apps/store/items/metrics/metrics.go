@@ -89,14 +89,14 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 			panic("histories are not of the same typeId")
 		}
 
-		regionDataPoints := getRegionDataPoints(hotDataPoints, history.RegionId)
-		if len(regionDataPoints) > 0 {
-			regionDataPoint, err := computeRegionDayDataPointOfType(regionDataPoints, history, day)
-			if err != nil {
-				return fmt.Errorf("compute day dp: %w", err)
-			}
-			dayDataPoints = append(dayDataPoints, *regionDataPoint)
-		}
+		hotDataPoints := getRegionDataPoints(hotDataPoints, history.RegionId)
+    dayDataPoint, err := computeRegionDayDataPointOfType(hotDataPoints, history, day)
+    if err != nil {
+      return fmt.Errorf("compute day dp: %w", err)
+    }
+    if dayDataPoint != nil {
+      dayDataPoints = append(dayDataPoints, *dayDataPoint)
+    }
 	}
 	if len(dayDataPoints) > 0 {
 		globalDataPoint := computeGlobalDayDataPointOfType(dayDataPoints, day, typeId)
@@ -157,15 +157,19 @@ func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoi
 	return dataPoints
 }
 
+// WARN: nillable return value
 func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history dbHistory, day time.Time) (*dayDataPoint, error) {
 	if len(regionDataPoints) == 0 {
-		panic("empty regionDataPoints")
+    return nil, nil
 	}
 
 	historyDay, err := getHistoryDay(history, day)
 	if err != nil {
 		return nil, fmt.Errorf("getHostiryDay: %w", err)
 	}
+  if historyDay == nil {
+    return nil, nil
+  }
 
 	var sellPrice, buyPrice float64 = 0, 0
 	for _, dp := range regionDataPoints {
@@ -234,6 +238,7 @@ func unmarshalHistory(history []byte) ([]esiHistoryDay, error) {
 }
 
 // return nil history day if not found
+// WARN: nillable return value
 func getHistoryDay(history dbHistory, day time.Time) (*esiHistoryDay, error) {
 	unmarshaledHistory, err := unmarshalHistory(history.History)
 	if err != nil {
