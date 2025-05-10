@@ -111,7 +111,7 @@ func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()
 
-	query := "INSERT INTO DayTypeMetric VALUES (?,?,?,?,?,?,?,?)"
+	query := "INSERT INTO DayTypeMetric VALUES (?,?,?,?,?,?,?)"
 	stmt, err := db.PrepareWrite(timeoutCtx, query)
 	if err != nil {
 		return err

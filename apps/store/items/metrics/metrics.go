@@ -90,13 +90,13 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 		}
 
 		hotDataPoints := getRegionDataPoints(hotDataPoints, history.RegionId)
-    dayDataPoint, err := computeRegionDayDataPointOfType(hotDataPoints, history, day)
-    if err != nil {
-      return fmt.Errorf("compute day dp: %w", err)
-    }
-    if dayDataPoint != nil {
-      dayDataPoints = append(dayDataPoints, *dayDataPoint)
-    }
+		dayDataPoint, err := computeRegionDayDataPointOfType(hotDataPoints, history, day)
+		if err != nil {
+			return fmt.Errorf("compute day dp: %w", err)
+		}
+		if dayDataPoint != nil {
+			dayDataPoints = append(dayDataPoints, *dayDataPoint)
+		}
 	}
 	if len(dayDataPoints) > 0 {
 		globalDataPoint := computeGlobalDayDataPointOfType(dayDataPoints, day, typeId)
@@ -160,16 +160,16 @@ func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoi
 // WARN: nillable return value
 func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history dbHistory, day time.Time) (*dayDataPoint, error) {
 	if len(regionDataPoints) == 0 {
-    return nil, nil
+		return nil, nil
 	}
 
 	historyDay, err := getHistoryDay(history, day)
 	if err != nil {
 		return nil, fmt.Errorf("getHostiryDay: %w", err)
 	}
-  if historyDay == nil {
-    return nil, nil
-  }
+	if historyDay == nil {
+		return nil, nil
+	}
 
 	var sellPrice, buyPrice float64 = 0, 0
 	for _, dp := range regionDataPoints {
