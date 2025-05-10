@@ -10,7 +10,6 @@ import (
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/items/activemarkets"
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
-	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
 	"github.com/raph5/eve-market-browser/apps/store/items/timerecord"
 )
@@ -52,19 +51,24 @@ func runOrdersHoardling(ctx context.Context) {
 			continue
 		}
 
-		err = locations.Populate(ctx)
-		if err != nil {
-			log.Printf("Orders hoardling error: locations populate: %v", err)
-			if ctx.Err() != nil {
-				break
-			}
-		}
+		// err = locations.Populate(ctx)
+		// if err != nil {
+		// 	log.Printf("Orders hoardling error: locations populate: %v", err)
+		// 	if ctx.Err() != nil {
+		// 		break
+		// 	}
+		// }
 
 		// NOTE: a better approach would have been to use the `Expires`
 		// header provided by the esi.
 		// The probleme with the current implementation is that orders data can
 		// change will Im fetching the orders batch
-		newExpiration := expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
+    var newExpiration time.Time
+    if expiration.IsZero() {
+      newExpiration = time.Now().Add(10*time.Minute)
+    } else {
+      newExpiration = expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
+    }
 		err = timerecord.Set(ctx, "OrdersExpiration", newExpiration)
 		if err != nil {
 			log.Printf("Orders hoardling error: timerecord set: %v", err)

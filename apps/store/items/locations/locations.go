@@ -1,38 +1,115 @@
 package locations
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
+	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
+	"log"
+	"strconv"
+	"time"
 
-	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
+	"github.com/raph5/eve-market-browser/apps/store/items/timerecord"
+	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
-type nameAndId struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+type location struct {
+	id       int
+	name     string
+	security float32
 }
 
-func Populate(ctx context.Context) error {
-	unknownLocations, err := dbGetUnknownLocations(ctx)
-	if err != nil {
-		return fmt.Errorf("get unknown locations: %w", err)
-	}
+//go:embed data/staStations.csv
+var stationCsv []byte
 
-	locationsData := make([]nameAndId, 0)
-	for i := 0; i < len(unknownLocations); i += 1000 {
-		chunk := unknownLocations[i:min(i+1000, len(unknownLocations))]
-		response, err := esi.EsiFetch[[]nameAndId](ctx, "POST", "/universe/names", chunk, 1, 5)
+func Init(ctx context.Context) error {
+	count, err := dbGetLocationCount(ctx)
+	if err != nil {
+		return err
+	}
+  expiration, err := timerecord.Get(ctx, "LocationExpiration")
+  if err != nil {
+    return err
+  }
+
+  now := time.Now()
+	if count == 0 || now.After(expiration) {
+    log.Println("Initializing locations")
+    err = dbClear(ctx)
+    if err != nil {
+      return err
+    }
+		err = populateStation(ctx)
 		if err != nil {
-			return fmt.Errorf("esi request: %w", err)
+			return err
 		}
-		locationsDataChunk := *response.Data
-		locationsData = append(locationsData, locationsDataChunk...)
+    err = timerecord.Set(ctx, "LocationExpiration", expiration.Add(7*24*time.Hour))
+    if err != nil {
+      return err
+    }
+    log.Println("Locations initialized")
 	}
 
-	err = dbAddLocations(ctx, locationsData)
+	return nil
+}
+
+func populateStation(ctx context.Context) error {
+	r := csv.NewReader(bytes.NewReader(stationCsv))
+	record, err := r.Read()
 	if err != nil {
-		return fmt.Errorf("add locations: %w", err)
+		return fmt.Errorf("reader error: %w", err)
 	}
+	if record[0] != "stationID" && record[1] != "security" && record[11] != "stationName" {
+		return errors.New("invalid station csv header")
+	}
+
+	db := ctx.Value("db").(*database.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cancel()
+
+  tx, err := db.Begin(timeoutCtx)
+  if err != nil {
+    return err
+  }
+  defer tx.Rollback()
+	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?,?)")
+	if err != nil {
+		return err
+	}
+  defer stmt.Close()
+
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		id, err := strconv.Atoi(record[0])
+		if err != nil {
+			return err
+		}
+		name := record[11]
+		security, err := strconv.ParseFloat(record[1], 32)
+		if err != nil {
+			return err
+		}
+
+		_, err = stmt.Exec(timeoutCtx, id, name, security)
+		if err != nil {
+			return err
+		}
+	}
+
+  err = tx.Commit()
+  if err != nil {
+    return err
+  }
 
 	return nil
 }

@@ -33,7 +33,7 @@ func Get(ctx context.Context, key string) (time.Time, error) {
 	err := db.QueryRow(timeoutCtx, selectQuery, key).Scan(&unixTime)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return time.Now().Add(-1 * time.Second), nil
+			return time.Time{}, nil
 		}
 		return time.Time{}, err
 	}

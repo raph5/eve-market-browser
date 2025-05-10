@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
+	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
@@ -46,6 +47,12 @@ func main() {
 	ctx = context.WithValue(ctx, "db", db)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
+
+	// Init locations
+	err = locations.Init(ctx)
+  if err != nil {
+    log.Printf("Impossible to initialize locations: %v", err)
+  }
 
 	// Mux handler
 	mux := http.NewServeMux()

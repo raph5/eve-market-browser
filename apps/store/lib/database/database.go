@@ -73,7 +73,8 @@ func Init(dbPath string) (*DB, error) {
 
   CREATE TABLE IF NOT EXISTS Location (
     Id INTEGER PRIMARY KEY,
-    Name TEXT
+    Name TEXT,
+    Security REAL
   );
   CREATE INDEX IF NOT EXISTS LocationIndex ON Location (Id);
 
