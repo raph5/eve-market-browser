@@ -241,7 +241,7 @@ func getHistoryDay(history dbHistory, day time.Time) (*esiHistoryDay, error) {
 	}
 
 	esiDay := day.Format(esi.DateLayout)
-	for i := len(unmarshaledHistory) - 1; i >= 0; i++ {
+	for i := len(unmarshaledHistory) - 1; i >= 0; i-- {
 		if unmarshaledHistory[i].Date == esiDay {
 			historyDay := unmarshaledHistory[i] // to allow the gc to free unmarshaledHistory
 			return &historyDay, nil
