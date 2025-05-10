@@ -283,8 +283,11 @@ func getTypeSellStartAndEnd(orders []*dbOrder, typeId int, typeStart int) (int, 
 
 // highest buy
 func computeBuyPriceFromOrders(orders []*dbOrder) float64 {
-	if len(orders) == 0 || !orders[0].IsBuyOrder {
+	if !orders[0].IsBuyOrder {
 		panic("hummm")
+	}
+	if len(orders) == 0 {
+		return 0
 	}
 	lowest := orders[0].Price
 	for _, o := range orders {
@@ -300,8 +303,11 @@ func computeBuyPriceFromOrders(orders []*dbOrder) float64 {
 
 // lowest sell
 func computeSellPriceFromOrders(orders []*dbOrder) float64 {
-	if len(orders) == 0 || orders[0].IsBuyOrder {
+	if orders[0].IsBuyOrder {
 		panic("hummm")
+	}
+	if len(orders) == 0 {
+		return 0
 	}
 	lowest := orders[0].Price
 	for _, o := range orders {
@@ -314,11 +320,6 @@ func computeSellPriceFromOrders(orders []*dbOrder) float64 {
 	}
 	return lowest
 }
-
-// NOTE: We can assert dataPoints to contain at least one element
-// func computeSellPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
-
-// func computeBuyPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
 
 // natural sort of orders over (RegionId, TypeId, IsBuyOrder)
 func sortOrders(orders []*dbOrder) {
