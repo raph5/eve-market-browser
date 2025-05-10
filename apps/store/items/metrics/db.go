@@ -69,7 +69,7 @@ func dbGetHotDataPointOfTypeId(ctx context.Context, typeId int, after time.Time,
 	query := `SELECT RegionId, Time, BuyPrice, SellPrice FROM HotTypeMetric
 		WHERE TypeId = ? AND Time >= ? AND Time < ?
 		ORDER BY RegionId;`
-	rows, err := db.Query(timeoutCtx, query, after.Unix(), before.Unix())
+	rows, err := db.Query(timeoutCtx, query, typeId, after.Unix(), before.Unix())
 	if err != nil {
 		return nil, err
 	}

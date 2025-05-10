@@ -112,12 +112,12 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 }
 
 func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoint {
-	assertOrdersAreOrderedByRegion(orders)
 	dataPoints := make([]hotDataPoint, 0, 1024)
 	ordersPtr := make([]*dbOrder, len(orders))
 	for i := range orders {
 		ordersPtr[i] = &orders[i]
 	}
+	sortOrders(ordersPtr)
 
 	regionStart := 0
 	for regionStart < len(ordersPtr) {
@@ -126,9 +126,8 @@ func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoi
 		if regionEnd == regionStart {
 			panic("hummmmm")
 		}
-
 		regionOrders := ordersPtr[regionStart:regionEnd]
-		sortOrders(regionOrders)
+
 		typeStart := 0
 		for typeStart < len(regionOrders) {
 			typeId := regionOrders[typeStart].TypeId
@@ -138,9 +137,9 @@ func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoi
 			}
 			buyOrders := regionOrders[typeStart:typeSellStart]
 			sellOrders := regionOrders[typeSellStart:typeEnd]
+
 			buyPrice := computeBuyPriceFromOrders(buyOrders)
 			sellPrice := computeSellPriceFromOrders(sellOrders)
-
 			dataPoints = append(dataPoints, hotDataPoint{
 				typeId:    typeId,
 				regionId:  regionId,
@@ -316,20 +315,13 @@ func computeSellPriceFromOrders(orders []*dbOrder) float64 {
 
 // func computeBuyPriceFromHotDataPoints(dataPoints []hotDataPoint) float32
 
-// natural sort of orders over (TypeId, IsBuyOrder)
+// natural sort of orders over (RegionId, TypeId, IsBuyOrder)
 func sortOrders(orders []*dbOrder) {
 	sort.Slice(orders, func(i, j int) bool {
-		return (orders[i].TypeId < orders[j].TypeId ||
-			orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder && !orders[j].IsBuyOrder)
+		return (orders[i].RegionId < orders[j].RegionId ||
+			orders[i].RegionId == orders[j].RegionId && orders[i].TypeId < orders[j].TypeId ||
+			orders[i].RegionId == orders[j].RegionId && orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder && !orders[j].IsBuyOrder)
 	})
-}
-
-func assertOrdersAreOrderedByRegion(orders []dbOrder) {
-	for i := 0; i < len(orders)-1; i++ {
-		if orders[i].RegionId > orders[i+1].RegionId {
-			panic("orders are not ordered by regions")
-		}
-	}
 }
 
 func yearAndDayToDate(year int, day int) time.Time {
