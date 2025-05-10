@@ -50,9 +50,9 @@ func main() {
 
 	// Init locations
 	err = locations.Init(ctx)
-  if err != nil {
-    log.Printf("Impossible to initialize locations: %v", err)
-  }
+	if err != nil {
+		log.Printf("Impossible to initialize locations: %v", err)
+	}
 
 	// Mux handler
 	mux := http.NewServeMux()

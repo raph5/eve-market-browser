@@ -63,12 +63,12 @@ func runOrdersHoardling(ctx context.Context) {
 		// header provided by the esi.
 		// The probleme with the current implementation is that orders data can
 		// change will Im fetching the orders batch
-    var newExpiration time.Time
-    if expiration.IsZero() {
-      newExpiration = time.Now().Add(10*time.Minute)
-    } else {
-      newExpiration = expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
-    }
+		var newExpiration time.Time
+		if expiration.IsZero() {
+			newExpiration = time.Now().Add(10 * time.Minute)
+		} else {
+			newExpiration = expiration.Add(-delta.Truncate(10*time.Minute) + 10*time.Minute)
+		}
 		err = timerecord.Set(ctx, "OrdersExpiration", newExpiration)
 		if err != nil {
 			log.Printf("Orders hoardling error: timerecord set: %v", err)

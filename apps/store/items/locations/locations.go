@@ -30,27 +30,27 @@ func Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-  expiration, err := timerecord.Get(ctx, "LocationExpiration")
-  if err != nil {
-    return err
-  }
+	expiration, err := timerecord.Get(ctx, "LocationExpiration")
+	if err != nil {
+		return err
+	}
 
-  now := time.Now()
+	now := time.Now()
 	if count == 0 || now.After(expiration) {
-    log.Println("Initializing locations")
-    err = dbClear(ctx)
-    if err != nil {
-      return err
-    }
+		log.Println("Initializing locations")
+		err = dbClear(ctx)
+		if err != nil {
+			return err
+		}
 		err = populateStation(ctx)
 		if err != nil {
 			return err
 		}
-    err = timerecord.Set(ctx, "LocationExpiration", expiration.Add(7*24*time.Hour))
-    if err != nil {
-      return err
-    }
-    log.Println("Locations initialized")
+		err = timerecord.Set(ctx, "LocationExpiration", expiration.Add(7*24*time.Hour))
+		if err != nil {
+			return err
+		}
+		log.Println("Locations initialized")
 	}
 
 	return nil
@@ -70,16 +70,16 @@ func populateStation(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-  tx, err := db.Begin(timeoutCtx)
-  if err != nil {
-    return err
-  }
-  defer tx.Rollback()
+	tx, err := db.Begin(timeoutCtx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?,?)")
 	if err != nil {
 		return err
 	}
-  defer stmt.Close()
+	defer stmt.Close()
 
 	for {
 		record, err := r.Read()
@@ -106,10 +106,10 @@ func populateStation(ctx context.Context) error {
 		}
 	}
 
-  err = tx.Commit()
-  if err != nil {
-    return err
-  }
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

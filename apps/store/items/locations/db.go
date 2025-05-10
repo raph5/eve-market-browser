@@ -25,13 +25,13 @@ func dbClear(ctx context.Context) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
-  
-  _, err := db.Exec(timeoutCtx, "DELETE FROM Location")
-  if err != nil {
-    return err
-  }
 
-  return nil
+	_, err := db.Exec(timeoutCtx, "DELETE FROM Location")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
