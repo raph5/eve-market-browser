@@ -66,8 +66,8 @@ export default function Header({ regions }: HeaderProps) {
         </ul>
 
         <span className="header__message">
-          Give me 2b for a new <a target="_blank" href="https://zkillboard.com/kill/127010599/">Vedmak & Pod</a> and<br/>
-          I put your name here until the end of the month 🤝
+          Give me 2b for a new <a target="_blank" href="https://zkillboard.com/kill/127010599/">Vedmak & Pod</a><br/>
+          and I put your name here for two months 🤝
         </span>
 
         {isMarketHeader && <>
