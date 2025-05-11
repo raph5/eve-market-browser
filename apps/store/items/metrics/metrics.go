@@ -283,11 +283,11 @@ func getTypeSellStartAndEnd(orders []*dbOrder, typeId int, typeStart int) (int, 
 
 // highest buy
 func computeBuyPriceFromOrders(orders []*dbOrder) float64 {
-	if !orders[0].IsBuyOrder {
-		panic("hummm")
-	}
 	if len(orders) == 0 {
 		return 0
+	}
+	if !orders[0].IsBuyOrder {
+		panic("hummm")
 	}
 	lowest := orders[0].Price
 	for _, o := range orders {
@@ -303,11 +303,11 @@ func computeBuyPriceFromOrders(orders []*dbOrder) float64 {
 
 // lowest sell
 func computeSellPriceFromOrders(orders []*dbOrder) float64 {
-	if orders[0].IsBuyOrder {
-		panic("hummm")
-	}
 	if len(orders) == 0 {
 		return 0
+	}
+	if orders[0].IsBuyOrder {
+		panic("hummm")
 	}
 	lowest := orders[0].Price
 	for _, o := range orders {
