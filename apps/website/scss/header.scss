@@ -13,11 +13,20 @@
 
   &__message {
     font-size: 12px;
-    margin: 0 auto;
+    margin-left: auto;
     text-align: center;
     color: $alert;
 
-    * { color: $alert; }
+    * {
+      color: $alert;
+    }
+
+    @media (max-width: 950px) {
+      display: none;
+    }
+  }
+  &__region-label {
+    margin-left: auto;
   }
   &__title {
     margin: 0;
