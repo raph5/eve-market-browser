@@ -11,6 +11,14 @@
   box-sizing: border-box;
   top: 0;
 
+  &__message {
+    font-size: 12px;
+    margin: 0 auto;
+    text-align: center;
+    color: $alert;
+
+    * { color: $alert; }
+  }
   &__title {
     margin: 0;
     margin-left: 12px;
@@ -19,9 +27,6 @@
   &__logo {
     height: 32px;
     width: 32px;
-  }
-  &__region-label {
-    margin-left: auto;
   }
   &__title-link {
     height: 100%;

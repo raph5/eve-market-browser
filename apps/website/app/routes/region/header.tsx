@@ -65,6 +65,11 @@ export default function Header({ regions }: HeaderProps) {
           </li>
         </ul>
 
+        <span className="header__message">
+          Give me 2b for a new <a target="_blank" href="https://zkillboard.com/kill/127010599/">Vedmak & Pod</a> and<br/>
+          I put your name here until the end of the month 🤝
+        </span>
+
         {isMarketHeader && <>
           <Label value="Region :" className="header__region-label" htmlFor="regionSelect" />
           <Select
