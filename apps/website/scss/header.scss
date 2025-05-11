@@ -17,8 +17,11 @@
     text-align: center;
     color: $alert;
 
-    * {
+    a {
       color: $alert;
+      &:hover {
+        color: $font-color;
+      }
     }
 
     @media (max-width: 950px) {
