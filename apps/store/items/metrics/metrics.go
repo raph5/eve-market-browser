@@ -54,8 +54,11 @@ type dayDataPoint struct {
 // retrivalTime is the time at wich the data was up to date
 // This function is meant to be called during the orders download process
 func CreateHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []dbOrder) error {
-	dataPoints := computeHotDataPoints(retrivalTime, orders)
-	err := dbInsertHotDataPoints(ctx, dataPoints)
+	dataPoints, err := computeHotDataPoints(ctx, retrivalTime, orders)
+	if err != nil {
+		return err
+	}
+	err = dbInsertHotDataPoints(ctx, dataPoints)
 	if err != nil {
 		return err
 	}
@@ -88,6 +91,9 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 		if history.TypeId != typeId {
 			panic("histories are not of the same typeId")
 		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
 		hotDataPoints := getRegionDataPoints(hotDataPoints, history.RegionId)
 		dayDataPoint, err := computeRegionDayDataPointOfType(hotDataPoints, history, day)
@@ -111,7 +117,7 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 	return nil
 }
 
-func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoint {
+func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []dbOrder) ([]hotDataPoint, error) {
 	dataPoints := make([]hotDataPoint, 0, 1024)
 	ordersPtr := make([]*dbOrder, len(orders))
 	for i := range orders {
@@ -130,6 +136,10 @@ func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoi
 
 		typeStart := 0
 		for typeStart < len(regionOrders) {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+
 			typeId := regionOrders[typeStart].TypeId
 			typeSellStart, typeEnd := getTypeSellStartAndEnd(regionOrders, typeId, typeStart)
 			if typeSellStart < typeStart || typeSellStart > typeEnd || typeEnd == typeStart {
@@ -154,7 +164,7 @@ func computeHotDataPoints(retrivalTime time.Time, orders []dbOrder) []hotDataPoi
 		regionStart = regionEnd
 	}
 
-	return dataPoints
+	return dataPoints, nil
 }
 
 // WARN: nillable return value

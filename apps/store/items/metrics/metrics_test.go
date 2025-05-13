@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -24,7 +25,7 @@ func loadOrderSample() []dbOrder {
 func TestHotDataPoint(t *testing.T) {
 	now := time.Now()
 	orderSample := loadOrderSample()
-	dataPoints := computeHotDataPoints(now, orderSample)
+	dataPoints, _ := computeHotDataPoints(context.Background(), now, orderSample)
 
 	if len(dataPoints) != 4 {
 		t.Errorf("got: %v", dataPoints)
