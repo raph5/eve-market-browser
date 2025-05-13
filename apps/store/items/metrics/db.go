@@ -98,7 +98,7 @@ func dbGetHotDataPointOfTypeId(ctx context.Context, typeId int, after time.Time,
 	for rows.Next() {
 		dataPoints = append(dataPoints, hotDataPoint{typeId: typeId})
 		dp := &dataPoints[len(dataPoints)-1]
-		err = rows.Scan(dp.regionId, dp.time, dp.buyPrice, dp.sellPrice)
+		err = rows.Scan(&dp.regionId, &dp.time, &dp.buyPrice, &dp.sellPrice)
 		if err != nil {
 			return nil, err
 		}
