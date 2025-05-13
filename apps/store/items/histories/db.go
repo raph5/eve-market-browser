@@ -65,6 +65,7 @@ func dbInsertHistories(ctx context.Context, histories []dbHistory) error {
 		return err
 	}
 	defer tx.Rollback()
+
 	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT OR REPLACE INTO History VALUES (?,?,?)")
 	if err != nil {
 		return err

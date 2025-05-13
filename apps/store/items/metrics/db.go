@@ -2,18 +2,30 @@ package metrics
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
+// NOTE: It's important to wrap those inserts in a transaction to avoid the
+// heavy work of updating the table index at each insert
 func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()
 
+  log.Printf("DEBUG: Rows to insert: %d", len(dps))
+  debugStart := time.Now()
+
+  tx, err := db.Begin(timeoutCtx)
+  if err != nil {
+    return err
+  }
+  defer tx.Rollback()
+
 	query := "INSERT INTO HotTypeMetric VALUES (?,?,?,?,?)"
-	stmt, err := db.PrepareWrite(timeoutCtx, query)
+	stmt, err := tx.PrepareWrite(timeoutCtx, query)
 	if err != nil {
 		return err
 	}
@@ -25,6 +37,14 @@ func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 			return err
 		}
 	}
+
+  err = tx.Commit()
+  if err != nil {
+    return err
+  }
+
+  debugEnd := time.Now()
+  log.Printf("DEBUG: Insert duration: %f minutes", debugEnd.Sub(debugStart).Minutes())
 
 	return nil
 }
@@ -106,10 +126,18 @@ func dbClearHotTypeDataPoints(ctx context.Context, before time.Time) error {
 	return nil
 }
 
+// NOTE: It's important to wrap those inserts in a transaction to avoid the
+// heavy work of updating the table index at each insert
 func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()
+
+  tx, err := db.Begin(timeoutCtx)
+  if err != nil {
+    return err
+  }
+  defer tx.Rollback()
 
 	query := "INSERT INTO DayTypeMetric VALUES (?,?,?,?,?,?,?)"
 	stmt, err := db.PrepareWrite(timeoutCtx, query)
@@ -125,6 +153,11 @@ func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
 			return err
 		}
 	}
+
+  err = tx.Commit()
+  if err != nil {
+    return err
+  }
 
 	return nil
 }
