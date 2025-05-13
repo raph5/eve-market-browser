@@ -2,6 +2,8 @@ package metrics
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log"
 	"time"
 
@@ -15,14 +17,14 @@ func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()
 
-  log.Printf("DEBUG: Rows to insert: %d", len(dps))
-  debugStart := time.Now()
+	log.Printf("DEBUG: Rows to insert: %d", len(dps))
+	debugStart := time.Now()
 
-  tx, err := db.Begin(timeoutCtx)
-  if err != nil {
-    return err
-  }
-  defer tx.Rollback()
+	tx, err := db.Begin(timeoutCtx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
 	query := "INSERT INTO HotTypeMetric VALUES (?,?,?,?,?)"
 	stmt, err := tx.PrepareWrite(timeoutCtx, query)
@@ -38,13 +40,13 @@ func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 		}
 	}
 
-  err = tx.Commit()
-  if err != nil {
-    return err
-  }
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 
-  debugEnd := time.Now()
-  log.Printf("DEBUG: Insert duration: %f minutes", debugEnd.Sub(debugStart).Minutes())
+	debugEnd := time.Now()
+	log.Printf("DEBUG: Insert duration: %f minutes", debugEnd.Sub(debugStart).Minutes())
 
 	return nil
 }
@@ -126,6 +128,56 @@ func dbClearHotTypeDataPoints(ctx context.Context, before time.Time) error {
 	return nil
 }
 
+func dbGetItemStats(ctx context.Context, typeId int, regionId int, date time.Time) (*apiItemStats, error) {
+	stats := apiItemStats{TypeId: typeId, RegionId: regionId}
+
+	db := ctx.Value("db").(*database.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cancel()
+
+	query := `
+  SELECT Volume, SellPrice, BuyPrice FROM DayTypeMetric
+    WHERE RegionId = ? AND TypeId = ? AND Date = ?;
+  `
+	err := db.QueryRow(
+		timeoutCtx,
+		query,
+		regionId,
+		typeId,
+		date.Format(dateLayout),
+	).Scan(&stats.Volume, &stats.SellPrice, &stats.BuyPrice)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	query = `
+  SELECT AVG(Volume), AVG(SellPrice), AVG(BuyPrice) FROM DayTypeMetric
+    WHERE RegionId = ? AND TypeId = ? AND Date BETWEEN ? AND ?;
+  `
+	err = db.QueryRow(
+		timeoutCtx,
+		query,
+		regionId,
+		typeId,
+		date.AddDate(0, 0, -7).Format(dateLayout),
+		date.AddDate(0, 0, -1).Format(dateLayout),
+	).Scan(&stats.WeeklyVolume, &stats.WeeklySellPrice, &stats.WeeklyBuyPrice)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			stats.WeeklyVolume = -1
+			stats.WeeklyBuyPrice = 0
+			stats.WeeklySellPrice = 0
+		} else {
+			return nil, err
+		}
+	}
+
+	return &stats, nil
+}
+
 // NOTE: It's important to wrap those inserts in a transaction to avoid the
 // heavy work of updating the table index at each insert
 func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
@@ -133,13 +185,13 @@ func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()
 
-  tx, err := db.Begin(timeoutCtx)
-  if err != nil {
-    return err
-  }
-  defer tx.Rollback()
+	tx, err := db.Begin(timeoutCtx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-	query := "INSERT INTO DayTypeMetric VALUES (?,?,?,?,?,?,?)"
+	query := "INSERT INTO DayTypeMetric VALUES (?,?,?,?,?,?)"
 	stmt, err := db.PrepareWrite(timeoutCtx, query)
 	if err != nil {
 		return err
@@ -147,17 +199,17 @@ func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
 	defer stmt.Close()
 
 	for _, dp := range dps {
-		year, day := dateToYearAndDay(dp.date)
-		_, err := stmt.Exec(timeoutCtx, query, dp.typeId, dp.regionId, year, day, dp.buyPrice, dp.sellPrice, dp.volume)
+		date := dp.date.Format(dateLayout)
+		_, err := stmt.Exec(timeoutCtx, query, dp.typeId, dp.regionId, date, dp.buyPrice, dp.sellPrice, dp.volume)
 		if err != nil {
 			return err
 		}
 	}
 
-  err = tx.Commit()
-  if err != nil {
-    return err
-  }
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -50,6 +50,8 @@ type dayDataPoint struct {
 	volume    int64
 }
 
+const dateLayout = "2006-01-02"
+
 // Compute and store HotDataPoints relative and ordersList
 // retrivalTime is the time at wich the data was up to date
 // This function is meant to be called during the orders download process
@@ -338,19 +340,6 @@ func sortOrders(orders []*dbOrder) {
 			orders[i].RegionId == orders[j].RegionId && orders[i].TypeId < orders[j].TypeId ||
 			orders[i].RegionId == orders[j].RegionId && orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder && !orders[j].IsBuyOrder)
 	})
-}
-
-func yearAndDayToDate(year int, day int) time.Time {
-	ordinalDate := fmt.Sprintf("%04d-%03d", year, day)
-	date, err := time.Parse("2006-002", ordinalDate)
-	if err != nil {
-		panic(fmt.Sprintf("impossible to format the date: %s", ordinalDate))
-	}
-	return date
-}
-
-func dateToYearAndDay(date time.Time) (int, int) {
-	return date.Year(), date.YearDay()
 }
 
 func elevenThatDay(date time.Time) time.Time {

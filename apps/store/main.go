@@ -22,11 +22,12 @@ func main() {
 	log.SetFlags(log.LstdFlags)
 
 	// Flags
-	var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
+	var historiesEnabled, ordersEnabled, metricsEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
 	var socketPath, dbPath string
 	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
+	flag.BoolVar(&metricsEnabled, "metric", true, "Enable metrics update")
 	flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
 	flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
 	flag.BoolVar(&victoriaEnabled, "victoria", true, "Enable victoria metric server")
@@ -91,7 +92,7 @@ func main() {
 	if ordersEnabled {
 		mainWg.Add(1)
 		go func() {
-			runOrdersHoardling(ctx)
+			runOrdersHoardling(ctx, metricsEnabled)
 			log.Print("Order worker stopped")
 			mainWg.Done()
 			cancel()
@@ -100,7 +101,7 @@ func main() {
 	if historiesEnabled {
 		mainWg.Add(1)
 		go func() {
-			runHistoriesHoardling(ctx)
+			runHistoriesHoardling(ctx, metricsEnabled)
 			log.Print("History worker stopped")
 			mainWg.Done()
 			cancel()

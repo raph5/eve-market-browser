@@ -19,7 +19,7 @@ import (
 // Though the first approach was more simple to write it turned out to be
 // significantly slower (~7min against ~3min for the second approach).
 // EDIT: Just fetching orders and regions sequentially works fine 👉👈
-func Download(ctx context.Context) error {
+func Download(ctx context.Context, metricsEnabled bool) error {
 	orders := make([]dbOrder, 0, 1024)
 
 	for _, regionId := range regions.Regions {
@@ -37,13 +37,15 @@ func Download(ctx context.Context) error {
 		}
 	}
 
-	retrivalTime := time.Now()
-	err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
-	if err != nil {
-		log.Printf("CreateHotDataPoints: %v", err)
-	}
+  if metricsEnabled {
+    retrivalTime := time.Now()
+    err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
+    if err != nil {
+      log.Printf("CreateHotDataPoints: %v", err)
+    }
+  }
 
-	err = dbReplaceOrders(ctx, orders)
+  err := dbReplaceOrders(ctx, orders)
 	if err != nil {
 		return fmt.Errorf("replacing orders: %w", err)
 	}

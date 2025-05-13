@@ -19,7 +19,7 @@ var (
 	historyStatus = metrics.NewCounter("store_history_status_info")
 )
 
-func runOrdersHoardling(ctx context.Context) {
+func runOrdersHoardling(ctx context.Context, metricsEnabled bool) {
 	for ctx.Err() == nil {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "OrdersExpiration")
@@ -43,7 +43,7 @@ func runOrdersHoardling(ctx context.Context) {
 		orderStatus.Set(0)
 		log.Print("Orders hoardling: downloading orders and locations")
 
-		err = orders.Download(ctx)
+		err = orders.Download(ctx, metricsEnabled)
 		if err != nil {
 			log.Printf("Orders hoardling error: orders download: %v", err)
 			log.Print("Order hoardling: 2 minutes backoff")
@@ -79,7 +79,7 @@ func runOrdersHoardling(ctx context.Context) {
 	log.Print("Orders hoardling: stopping")
 }
 
-func runHistoriesHoardling(ctx context.Context) {
+func runHistoriesHoardling(ctx context.Context, metricsEnabled bool) {
 	for ctx.Err() == nil {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "HistoriesExpiration")
@@ -118,7 +118,7 @@ func runHistoriesHoardling(ctx context.Context) {
 			continue
 		}
 
-		err = histories.ComputeGobalHistories(ctx, day)
+		err = histories.ComputeGobalHistories(ctx, day, metricsEnabled)
 		if err != nil {
 			log.Printf("Histories hoardling error: compute global histories: %v", err)
 			if ctx.Err() != nil {

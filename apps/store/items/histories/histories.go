@@ -62,7 +62,7 @@ func Download(ctx context.Context) error {
 	return nil
 }
 
-func ComputeGobalHistories(ctx context.Context, day time.Time) error {
+func ComputeGobalHistories(ctx context.Context, day time.Time, metricsEnabled bool) error {
 	activeMarketsId, err := activemarkets.GetTypesId(ctx)
 	if err != nil {
 		return err
@@ -72,21 +72,23 @@ func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err = computeGlobalHistoryOfType(ctx, typeId, day)
+		err = computeGlobalHistoryOfType(ctx, typeId, day, metricsEnabled)
 		if err != nil {
 			log.Printf("Can't compute global history for type %d: %v", typeId, err)
 		}
 	}
 
-	err = metrics.ClearHotDataPoints(ctx, day)
-	if err != nil {
-		log.Printf("ClearHotDataPoints: %v\n", err)
-	}
+  if metricsEnabled {
+    err = metrics.ClearHotDataPoints(ctx, day)
+    if err != nil {
+      log.Printf("ClearHotDataPoints: %v\n", err)
+    }
+  }
 
 	return nil
 }
 
-func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) error {
+func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time, metricsEnabled bool) error {
 	histories, err := dbGetHistoriesOfType(ctx, typeId)
 	if err != nil {
 		return fmt.Errorf("can't get histories of type %d: %w", typeId, err)
@@ -100,10 +102,13 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) 
 		// here I do not throw as in practice I get a few empty ones
 		return nil
 	}
-	err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
-	if err != nil {
-		log.Printf("CreateRegionDayDataPoints: %v\n", err)
-	}
+
+  if metricsEnabled {
+    err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
+    if err != nil {
+      log.Printf("CreateRegionDayDataPoints: %v\n", err)
+    }
+  }
 
 	if regions == 1 {
 		histories[0].RegionId = 0

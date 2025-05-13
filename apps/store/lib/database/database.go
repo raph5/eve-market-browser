@@ -105,17 +105,16 @@ func Init(dbPath string) (*DB, error) {
   CREATE TABLE IF NOT EXISTS DayTypeMetric (
     TypeId INTEGER,
     RegionId INTEGER,
-    Year INTEGER,
-    Day INTEGER,  -- Day Of The Year (ISO 8601)
+    Date TEXT,  -- YYYY-MM-DD (https://sqlite.org/lang_datefunc.html#time_values)
     BuyPrice REAL,
     SellPrice REAL,
     Volume INTERGER,
-    PRIMARY KEY (Year, Day, TypeId)
+    PRIMARY KEY (Day, TypeId)
     -- If we are not able to compute buy/sell volume separately then BuyVolume
     -- will represent the total volume and SellVolume will be equal to -1 to
     -- signal that change.
   );
-  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Year DESC, Day DESC);
+  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Day DESC);
 
   CREATE TABLE IF NOT EXISTS TimeRecord (
     "Key" TEXT PRIMARY KEY,
