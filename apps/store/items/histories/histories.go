@@ -78,12 +78,12 @@ func ComputeGobalHistories(ctx context.Context, day time.Time, metricsEnabled bo
 		}
 	}
 
-  if metricsEnabled {
-    err = metrics.ClearHotDataPoints(ctx, day)
-    if err != nil {
-      log.Printf("ClearHotDataPoints: %v\n", err)
-    }
-  }
+	if metricsEnabled {
+		err = metrics.ClearHotDataPoints(ctx, day)
+		if err != nil {
+			log.Printf("ClearHotDataPoints: %v\n", err)
+		}
+	}
 
 	return nil
 }
@@ -103,12 +103,12 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time, 
 		return nil
 	}
 
-  if metricsEnabled {
-    err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
-    if err != nil {
-      log.Printf("CreateRegionDayDataPoints: %v\n", err)
-    }
-  }
+	if metricsEnabled {
+		err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
+		if err != nil {
+			log.Printf("CreateRegionDayDataPoints: %v\n", err)
+		}
+	}
 
 	if regions == 1 {
 		histories[0].RegionId = 0
