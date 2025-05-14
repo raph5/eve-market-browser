@@ -101,16 +101,15 @@ func Init(dbPath string) (*DB, error) {
     SellPrice REAL
     -- No primary key here as data integrity is not a big concern
   );
-  CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, RegionId, Time DESC);
+  -- CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, RegionId, Time DESC);
   CREATE TABLE IF NOT EXISTS DayTypeMetric (
     TypeId INTEGER,
     RegionId INTEGER,
     Date TEXT,  -- YYYY-MM-DD (https://sqlite.org/lang_datefunc.html#time_values)
     BuyPrice REAL,
     SellPrice REAL,
-    Volume INTERGER
-    -- Remove composite primary key for faster inserts
-    -- PRIMARY KEY (Date, TypeId)
+    Volume INTERGER,
+    PRIMARY KEY (Date, TypeId)
 
     -- If we are not able to compute buy/sell volume separately then BuyVolume
     -- will represent the total volume and SellVolume will be equal to -1 to
