@@ -108,7 +108,7 @@ func Init(dbPath string) (*DB, error) {
     Date TEXT,  -- YYYY-MM-DD (https://sqlite.org/lang_datefunc.html#time_values)
     BuyPrice REAL,
     SellPrice REAL,
-    Volume INTERGER,
+    Volume INTERGER
     -- Remove composite primary key for faster inserts
     -- PRIMARY KEY (Day, TypeId)
 
