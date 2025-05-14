@@ -110,13 +110,13 @@ func Init(dbPath string) (*DB, error) {
     SellPrice REAL,
     Volume INTERGER
     -- Remove composite primary key for faster inserts
-    -- PRIMARY KEY (Day, TypeId)
+    -- PRIMARY KEY (Date, TypeId)
 
     -- If we are not able to compute buy/sell volume separately then BuyVolume
     -- will represent the total volume and SellVolume will be equal to -1 to
     -- signal that change.
   );
-  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Day DESC);
+  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Date DESC);
 
   CREATE TABLE IF NOT EXISTS TimeRecord (
     "Key" TEXT PRIMARY KEY,
