@@ -109,7 +109,9 @@ func Init(dbPath string) (*DB, error) {
     BuyPrice REAL,
     SellPrice REAL,
     Volume INTERGER,
-    PRIMARY KEY (Day, TypeId)
+    -- Remove composite primary key for faster inserts
+    -- PRIMARY KEY (Day, TypeId)
+
     -- If we are not able to compute buy/sell volume separately then BuyVolume
     -- will represent the total volume and SellVolume will be equal to -1 to
     -- signal that change.
