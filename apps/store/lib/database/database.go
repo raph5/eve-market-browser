@@ -109,7 +109,7 @@ func Init(dbPath string) (*DB, error) {
     Date TEXT,  -- YYYY-MM-DD (https://sqlite.org/lang_datefunc.html#time_values)
     BuyPrice REAL,
     SellPrice REAL,
-    Volume INTERGER,
+    Volume INTERGER
     -- PRIMARY KEY (Date, TypeId) removed by fear of a slow down
   );
   CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Date DESC);
