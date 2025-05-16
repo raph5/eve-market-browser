@@ -45,6 +45,7 @@ Build remix app `npm run build`
 - Add player owned private structures
 - Add filters
 - Add security status
+- Add a flashing dot signalling whether or not orders are up to date
 
 ## Ports
 
