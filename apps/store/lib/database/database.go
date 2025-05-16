@@ -101,6 +101,7 @@ func Init(dbPath string) (*DB, error) {
     SellPrice REAL
     -- No primary key here as data integrity is not a big concern
   );
+  -- Removed for fast inserts
   -- CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, RegionId, Time DESC);
   CREATE TABLE IF NOT EXISTS DayTypeMetric (
     TypeId INTEGER,
@@ -109,11 +110,7 @@ func Init(dbPath string) (*DB, error) {
     BuyPrice REAL,
     SellPrice REAL,
     Volume INTERGER,
-    PRIMARY KEY (Date, TypeId)
-
-    -- If we are not able to compute buy/sell volume separately then BuyVolume
-    -- will represent the total volume and SellVolume will be equal to -1 to
-    -- signal that change.
+    -- PRIMARY KEY (Date, TypeId) removed by fear of a slow down
   );
   CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Date DESC);
 
