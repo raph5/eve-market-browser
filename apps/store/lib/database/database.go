@@ -83,7 +83,7 @@ func Init(dbPath string) (*DB, error) {
     Id INTEGER PRIMARY KEY,
     Name TEXT,
     Security REAL
-  )
+  );
   CREATE INDEX IF NOT EXISTS SystemIndex ON System (Id);
 
   CREATE TABLE IF NOT EXISTS History (
