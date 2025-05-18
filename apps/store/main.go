@@ -13,6 +13,7 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
 	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
+	"github.com/raph5/eve-market-browser/apps/store/items/systems"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 	"github.com/raph5/eve-market-browser/apps/store/lib/secret"
 	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
@@ -57,6 +58,12 @@ func main() {
 	ctx = context.WithValue(ctx, "sm", sm)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
+
+	// Init systems
+	err = systems.Init()
+	if err != nil {
+		log.Printf("Impossible to initialize systems: %v", err)
+	}
 
 	// Init locations
 	err = locations.Init(ctx)

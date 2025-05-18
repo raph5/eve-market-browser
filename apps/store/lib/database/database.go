@@ -73,10 +73,18 @@ func Init(dbPath string) (*DB, error) {
 
   CREATE TABLE IF NOT EXISTS Location (
     Id INTEGER PRIMARY KEY,
+    SystemId INTEGER,  -- For now I dont need to mark it as a foriegn key
     Name TEXT,
     Security REAL
   );
   CREATE INDEX IF NOT EXISTS LocationIndex ON Location (Id);
+
+  CREATE TABLE IF NOT EXISTS System (
+    Id INTEGER PRIMARY KEY,
+    Name TEXT,
+    Security REAL
+  )
+  CREATE INDEX IF NOT EXISTS SystemIndex ON System (Id);
 
   CREATE TABLE IF NOT EXISTS History (
     TypeId INTEGER,

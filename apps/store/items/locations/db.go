@@ -21,19 +21,6 @@ func dbGetLocationCount(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func dbClear(ctx context.Context) error {
-	db := ctx.Value("db").(*database.DB)
-	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-	defer cancel()
-
-	_, err := db.Exec(timeoutCtx, "DELETE FROM Location")
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
 // 	db := ctx.Value("db").(*database.DB)
 // 	unknownLocations := make([]int, 0)

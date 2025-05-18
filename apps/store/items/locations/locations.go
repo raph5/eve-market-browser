@@ -17,7 +17,8 @@ import (
 )
 
 type location struct {
-	id       int
+	id       int64
+	systemId int64
 	name     string
 	security float32
 }
@@ -38,10 +39,6 @@ func Init(ctx context.Context) error {
 	now := time.Now()
 	if count == 0 || now.After(expiration) {
 		log.Println("Initializing locations")
-		err = dbClear(ctx)
-		if err != nil {
-			return err
-		}
 		err = populateStation(ctx)
 		if err != nil {
 			return err
@@ -62,7 +59,7 @@ func populateStation(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reader error: %w", err)
 	}
-	if record[0] != "stationID" && record[1] != "security" && record[11] != "stationName" {
+	if record[0] != "stationID" && record[1] != "security" && record[8] != "solarSystemID" && record[11] != "stationName" {
 		return errors.New("invalid station csv header")
 	}
 
@@ -75,7 +72,13 @@ func populateStation(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback()
-	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?,?)")
+
+	_, err = db.Exec(timeoutCtx, "DELETE FROM Location")
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -94,13 +97,17 @@ func populateStation(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		systemId, err := strconv.Atoi(record[8])
+		if err != nil {
+			return err
+		}
 		name := record[11]
 		security, err := strconv.ParseFloat(record[1], 32)
 		if err != nil {
 			return err
 		}
 
-		_, err = stmt.Exec(timeoutCtx, id, name, security)
+		_, err = stmt.Exec(timeoutCtx, id, systemId, name, security)
 		if err != nil {
 			return err
 		}
