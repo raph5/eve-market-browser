@@ -12,19 +12,24 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/raph5/eve-market-browser/apps/store/items/systems"
 	"github.com/raph5/eve-market-browser/apps/store/items/timerecord"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
+	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
 )
 
 type location struct {
 	id       int64
-	systemId int64
 	name     string
+	systemId int32
 	security float32
 }
 
 //go:embed data/staStations.csv
 var stationCsv []byte
+
+// forbiddenLocations will be reset at each restart
+var forbiddenLocations = make(map[int64]struct{})
 
 func Init(ctx context.Context) error {
 	count, err := dbGetLocationCount(ctx)
@@ -48,6 +53,51 @@ func Init(ctx context.Context) error {
 			return err
 		}
 		log.Println("Locations initialized")
+	}
+
+	return nil
+}
+
+func PopulateStructure(ctx context.Context) error {
+	unknownIds, err := dbGetUnknownStructures(ctx)
+	if err != nil {
+		return fmt.Errorf("dbGetUnknownStructures: %w", err)
+	}
+
+	var newLocations []location
+	for _, id := range unknownIds {
+		_, isForbidden := forbiddenLocations[id]
+		if isForbidden {
+			continue
+		}
+
+		info, err := fetchStrcutreInfo(ctx, id)
+		var esiError *esi.EsiError
+		if errors.As(err, &esiError) {
+			forbiddenLocations[id] = struct{}{}
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		system, err := systems.Get(info.SystemId)
+		if err != nil {
+			return err
+		}
+
+		newLocations = append(newLocations, location{
+			id:       id,
+			name:     info.Name,
+			systemId: info.SystemId,
+			security: system.Security,
+		})
+	}
+
+	if len(newLocations) > 0 {
+		err = dbAddLocations(ctx, newLocations)
+		if err != nil {
+			return fmt.Errorf("dbAddLocations: %w", err)
+		}
 	}
 
 	return nil

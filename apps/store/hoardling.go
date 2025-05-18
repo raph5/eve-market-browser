@@ -10,6 +10,7 @@ import (
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/items/activemarkets"
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
+	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
 	"github.com/raph5/eve-market-browser/apps/store/items/timerecord"
 )
@@ -51,13 +52,13 @@ func runOrdersHoardling(ctx context.Context, metricsEnabled bool) {
 			continue
 		}
 
-		// err = locations.Populate(ctx)
-		// if err != nil {
-		// 	log.Printf("Orders hoardling error: locations populate: %v", err)
-		// 	if ctx.Err() != nil {
-		// 		break
-		// 	}
-		// }
+		err = locations.PopulateStructure(ctx)
+		if err != nil {
+			log.Printf("Orders hoardling error: locations populate structures: %v", err)
+			if ctx.Err() != nil {
+				break
+			}
+		}
 
 		// NOTE: a better approach would have been to use the `Expires`
 		// header provided by the esi.

@@ -11,10 +11,10 @@ import (
 	"strconv"
 )
 
-type system struct {
-	name     string
-	id       int32
-	security float32
+type System struct {
+	Name     string
+	Id       int32
+	Security float32
 }
 
 var ErrNoSystem = errors.New("system not available")
@@ -23,7 +23,7 @@ var ErrNoSystem = errors.New("system not available")
 var systemCsv []byte
 
 // the systemMap weigh around that 400kb so we can load that in memory on startup
-var systemMap = make(map[int32]system)
+var systemMap = make(map[int32]System)
 
 func Init() error {
 	r := csv.NewReader(bytes.NewReader(systemCsv))
@@ -57,19 +57,19 @@ func Init() error {
 			return err
 		}
 
-		systemMap[int32(id)] = system{id: int32(id), name: name, security: float32(security)}
+		systemMap[int32(id)] = System{Id: int32(id), Name: name, Security: float32(security)}
 	}
 
 	return nil
 }
 
-func Get(id int) (system, error) {
+func Get(id int32) (System, error) {
 	if id < 0 || id > math.MaxInt32 {
-		return system{}, fmt.Errorf("id %d out of range", id)
+		return System{}, fmt.Errorf("id %d out of range", id)
 	}
-	s, ok := systemMap[int32(id)]
+	s, ok := systemMap[id]
 	if !ok {
-		return system{}, fmt.Errorf("system %d: %w", id, ErrNoSystem)
+		return System{}, fmt.Errorf("system %d: %w", id, ErrNoSystem)
 	}
 	return s, nil
 }
