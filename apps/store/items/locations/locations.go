@@ -73,7 +73,7 @@ func populateStation(ctx context.Context) error {
 	}
 	defer tx.Rollback()
 
-	_, err = db.Exec(timeoutCtx, "DELETE FROM Location")
+	_, err = tx.Exec(timeoutCtx, "DELETE FROM Location")
 	if err != nil {
 		return err
 	}
