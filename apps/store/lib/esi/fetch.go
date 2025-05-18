@@ -3,6 +3,7 @@ package esi
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/metrics"
+	"github.com/raph5/eve-market-browser/apps/store/lib/secret"
 	"github.com/raph5/eve-market-browser/apps/store/lib/sem"
 	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
 )
@@ -35,6 +37,12 @@ type jsonTimeoutError struct {
 type jsonError struct {
 	Error string `json:"error"`
 }
+type jsonSsoResponse struct {
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+}
 
 const esiRoot = "https://esi.evetech.net/latest"
 const requestTimeout = 7 * time.Second
@@ -49,8 +57,18 @@ var ErrExplicitTimeout = errors.New("Esi explicit timeout")
 var semaphore = sem.New(MaxConcurrentRequests)
 var esiTimeout time.Time
 var esiTimeoutMu sync.Mutex
+var accessToken string
+var accessTokenExpiry time.Time
 
-func EsiFetch[T any](ctx context.Context, method string, uri string, body any, priority int, trails int) (EsiResponse[T], error) {
+func EsiFetch[T any](
+	ctx context.Context,
+	method string,
+	uri string,
+	body any,
+	authenticated bool,
+	priority int,
+	trails int,
+) (EsiResponse[T], error) {
 	// If no tries left, fail the request
 	if trails <= 0 {
 		reportEsiRequest("failure")
@@ -60,7 +78,7 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	// Init retry function that will be called in case the request fail
 	retry := func(fallbackErr error) (EsiResponse[T], error) {
 		reportEsiRequest("retry")
-		retryResponse, retryErr := EsiFetch[T](ctx, method, uri, body, priority, trails-1)
+		retryResponse, retryErr := EsiFetch[T](ctx, method, uri, body, authenticated, priority, trails-1)
 		if errors.Is(retryErr, ErrNoTrailsLeft) {
 			return EsiResponse[T]{}, fmt.Errorf("no trails left: %w", fallbackErr)
 		}
@@ -96,8 +114,15 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	if err != nil {
 		return EsiResponse[T]{}, fmt.Errorf("new request: %w", err)
 	}
-	request.Header.Set("content-type", "application/json")
+	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("User-Agent", "evemarketbrowser.com - contact me at raphguyader@gmail.com")
+	if authenticated {
+		token, err := acquireSSOToken(ctx)
+		if err != nil {
+			return EsiResponse[T]{}, fmt.Errorf("acquire SSO token: %w", err)
+		}
+		request.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	// Run the request
 	client := &http.Client{
@@ -144,6 +169,8 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 	}
 
 	decoder := json.NewDecoder(response.Body)
+	// NOTE: I dont think the call to UseNumber is usefull as I dont Unmarshal to
+	// interface{}. I might try to delete it in the future
 	decoder.UseNumber()
 	// Explicit timeout
 	if response.StatusCode == 504 {
@@ -205,6 +232,66 @@ func EsiFetch[T any](ctx context.Context, method string, uri string, body any, p
 
 	reportEsiRequest("success")
 	return esiResponse, nil
+}
+
+func acquireSSOToken(ctx context.Context) (string, error) {
+	sm := ctx.Value("sm").(*secret.SecretManager)
+	clientId := sm.Get("ssoClientId")
+	clientSecret := sm.Get("ssoClientSecret")
+	refreshToken := sm.Get("ssoRefreshToken")
+
+	now := time.Now()
+	if now.Before(accessTokenExpiry) {
+		return accessToken, nil
+	}
+
+	// Create the request
+	url := "https://login.eveonline.com/v2/oauth/token"
+	var body bytes.Buffer
+	fmt.Fprintf(&body, "grant_type=refresh_token&refresh_token=%s", refreshToken)
+	request, err := http.NewRequestWithContext(ctx, "POST", url, &body)
+	if err != nil {
+		return "", fmt.Errorf("new request: %w", err)
+	}
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("User-Agent", "evemarketbrowser.com - contact me at raphguyader@gmail.com")
+	request.Header.Set("Authorization", createBasicAuthHeader(clientId, clientSecret))
+
+	// Run the request
+	client := &http.Client{
+		Timeout: requestTimeout,
+	}
+	response, err := client.Do(request)
+	if err != nil {
+		return "", fmt.Errorf("http request: %w", err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return "", fmt.Errorf("%d status code", response.StatusCode)
+	}
+
+	var ssoResponse jsonSsoResponse
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&ssoResponse)
+	if err != nil {
+		return "", fmt.Errorf("unmarshal sso response: %w", err)
+	}
+	if ssoResponse.TokenType != "Bearer" || ssoResponse.RefreshToken != refreshToken {
+		log.Panicf("unexpected sso repseonse: %v", ssoResponse)
+	}
+
+	accessToken = ssoResponse.AccessToken
+	accessTokenExpiry = now.Add(time.Duration(ssoResponse.ExpiresIn) * time.Second)
+	if time.Now().After(accessTokenExpiry) {
+		log.Panic("hummmm")
+	}
+
+	return accessToken, nil
+}
+
+func createBasicAuthHeader(user string, password string) string {
+	payload := user + ":" + password
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(payload))
 }
 
 func clearEsiTimeout(ctx context.Context) error {

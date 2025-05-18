@@ -14,6 +14,7 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
+	"github.com/raph5/eve-market-browser/apps/store/lib/secret"
 	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
 )
 
@@ -23,7 +24,7 @@ func main() {
 
 	// Flags
 	var historiesEnabled, ordersEnabled, metricsEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
-	var socketPath, dbPath string
+	var socketPath, dbPath, secrets string
 	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
@@ -33,8 +34,15 @@ func main() {
 	flag.BoolVar(&victoriaEnabled, "victoria", true, "Enable victoria metric server")
 	flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
 	flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
+	flag.StringVar(&secrets, "secrets", "{}", "Json string containing the secrets in foramt {key: value}")
 	flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port")
 	flag.Parse()
+
+	// Init secret manager
+	sm, err := secret.Init([]byte(secrets))
+	if err != nil {
+		log.Fatalf("Invalid secrets: %v", err)
+	}
 
 	// Init database
 	db, err := database.Init(dbPath)
@@ -46,6 +54,7 @@ func main() {
 	// Init context
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, "db", db)
+	ctx = context.WithValue(ctx, "sm", sm)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 

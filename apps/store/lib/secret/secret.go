@@ -2,22 +2,20 @@ package secret
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"log"
 )
-
-var ErrNoSecret = errors.New("The secret you requested do not exists")
 
 type SecretManager struct {
 	secret map[string]string
 }
 
-func (sm *SecretManager) Get(name string) (string, error) {
+func (sm *SecretManager) Get(name string) string {
 	secret, ok := sm.secret[name]
-	if ok {
-		return secret, nil
+	if !ok {
+		log.Panicf("secret %s not available", name)
 	}
-	return "", ErrNoSecret
+	return secret
 }
 
 func Init(secretJson []byte) (*SecretManager, error) {
