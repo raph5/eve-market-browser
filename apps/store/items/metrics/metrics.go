@@ -22,7 +22,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sort"
 	"time"
 
@@ -126,10 +125,7 @@ func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []
 	for i := range orders {
 		ordersPtr[i] = &orders[i]
 	}
-	debugStart := time.Now()
 	sortOrders(ordersPtr)
-	debugEnd := time.Now()
-	log.Printf("DEBUG: Sort duration %fs", debugEnd.Sub(debugStart).Seconds())
 
 	regionStart := 0
 	for regionStart < len(ordersPtr) {

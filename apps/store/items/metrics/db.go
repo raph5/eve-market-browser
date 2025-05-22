@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
@@ -16,9 +15,6 @@ func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()
-
-	log.Printf("DEBUG: Rows to insert: %d", len(dps))
-	debugStart := time.Now()
 
 	tx, err := db.Begin(timeoutCtx)
 	if err != nil {
@@ -44,9 +40,6 @@ func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 	if err != nil {
 		return err
 	}
-
-	debugEnd := time.Now()
-	log.Printf("DEBUG: Insert duration: %f minutes", debugEnd.Sub(debugStart).Minutes())
 
 	return nil
 }
