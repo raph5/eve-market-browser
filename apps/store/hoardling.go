@@ -20,7 +20,9 @@ var (
 	historyStatus = metrics.NewCounter("store_history_status_info")
 )
 
-func runOrdersHoardling(ctx context.Context, metricsEnabled bool) {
+func runOrdersHoardling(ctx context.Context) {
+	structuresEnabled := ctx.Value("structuresEnabled").(bool)
+
 	for ctx.Err() == nil {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "OrdersExpiration")
@@ -44,7 +46,7 @@ func runOrdersHoardling(ctx context.Context, metricsEnabled bool) {
 		orderStatus.Set(0)
 		log.Print("Orders hoardling: downloading orders and locations")
 
-		err = orders.Download(ctx, metricsEnabled)
+		err = orders.Download(ctx)
 		if err != nil {
 			log.Printf("Orders hoardling error: orders download: %v", err)
 			log.Print("Order hoardling: 2 minutes backoff")
@@ -52,11 +54,13 @@ func runOrdersHoardling(ctx context.Context, metricsEnabled bool) {
 			continue
 		}
 
-		err = locations.PopulateStructure(ctx)
-		if err != nil {
-			log.Printf("Orders hoardling error: locations populate structures: %v", err)
-			if ctx.Err() != nil {
-				break
+		if structuresEnabled {
+			err = locations.PopulateStructure(ctx)
+			if err != nil {
+				log.Printf("Orders hoardling error: locations populate structures: %v", err)
+				if ctx.Err() != nil {
+					break
+				}
 			}
 		}
 
@@ -80,7 +84,7 @@ func runOrdersHoardling(ctx context.Context, metricsEnabled bool) {
 	log.Print("Orders hoardling: stopping")
 }
 
-func runHistoriesHoardling(ctx context.Context, metricsEnabled bool) {
+func runHistoriesHoardling(ctx context.Context) {
 	for ctx.Err() == nil {
 		now := time.Now()
 		expiration, err := timerecord.Get(ctx, "HistoriesExpiration")
@@ -119,7 +123,7 @@ func runHistoriesHoardling(ctx context.Context, metricsEnabled bool) {
 			continue
 		}
 
-		err = histories.ComputeGobalHistories(ctx, day, metricsEnabled)
+		err = histories.ComputeGobalHistories(ctx, day)
 		if err != nil {
 			log.Printf("Histories hoardling error: compute global histories: %v", err)
 			if ctx.Err() != nil {

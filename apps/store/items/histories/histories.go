@@ -62,7 +62,9 @@ func Download(ctx context.Context) error {
 	return nil
 }
 
-func ComputeGobalHistories(ctx context.Context, day time.Time, metricsEnabled bool) error {
+func ComputeGobalHistories(ctx context.Context, day time.Time) error {
+	metricsEnabled := ctx.Value("metricsEnabled").(bool)
+
 	activeMarketsId, err := activemarkets.GetTypesId(ctx)
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func ComputeGobalHistories(ctx context.Context, day time.Time, metricsEnabled bo
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err = computeGlobalHistoryOfType(ctx, typeId, day, metricsEnabled)
+		err = computeGlobalHistoryOfType(ctx, typeId, day)
 		if err != nil {
 			log.Printf("Can't compute global history for type %d: %v", typeId, err)
 		}
@@ -88,7 +90,9 @@ func ComputeGobalHistories(ctx context.Context, day time.Time, metricsEnabled bo
 	return nil
 }
 
-func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time, metricsEnabled bool) error {
+func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) error {
+	metricsEnabled := ctx.Value("metricsEnabled").(bool)
+
 	histories, err := dbGetHistoriesOfType(ctx, typeId)
 	if err != nil {
 		return fmt.Errorf("can't get histories of type %d: %w", typeId, err)

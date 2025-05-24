@@ -24,12 +24,13 @@ func main() {
 	log.SetFlags(log.LstdFlags)
 
 	// Flags
-	var historiesEnabled, ordersEnabled, metricsEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
+	var historiesEnabled, ordersEnabled, metricsEnabled, structuresEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
 	var socketPath, dbPath, secrets string
 	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
 	flag.BoolVar(&metricsEnabled, "metric", true, "Enable metrics update")
+	flag.BoolVar(&structuresEnabled, "structure", true, "Enable fetching of public player structures (requires ssoClientId, ssoClientSecret and ssoRefreshToken)")
 	flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
 	flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
 	flag.BoolVar(&victoriaEnabled, "victoria", true, "Enable victoria metric server")
@@ -45,6 +46,13 @@ func main() {
 		log.Fatalf("Invalid secrets: %v", err)
 	}
 
+	// Check if secrets are set
+	if structuresEnabled {
+		_ = sm.Get("ssoClientId")
+		_ = sm.Get("ssoClientSecret")
+		_ = sm.Get("ssoRefreshToken")
+	}
+
 	// Init database
 	db, err := database.Init(dbPath)
 	if err != nil {
@@ -56,6 +64,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, "db", db)
 	ctx = context.WithValue(ctx, "sm", sm)
+	ctx = context.WithValue(ctx, "structuresEnabled", structuresEnabled)
+	ctx = context.WithValue(ctx, "metricsEnabled", metricsEnabled)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -108,7 +118,7 @@ func main() {
 	if ordersEnabled {
 		mainWg.Add(1)
 		go func() {
-			runOrdersHoardling(ctx, metricsEnabled)
+			runOrdersHoardling(ctx)
 			log.Print("Order worker stopped")
 			mainWg.Done()
 			cancel()
@@ -117,7 +127,7 @@ func main() {
 	if historiesEnabled {
 		mainWg.Add(1)
 		go func() {
-			runHistoriesHoardling(ctx, metricsEnabled)
+			runHistoriesHoardling(ctx)
 			log.Print("History worker stopped")
 			mainWg.Done()
 			cancel()

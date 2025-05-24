@@ -19,7 +19,8 @@ import (
 // Though the first approach was more simple to write it turned out to be
 // significantly slower (~7min against ~3min for the second approach).
 // EDIT: Just fetching orders and regions sequentially works fine 👉👈
-func Download(ctx context.Context, metricsEnabled bool) error {
+func Download(ctx context.Context) error {
+	metricsEnabled := ctx.Value("metricsEnabled").(bool)
 	orders := make([]dbOrder, 0, 1024)
 
 	for _, regionId := range regions.Regions {
