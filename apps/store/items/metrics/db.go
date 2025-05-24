@@ -9,8 +9,6 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
-// NOTE: It's important to wrap those inserts in a transaction to avoid the
-// heavy work of updating the table index at each insert
 func dbInsertHotDataPoints(ctx context.Context, dps []hotDataPoint) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
@@ -187,7 +185,7 @@ func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
 	defer tx.Rollback()
 
 	query := "INSERT INTO DayTypeMetric VALUES (?,?,?,?,?,?)"
-	stmt, err := db.PrepareWrite(timeoutCtx, query)
+	stmt, err := tx.PrepareWrite(timeoutCtx, query)
 	if err != nil {
 		return err
 	}
