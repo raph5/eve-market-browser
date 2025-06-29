@@ -223,7 +223,7 @@ func computeGlobalDayDataPointOfType(dayDataPoints []DayDataPoint, day time.Time
 	}
 }
 
-// WARN: dataPoints most be sorted by regionId
+// WARN: dataPoints most be grouped by regionId
 func getRegionDataPoints(dataPoints []hotDataPoint, regionId int) []hotDataPoint {
 	var start, end int
 	for start = 0; start < len(dataPoints); start++ {
@@ -231,7 +231,7 @@ func getRegionDataPoints(dataPoints []hotDataPoint, regionId int) []hotDataPoint
 			break
 		}
 	}
-	for end = start + 1; end < len(dataPoints); end++ {
+	for end = start; end < len(dataPoints); end++ {
 		if dataPoints[end].regionId != regionId {
 			break
 		}
