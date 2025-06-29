@@ -173,7 +173,7 @@ func dbGetItemStats(ctx context.Context, typeId int, regionId int, date time.Tim
 
 // NOTE: It's important to wrap those inserts in a transaction to avoid the
 // heavy work of updating the table index at each insert
-func dbInsertDayDataPoints(ctx context.Context, dps []dayDataPoint) error {
+func dbInsertDayDataPoints(ctx context.Context, dps []DayDataPoint) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 6*time.Minute)
 	defer cancel()

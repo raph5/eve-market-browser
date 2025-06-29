@@ -70,17 +70,44 @@ func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 		return err
 	}
 
+	var dayDataPoints []metrics.DayDataPoint
+	if metricsEnabled {
+		dayDataPoints = make([]metrics.DayDataPoint, 0, len(activeMarketsId))
+	}
+
 	for _, typeId := range activeMarketsId {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err = computeGlobalHistoryOfType(ctx, typeId, day)
+
+		histories, err := dbGetHistoriesOfType(ctx, typeId)
+		if err != nil {
+			log.Printf("Can't get histories of type %d: %v", typeId, err)
+			continue
+		}
+		histories = filterOutEmptyHistories(histories)
+
+		err = computeGlobalHistoryOfType(ctx, histories, typeId)
 		if err != nil {
 			log.Printf("Can't compute global history for type %d: %v", typeId, err)
+			continue
+		}
+
+		if metricsEnabled {
+			regionDataPoint, err := metrics.CreateRegionDayDataPoints(ctx, histories, day)
+			if err != nil {
+				log.Printf("CreateRegionDayDataPoints: %v\n", err)
+				continue
+			}
+			dayDataPoints = append(dayDataPoints, regionDataPoint...)
 		}
 	}
 
 	if metricsEnabled {
+		err = metrics.InsertDayDataPoints(ctx, dayDataPoints)
+		if err != nil {
+			log.Printf("InsertDatDataPoints: %v\n", err)
+		}
 		err = metrics.ClearHotDataPoints(ctx, day)
 		if err != nil {
 			log.Printf("ClearHotDataPoints: %v\n", err)
@@ -90,15 +117,7 @@ func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 	return nil
 }
 
-func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) error {
-	metricsEnabled := ctx.Value("metricsEnabled").(bool)
-
-	histories, err := dbGetHistoriesOfType(ctx, typeId)
-	if err != nil {
-		return fmt.Errorf("can't get histories of type %d: %w", typeId, err)
-	}
-
-	histories = filterOutEmptyHistories(histories)
+func computeGlobalHistoryOfType(ctx context.Context, histories []dbHistory, typeId int) error {
 	regions := len(histories)
 
 	if regions == 0 {
@@ -107,16 +126,9 @@ func computeGlobalHistoryOfType(ctx context.Context, typeId int, day time.Time) 
 		return nil
 	}
 
-	if metricsEnabled {
-		err = metrics.CreateRegionDayDataPoints(ctx, histories, day)
-		if err != nil {
-			log.Printf("CreateRegionDayDataPoints: %v\n", err)
-		}
-	}
-
 	if regions == 1 {
 		histories[0].RegionId = 0
-		err = dbInsertHistory(ctx, histories[0])
+		err := dbInsertHistory(ctx, histories[0])
 		if err != nil {
 			return fmt.Errorf("can't insert history: %w", err)
 		}

@@ -41,7 +41,7 @@ type hotDataPoint struct {
 	buyPrice  float64
 }
 
-type dayDataPoint struct {
+type DayDataPoint struct {
 	typeId    int
 	regionId  int
 	date      time.Time
@@ -74,9 +74,9 @@ func ClearHotDataPoints(ctx context.Context, day time.Time) error {
 
 // histories contains all histories of a typeId
 // This function is meant to be called during the global histories computation
-func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day time.Time) error {
+func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day time.Time) ([]DayDataPoint, error) {
 	if len(histories) == 0 {
-		return nil
+		return nil, nil
 	}
 	typeId := histories[0].TypeId
 
@@ -85,22 +85,22 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 	// hotDataPoints of typeId for all regions sorted by regionId
 	hotDataPoints, err := dbGetHotDataPointOfTypeId(ctx, typeId, elevenYesterday, elevenToday)
 	if err != nil {
-		return fmt.Errorf("get day dp: %w", err)
+		return nil, fmt.Errorf("get day dp: %w", err)
 	}
 
-	dayDataPoints := make([]dayDataPoint, 0, len(histories)+1)
+	dayDataPoints := make([]DayDataPoint, 0, len(histories)+1)
 	for _, history := range histories {
 		if history.TypeId != typeId {
 			panic("histories are not of the same typeId")
 		}
 		if err := ctx.Err(); err != nil {
-			return err
+			return nil, err
 		}
 
 		hotDataPoints := getRegionDataPoints(hotDataPoints, history.RegionId)
 		dayDataPoint, err := computeRegionDayDataPointOfType(hotDataPoints, history, day)
 		if err != nil {
-			return fmt.Errorf("compute day dp: %w", err)
+			return nil, fmt.Errorf("compute day dp: %w", err)
 		}
 		if dayDataPoint != nil {
 			dayDataPoints = append(dayDataPoints, *dayDataPoint)
@@ -111,12 +111,11 @@ func CreateRegionDayDataPoints(ctx context.Context, histories []dbHistory, day t
 		dayDataPoints = append(dayDataPoints, globalDataPoint)
 	}
 
-	err = dbInsertDayDataPoints(ctx, dayDataPoints)
-	if err != nil {
-		return fmt.Errorf("insert dps: %w", err)
-	}
+	return dayDataPoints, nil
+}
 
-	return nil
+func InsertDayDataPoints(ctx context.Context, dayDataPoints []DayDataPoint) error {
+	return dbInsertDayDataPoints(ctx, dayDataPoints)
 }
 
 func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []dbOrder) ([]hotDataPoint, error) {
@@ -170,7 +169,7 @@ func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []
 }
 
 // WARN: nillable return value
-func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history dbHistory, day time.Time) (*dayDataPoint, error) {
+func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history dbHistory, day time.Time) (*DayDataPoint, error) {
 	if len(regionDataPoints) == 0 {
 		return nil, nil
 	}
@@ -191,7 +190,7 @@ func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history db
 	sellPrice /= float64(len(regionDataPoints))
 	buyPrice /= float64(len(regionDataPoints))
 
-	return &dayDataPoint{
+	return &DayDataPoint{
 		typeId:    history.RegionId,
 		regionId:  history.TypeId,
 		date:      day,
@@ -201,7 +200,7 @@ func computeRegionDayDataPointOfType(regionDataPoints []hotDataPoint, history db
 	}, nil
 }
 
-func computeGlobalDayDataPointOfType(dayDataPoints []dayDataPoint, day time.Time, typeId int) dayDataPoint {
+func computeGlobalDayDataPointOfType(dayDataPoints []DayDataPoint, day time.Time, typeId int) DayDataPoint {
 	var sellPrice, buyPrice float64 = 0, 0
 	var volume float64 = 0
 
@@ -214,7 +213,7 @@ func computeGlobalDayDataPointOfType(dayDataPoints []dayDataPoint, day time.Time
 		}
 	}
 
-	return dayDataPoint{
+	return DayDataPoint{
 		typeId:    typeId,
 		regionId:  0,
 		date:      day,
