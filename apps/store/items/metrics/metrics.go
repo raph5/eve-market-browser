@@ -130,9 +130,6 @@ func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []
 	for regionStart < len(ordersPtr) {
 		regionId := orders[regionStart].RegionId
 		regionEnd := getRegionEnd(orders, regionId, regionStart)
-		if regionEnd == regionStart {
-			panic("hummmmm")
-		}
 		regionOrders := ordersPtr[regionStart:regionEnd]
 
 		typeStart := 0
@@ -143,9 +140,6 @@ func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []
 
 			typeId := regionOrders[typeStart].TypeId
 			typeSellStart, typeEnd := getTypeSellStartAndEnd(regionOrders, typeId, typeStart)
-			if typeSellStart < typeStart || typeSellStart > typeEnd || typeEnd == typeStart {
-				panic("hummmmmm")
-			}
 			buyOrders := regionOrders[typeStart:typeSellStart]
 			sellOrders := regionOrders[typeSellStart:typeEnd]
 
@@ -159,9 +153,15 @@ func computeHotDataPoints(ctx context.Context, retrivalTime time.Time, orders []
 				sellPrice: sellPrice,
 			})
 
+			if typeEnd <= typeStart {
+				panic("infinite loop?")
+			}
 			typeStart = typeEnd
 		}
 
+		if regionEnd <= regionStart {
+			panic("infinite loop?")
+		}
 		regionStart = regionEnd
 	}
 
@@ -274,6 +274,9 @@ func getRegionEnd(orders []dbOrder, regionId int, regionStart int) int {
 		}
 		regionEnd++
 	}
+	if regionEnd == regionStart {
+		panic("hummmmm")
+	}
 	return regionEnd
 }
 
@@ -288,6 +291,9 @@ func getTypeSellStartAndEnd(orders []*dbOrder, typeId int, typeStart int) (int, 
 			typeSellStart++
 		}
 		typeEnd++
+	}
+	if typeSellStart < typeStart || typeSellStart > typeEnd || typeEnd == typeStart {
+		panic("hummmmmm")
 	}
 	return typeSellStart, typeEnd
 }
