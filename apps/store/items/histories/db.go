@@ -4,15 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/raph5/eve-market-browser/apps/store/items/shared"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
-type dbHistory struct {
-	history  []byte
-	typeId   int
-	regionId int
-}
-
+type dbHistory = shared.DbHistory
 type dbHistoryDay struct {
 	Date           string  `json:"date"`
 	Average        float64 `json:"average"`
@@ -21,7 +17,7 @@ type dbHistoryDay struct {
 	Highest        float64 `json:"highest"`
 	Lowest         float64 `json:"lowest"`
 	OrderCount     int     `json:"orderCount"`
-	Volume         int     `json:"volume"`
+	Volume         int64   `json:"volume"`
 	DonchianTop    float64 `json:"donchianTop"`
 	DonchianBottom float64 `json:"donchianBottom"`
 }
@@ -41,8 +37,8 @@ func dbGetHistoriesOfType(ctx context.Context, typeId int) ([]dbHistory, error) 
 
 	histories := make([]dbHistory, 0)
 	for rows.Next() {
-		var h = dbHistory{typeId: typeId}
-		err = rows.Scan(&h.history, &h.regionId)
+		var h = dbHistory{TypeId: typeId}
+		err = rows.Scan(&h.History, &h.RegionId)
 		if err != nil {
 			return nil, err
 		}
@@ -69,6 +65,7 @@ func dbInsertHistories(ctx context.Context, histories []dbHistory) error {
 		return err
 	}
 	defer tx.Rollback()
+
 	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT OR REPLACE INTO History VALUES (?,?,?)")
 	if err != nil {
 		return err
@@ -76,7 +73,7 @@ func dbInsertHistories(ctx context.Context, histories []dbHistory) error {
 	defer stmt.Close()
 
 	for _, h := range histories {
-		_, err = stmt.Exec(timeoutCtx, h.typeId, h.regionId, h.history)
+		_, err = stmt.Exec(timeoutCtx, h.TypeId, h.RegionId, h.History)
 	}
 
 	err = tx.Commit()
@@ -93,7 +90,7 @@ func dbInsertHistory(ctx context.Context, history dbHistory) error {
 	defer cancel()
 
 	insertQuery := "INSERT OR REPLACE INTO History VALUES (?,?,?)"
-	_, err := db.Exec(timeoutCtx, insertQuery, history.typeId, history.regionId, history.history)
+	_, err := db.Exec(timeoutCtx, insertQuery, history.TypeId, history.RegionId, history.History)
 	if err != nil {
 		return err
 	}

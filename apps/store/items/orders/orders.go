@@ -3,7 +3,10 @@ package orders
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
 
+	"github.com/raph5/eve-market-browser/apps/store/items/metrics"
 	"github.com/raph5/eve-market-browser/apps/store/items/regions"
 )
 
@@ -17,7 +20,8 @@ import (
 // significantly slower (~7min against ~3min for the second approach).
 // EDIT: Just fetching orders and regions sequentially works fine 👉👈
 func Download(ctx context.Context) error {
-	orders := make([]dbOrder, 0, 1000)
+	metricsEnabled := ctx.Value("metricsEnabled").(bool)
+	orders := make([]dbOrder, 0, 1024)
 
 	for _, regionId := range regions.Regions {
 		var pageOrders []dbOrder
@@ -31,6 +35,14 @@ func Download(ctx context.Context) error {
 			}
 			// this slices are quite big, lets hop the gc does a great job...
 			orders = append(orders, pageOrders...)
+		}
+	}
+
+	if metricsEnabled {
+		retrivalTime := time.Now()
+		err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
+		if err != nil {
+			log.Printf("CreateHotDataPoints: %v", err)
 		}
 	}
 

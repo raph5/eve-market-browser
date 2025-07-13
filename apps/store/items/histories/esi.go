@@ -5,21 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/activemarkets"
+	"github.com/raph5/eve-market-browser/apps/store/items/shared"
 	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
 )
 
-type esiHistoryDay struct {
-	Average    float64 `json:"average"`
-	Date       string  `json:"date"`
-	Highest    float64 `json:"highest"`
-	Lowest     float64 `json:"lowest"`
-	OrderCount int     `json:"order_count"`
-	Volume     int     `json:"volume"`
-}
+type esiHistoryDay = shared.EsiHistoryDay
 
 var ErrInvalidEsiData = errors.New("Invalid esi data")
 
@@ -39,7 +32,7 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 				var esiError *esi.EsiError
 				if errors.As(err, &esiError) && (esiError.Code == 404 || esiError.Code == 400) {
 					// NOTE: I can maybe handle 404, 400 errors better
-					log.Printf("History downloader: I cant fetch history of type %d in region %d due to a %d so I'll skip it.", am.TypeId, am.RegionId, esiError.Code)
+					// log.Printf("History downloader: I cant fetch history of type %d in region %d due to a %d so I'll skip it.", am.TypeId, am.RegionId, esiError.Code)
 					history = nil
 				} else {
 					errorCancel(fmt.Errorf("fetch history: %w", err))
@@ -82,7 +75,7 @@ func fetchHistoriesChunk(ctx context.Context, activeMarketChunk []activemarkets.
 
 func fetchHistory(ctx context.Context, regionId int, typeId int) (*dbHistory, error) {
 	uri := fmt.Sprintf("/markets/%d/history?type_id=%d", regionId, typeId)
-	response, err := esi.EsiFetch[[]esiHistoryDay](ctx, "GET", uri, nil, 1, 5)
+	response, err := esi.EsiFetch[[]esiHistoryDay](ctx, "GET", uri, nil, false, 1, 5)
 	if err != nil {
 		return nil, fmt.Errorf("fetching esi history: %w", err)
 	}
@@ -96,9 +89,9 @@ func fetchHistory(ctx context.Context, regionId int, typeId int) (*dbHistory, er
 		return nil, fmt.Errorf("marshal history: %w", err)
 	}
 	return &dbHistory{
-		history:  dbHistoryDaysJson,
-		regionId: regionId,
-		typeId:   typeId,
+		History:  dbHistoryDaysJson,
+		RegionId: regionId,
+		TypeId:   typeId,
 	}, nil
 }
 

@@ -28,7 +28,7 @@ var ErrInvalidEsiData = errors.New("Invalid esi data")
 
 func fetchPageOrders(ctx context.Context, regionId int, page int) ([]dbOrder, int, error) {
 	uri := fmt.Sprintf("/markets/%d/orders?order_type=all&page=%d", regionId, page)
-	response, err := esi.EsiFetch[[]esiOrder](ctx, "GET", uri, nil, 2, 5)
+	response, err := esi.EsiFetch[[]esiOrder](ctx, "GET", uri, nil, false, 2, 5)
 	if err != nil {
 		return nil, 0, err
 	}

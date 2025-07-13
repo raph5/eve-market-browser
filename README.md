@@ -38,9 +38,13 @@ Build remix app `npm run build`
 - Improve search experience
 - Test quickbar exports
 - Find a way to reduce the rate of database locks
-- Make the breadcrumbs clickable
 - Document this installation procedure better
-
+- Add thera
+- Add player owned public structures
+- Add player owned private structures
+- Add filters
+- Add security status
+- Add a flashing dot signalling whether or not orders are up to date
 
 ## Ports
 

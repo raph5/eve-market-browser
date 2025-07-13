@@ -11,8 +11,11 @@ import (
 	"syscall"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/histories"
+	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
+	"github.com/raph5/eve-market-browser/apps/store/items/systems"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
+	"github.com/raph5/eve-market-browser/apps/store/lib/secret"
 	"github.com/raph5/eve-market-browser/apps/store/lib/victoria"
 )
 
@@ -21,18 +24,34 @@ func main() {
 	log.SetFlags(log.LstdFlags)
 
 	// Flags
-	var historiesEnabled, ordersEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
-	var socketPath, dbPath string
+	var historiesEnabled, ordersEnabled, metricsEnabled, structuresEnabled, unixSocketEnabled, tcpEnabled, victoriaEnabled bool
+	var socketPath, dbPath, secrets string
 	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
+	flag.BoolVar(&metricsEnabled, "metric", false, "Enable metrics update")
+	flag.BoolVar(&structuresEnabled, "structure", true, "Enable fetching of public player structures (requires ssoClientId, ssoClientSecret and ssoRefreshToken)")
 	flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
 	flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
 	flag.BoolVar(&victoriaEnabled, "victoria", true, "Enable victoria metric server")
 	flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
 	flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
+	flag.StringVar(&secrets, "secrets", "{}", "Json string containing the secrets in foramt {key: value}")
 	flag.IntVar(&tcpPort, "tcp-port", 7562, "Tcp server port")
 	flag.Parse()
+
+	// Init secret manager
+	sm, err := secret.Init([]byte(secrets))
+	if err != nil {
+		log.Fatalf("Invalid secrets: %v", err)
+	}
+
+	// Check if secrets are set
+	if structuresEnabled {
+		_ = sm.Get("ssoClientId")
+		_ = sm.Get("ssoClientSecret")
+		_ = sm.Get("ssoRefreshToken")
+	}
 
 	// Init database
 	db, err := database.Init(dbPath)
@@ -44,8 +63,23 @@ func main() {
 	// Init context
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, "db", db)
+	ctx = context.WithValue(ctx, "sm", sm)
+	ctx = context.WithValue(ctx, "structuresEnabled", structuresEnabled)
+	ctx = context.WithValue(ctx, "metricsEnabled", metricsEnabled)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
+
+	// Init systems
+	err = systems.Init()
+	if err != nil {
+		log.Printf("Impossible to initialize systems: %v", err)
+	}
+
+	// Init locations
+	err = locations.Init(ctx)
+	if err != nil {
+		log.Printf("Impossible to initialize locations: %v", err)
+	}
 
 	// Mux handler
 	mux := http.NewServeMux()

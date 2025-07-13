@@ -29,11 +29,11 @@ func Get(ctx context.Context, key string) (time.Time, error) {
 	defer cancel()
 
 	var unixTime int64
-	selectQuery := `SELECT "Time" FROM TimeRecord WHERE "Key" = ?`
+	selectQuery := `SELECT Time FROM TimeRecord WHERE "Key" = ?`
 	err := db.QueryRow(timeoutCtx, selectQuery, key).Scan(&unixTime)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return time.Now().Add(-1 * time.Second), nil
+			return time.Time{}, nil
 		}
 		return time.Time{}, err
 	}

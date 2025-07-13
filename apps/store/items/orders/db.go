@@ -4,25 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/raph5/eve-market-browser/apps/store/items/shared"
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
 // how orders are stored in db
-type dbOrder struct {
-	Duration     int
-	IsBuyOrder   bool
-	Issued       string
-	LocationId   int
-	MinVolume    int
-	OrderId      int
-	Price        float64
-	Range        string
-	RegionId     int
-	SystemId     int
-	TypeId       int
-	VolumeRemain int
-	VolumeTotal  int
-}
+type dbOrder = shared.DbOrder
 
 // NOTE: I could add an intermediate representation for ranges as int for
 // tighter storage. But the orders weight only ~200mb against ~10gb for the

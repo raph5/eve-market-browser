@@ -7,17 +7,33 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/lib/database"
 )
 
-func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
+func dbGetLocationCount(ctx context.Context) (int, error) {
 	db := ctx.Value("db").(*database.DB)
-	unknownLocations := make([]int, 0)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
+	var count int
+	err := db.QueryRow(timeoutCtx, "SELECT COUNT(*) FROM Location").Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func dbGetUnknownStructures(ctx context.Context) ([]int64, error) {
+	db := ctx.Value("db").(*database.DB)
+	unknownStructures := make([]int64, 0)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
+	// as of may 2025 it appears that the range player structures is 1000000000000
+	// to infinity
 	selectQuery := `
   SELECT DISTINCT o.LocationId FROM "Order" o
     LEFT JOIN Location l ON o.LocationId = l.Id
     WHERE l.Id IS NULL
-    AND o.LocationId >= 60000000 AND o.LocationId <= 64000000;
+    AND o.LocationId >= 1000000000000;
   `
 	rows, err := db.Query(timeoutCtx, selectQuery)
 	if err != nil {
@@ -25,23 +41,23 @@ func dbGetUnknownLocations(ctx context.Context) ([]int, error) {
 	}
 	defer rows.Close()
 
-	var locationId int
+	var structureId int64
 	for rows.Next() {
-		err := rows.Scan(&locationId)
+		err := rows.Scan(&structureId)
 		if err != nil {
 			return nil, err
 		}
-		unknownLocations = append(unknownLocations, locationId)
+		unknownStructures = append(unknownStructures, structureId)
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
 
-	return unknownLocations, nil
+	return unknownStructures, nil
 }
 
-func dbAddLocations(ctx context.Context, locations []nameAndId) error {
+func dbAddLocations(ctx context.Context, locations []location) error {
 	db := ctx.Value("db").(*database.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
@@ -54,14 +70,14 @@ func dbAddLocations(ctx context.Context, locations []nameAndId) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?)")
+	stmt, err := tx.PrepareWrite(timeoutCtx, "INSERT INTO Location VALUES (?,?,?,?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, l := range locations {
-		_, err = stmt.Exec(timeoutCtx, l.Id, l.Name)
+		_, err = stmt.Exec(timeoutCtx, l.id, l.systemId, l.name, l.security)
 		if err != nil {
 			return err
 		}

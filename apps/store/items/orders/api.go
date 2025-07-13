@@ -52,7 +52,13 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		var rows *sql.Rows
-		if regionId == 0 {
+		if typeId == 44992 { // plex
+			orderQuery := `
+      SELECT * FROM "Order"
+        WHERE TypeId = ?;
+      `
+			rows, err = db.Query(timeoutCtx, orderQuery, typeId)
+		} else if regionId == 0 {
 			orderQuery := `
       SELECT * FROM "Order"
         WHERE TypeId = ?;

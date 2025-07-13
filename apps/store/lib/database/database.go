@@ -73,9 +73,18 @@ func Init(dbPath string) (*DB, error) {
 
   CREATE TABLE IF NOT EXISTS Location (
     Id INTEGER PRIMARY KEY,
-    Name TEXT
+    SystemId INTEGER,  -- For now I dont need to mark it as a foriegn key
+    Name TEXT,
+    Security REAL
   );
   CREATE INDEX IF NOT EXISTS LocationIndex ON Location (Id);
+
+  CREATE TABLE IF NOT EXISTS System (
+    Id INTEGER PRIMARY KEY,
+    Name TEXT,
+    Security REAL
+  );
+  CREATE INDEX IF NOT EXISTS SystemIndex ON System (Id);
 
   CREATE TABLE IF NOT EXISTS History (
     TypeId INTEGER,
@@ -92,9 +101,30 @@ func Init(dbPath string) (*DB, error) {
     PRIMARY KEY (TypeId, RegionId)
   );
 
+  CREATE TABLE IF NOT EXISTS HotTypeMetric (
+    TypeId INTEGER,
+    RegionId INTEGER,
+    Time INTEGER,  -- Epoch Seconds
+    BuyPrice REAL,
+    SellPrice REAL
+    -- No primary key here as data integrity is not a big concern
+  );
+  -- Removed for fast inserts
+  -- CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, RegionId, Time DESC);
+  CREATE TABLE IF NOT EXISTS DayTypeMetric (
+    TypeId INTEGER,
+    RegionId INTEGER,
+    Date TEXT,  -- YYYY-MM-DD (https://sqlite.org/lang_datefunc.html#time_values)
+    BuyPrice REAL,
+    SellPrice REAL,
+    Volume INTERGER
+    -- PRIMARY KEY (Date, TypeId) removed by fear of a slow down
+  );
+  CREATE INDEX IF NOT EXISTS DayTypeMetricTypeIndex ON DayTypeMetric (TypeId, RegionId, Date DESC);
+
   CREATE TABLE IF NOT EXISTS TimeRecord (
     "Key" TEXT PRIMARY KEY,
-    "Time" INTEGER
+    Time INTEGER  -- Epoch Seconds
   );`
 	_, err = dbWrite.Exec(createTablesAndIndexs)
 	if err != nil {
