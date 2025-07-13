@@ -1,5 +1,7 @@
 package regions
 
+var GlobalPlexMarket = 19000001
+
 var Regions = [...]int{
 	10000002,
 	10000043,
@@ -46,7 +48,7 @@ var Regions = [...]int{
 	10000063,
 	10000066,
 	10000048,
-	10000070,
+	10000070, // pochven
 	10000047,
 	10000023,
 	10000050,
@@ -66,5 +68,7 @@ var Regions = [...]int{
 	10000015,
 	10000068,
 	10000006,
-	10001000,
+	10001000, // zarzakh
+	11000031, // thera
+	19000001, // global plex market
 }

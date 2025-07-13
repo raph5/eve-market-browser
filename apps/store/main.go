@@ -29,7 +29,7 @@ func main() {
 	var tcpPort int
 	flag.BoolVar(&historiesEnabled, "history", true, "Enable histories update")
 	flag.BoolVar(&ordersEnabled, "order", true, "Enable orders update")
-	flag.BoolVar(&metricsEnabled, "metric", true, "Enable metrics update")
+	flag.BoolVar(&metricsEnabled, "metric", false, "Enable metrics update")
 	flag.BoolVar(&structuresEnabled, "structure", true, "Enable fetching of public player structures (requires ssoClientId, ssoClientSecret and ssoRefreshToken)")
 	flag.BoolVar(&unixSocketEnabled, "socket", true, "Enable unix socket server")
 	flag.BoolVar(&tcpEnabled, "tcp", false, "Enable tcp server")
