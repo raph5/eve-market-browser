@@ -6,6 +6,8 @@ Available at http://evemarketbrowser.com/
 
 ## Install
 
+*Outdated instructions*
+
 **Dependencies:**  
 Node 20  
 Go 1.22
@@ -40,7 +42,6 @@ Build remix app `npm run build`
 - Find a way to reduce the rate of database locks
 - Document this installation procedure better
 - Add thera
-- Add player owned public structures
 - Add player owned private structures
 - Add filters
 - Add security status
