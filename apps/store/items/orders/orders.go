@@ -40,7 +40,7 @@ func Download(ctx context.Context) error {
 
 	if metricsEnabled {
 		retrivalTime := time.Now()
-		err := metrics.CreateHotDataPoints(ctx, retrivalTime, orders)
+		err := metrics.ComputeOrdersMetrics(ctx, retrivalTime, orders)
 		if err != nil {
 			log.Printf("CreateHotDataPoints: %v", err)
 		}

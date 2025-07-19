@@ -101,16 +101,6 @@ func Init(dbPath string) (*DB, error) {
     PRIMARY KEY (TypeId, RegionId)
   );
 
-  CREATE TABLE IF NOT EXISTS HotTypeMetric (
-    TypeId INTEGER,
-    RegionId INTEGER,
-    Time INTEGER,  -- Epoch Seconds
-    BuyPrice REAL,
-    SellPrice REAL
-    -- No primary key here as data integrity is not a big concern
-  );
-  -- Removed for fast inserts
-  -- CREATE INDEX IF NOT EXISTS HotTypeMetricTypeIndex ON HotTypeMetric (TypeId, RegionId, Time DESC);
   CREATE TABLE IF NOT EXISTS DayTypeMetric (
     TypeId INTEGER,
     RegionId INTEGER,

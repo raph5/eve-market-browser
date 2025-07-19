@@ -62,6 +62,8 @@ func Download(ctx context.Context) error {
 	return nil
 }
 
+// NOTE: I should be hable to speed up this function (that takes currently ~7h)
+// by batching DB calls
 func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 	metricsEnabled := ctx.Value("metricsEnabled").(bool)
 
@@ -94,7 +96,7 @@ func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 		}
 
 		if metricsEnabled {
-			regionDataPoint, err := metrics.CreateRegionDayDataPoints(ctx, histories, day)
+			regionDataPoint, err := metrics.ComputeDayDataPoints(ctx, typeId, histories, day)
 			if err != nil {
 				log.Printf("CreateRegionDayDataPoints: %v\n", err)
 				continue
@@ -108,10 +110,7 @@ func ComputeGobalHistories(ctx context.Context, day time.Time) error {
 		if err != nil {
 			log.Printf("InsertDatDataPoints: %v\n", err)
 		}
-		err = metrics.ClearHotDataPoints(ctx, day)
-		if err != nil {
-			log.Printf("ClearHotDataPoints: %v\n", err)
-		}
+		metrics.ClearDayMetrics(day)
 	}
 
 	return nil
