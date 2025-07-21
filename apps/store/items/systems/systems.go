@@ -52,7 +52,7 @@ func Init() error {
 			return fmt.Errorf("id %d out of range", id)
 		}
 		name := record[3]
-		security, err := strconv.ParseFloat(record[8], 32)
+		security, err := strconv.ParseFloat(record[21], 32)
 		if err != nil {
 			return err
 		}
