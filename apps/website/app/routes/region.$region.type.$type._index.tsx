@@ -57,7 +57,10 @@ export default function MarketData() {
   const sellData: Record<string, Cell>[] = orders.filter(order => !order.isBuyOrder).map(order => ({
     quantity: [ order.volumeRemain, order.volumeRemain ],
     price: [ order.price, formatIsk(order.price) ],
-    location: [ order.location, order.location ],
+    location: [
+      `${order.systemSecurity} ${order.location}`,
+      `${order.location} (${Math.round(order.systemSecurity * 10) / 10})`
+    ],
     expires: [
       Date.parse(order.issued) - time + order.duration*DAY,
       expiresIn(order.issued, order.duration, time)
