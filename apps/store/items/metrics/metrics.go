@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/raph5/eve-market-browser/apps/store/items/shared"
@@ -51,6 +52,7 @@ const dateLayout = "2006-01-02"
 // DB each day during the computation of global histories. The day that was
 // stored in DB in then deleted.
 var metricsRecord = make(map[string]map[market]marketMetrics)
+var metricsRecordMu sync.RWMutex
 
 // Saves computed metrics to `metricsReocrd`
 func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []dbOrder) error {
@@ -61,6 +63,7 @@ func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []
 	}
 	sortOrders(ordersPtr)
 
+	metricsRecordMu.Lock()
 	regionStart := 0
 	for regionStart < len(ordersPtr) {
 		regionId := orders[regionStart].RegionId
@@ -98,6 +101,7 @@ func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []
 		}
 		regionStart = regionEnd
 	}
+	metricsRecordMu.Unlock()
 
 	return nil
 }
@@ -110,6 +114,7 @@ func ComputeDayDataPoints(ctx context.Context, typeId int, histories []dbHistory
 	}
 
 	dayDataPoints := make([]DayDataPoint, 0, len(histories)+1)
+	metricsRecordMu.RLock()
 	for _, history := range histories {
 		if history.TypeId != typeId {
 			panic("histories are not of the same typeId")
@@ -126,6 +131,7 @@ func ComputeDayDataPoints(ctx context.Context, typeId int, histories []dbHistory
 			dayDataPoints = append(dayDataPoints, *dayDataPoint)
 		}
 	}
+	metricsRecordMu.RUnlock()
 	if len(dayDataPoints) > 0 {
 		globalDataPoint := computeGlobalDayDataPointOfType(dayDataPoints, day, typeId)
 		dayDataPoints = append(dayDataPoints, globalDataPoint)
@@ -139,7 +145,9 @@ func InsertDayDataPoints(ctx context.Context, dayDataPoints []DayDataPoint) erro
 }
 
 func ClearDayMetrics(day time.Time) {
+	metricsRecordMu.Lock()
 	delete(metricsRecord, day.Format(dateLayout))
+	metricsRecordMu.Unlock()
 }
 
 // WARN: nillable return value
