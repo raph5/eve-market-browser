@@ -50,7 +50,7 @@ const dateLayout = "2006-01-02"
 // stored in ram in the variable `dayMetrics`. Those mesurements are stored in
 // DB each day during the computation of global histories. The day that was
 // stored in DB in then deleted.
-var metricsRecord map[string]map[market]marketMetrics
+var metricsRecord = make(map[string]map[market]marketMetrics)
 
 // Saves computed metrics to `metricsReocrd`
 func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []dbOrder) error {
@@ -79,13 +79,13 @@ func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []
 			sellOrders := regionOrders[typeSellStart:typeEnd]
 
 			market := market{typeId: typeId, regionId: regionId}
-			metrics := metricsRecord[date][market]
-			metricsRecord[date][market] = marketMetrics{
+			metrics := metricsRecord[date][market] // can be zero
+			setMarketMetrics(date, market, marketMetrics{
 				buyPrice:        (computeBuyPriceFromOrders(buyOrders) + metrics.buyPrice*metrics.buyPriceWeight) / (metrics.buyPriceWeight + 1),
 				buyPriceWeight:  metrics.buyPriceWeight + 1,
 				sellPrice:       (computeSellPriceFromOrders(sellOrders) + metrics.sellPrice*metrics.sellPriceWeight) / (metrics.sellPriceWeight + 1),
 				sellPriceWeight: metrics.sellPriceWeight + 1,
-			}
+			})
 
 			if typeEnd <= typeStart {
 				panic("infinite loop?")
@@ -299,6 +299,15 @@ func sortOrders(orders []*dbOrder) {
 			orders[i].RegionId == orders[j].RegionId && orders[i].TypeId < orders[j].TypeId ||
 			orders[i].RegionId == orders[j].RegionId && orders[i].TypeId == orders[j].TypeId && orders[i].IsBuyOrder && !orders[j].IsBuyOrder)
 	})
+}
+
+func setMarketMetrics(date string, market_ market, metrics marketMetrics) {
+	dateRecord, ok := metricsRecord[date]
+	if !ok {
+		metricsRecord[date] = make(map[market]marketMetrics)
+		dateRecord = metricsRecord[date]
+	}
+	dateRecord[market_] = metrics
 }
 
 func elevenThatDay(date time.Time) time.Time {
