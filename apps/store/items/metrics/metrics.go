@@ -17,6 +17,7 @@ import (
 
 	"github.com/raph5/eve-market-browser/apps/store/items/shared"
 	"github.com/raph5/eve-market-browser/apps/store/lib/esi"
+	"github.com/raph5/eve-market-browser/apps/store/lib/utils"
 )
 
 type dbOrder = shared.DbOrder
@@ -38,7 +39,7 @@ type marketMetrics struct {
 type DayDataPoint struct {
 	typeId    int
 	regionId  int
-	date      string
+	date      time.Time
 	sellPrice float64
 	buyPrice  float64
 	volume    int64
@@ -51,12 +52,12 @@ const dateLayout = "2006-01-02"
 // stored in ram in the variable `dayMetrics`. Those mesurements are stored in
 // DB each day during the computation of global histories. The day that was
 // stored in DB in then deleted.
-var metricsRecord = make(map[string]map[market]marketMetrics)
+var metricsRecord = make(map[time.Time]map[market]marketMetrics)
 var metricsRecordMu sync.RWMutex
 
 // Saves computed metrics to `metricsReocrd`
 func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []dbOrder) error {
-	date := retrivalTime.Format(dateLayout)
+	today := utils.GetDate(retrivalTime)
 	ordersPtr := make([]*dbOrder, len(orders))
 	for i := range orders {
 		ordersPtr[i] = &orders[i]
@@ -82,8 +83,8 @@ func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []
 			sellOrders := regionOrders[typeSellStart:typeEnd]
 
 			market := market{typeId: typeId, regionId: regionId}
-			metrics := metricsRecord[date][market] // can be zero
-			setMarketMetrics(date, market, marketMetrics{
+			metrics := metricsRecord[today][market] // can be zero
+			setMarketMetrics(today, market, marketMetrics{
 				buyPrice:        (computeBuyPriceFromOrders(buyOrders) + metrics.buyPrice*metrics.buyPriceWeight) / (metrics.buyPriceWeight + 1),
 				buyPriceWeight:  metrics.buyPriceWeight + 1,
 				sellPrice:       (computeSellPriceFromOrders(sellOrders) + metrics.sellPrice*metrics.sellPriceWeight) / (metrics.sellPriceWeight + 1),
@@ -108,7 +109,9 @@ func ComputeOrdersMetrics(ctx context.Context, retrivalTime time.Time, orders []
 
 // `histories` contains all histories of typeId
 // This function is meant to be called during the global histories computation
-func ComputeDayDataPoints(ctx context.Context, typeId int, histories []dbHistory, day time.Time) ([]DayDataPoint, error) {
+func ComputeDayDataPoints(ctx context.Context, typeId int, histories []dbHistory, today time.Time) ([]DayDataPoint, error) {
+	utils.AssertIsDate(today)
+	yesterday := today.AddDate(0, 0, -1)
 	if len(histories) == 0 {
 		return nil, nil
 	}
@@ -123,7 +126,7 @@ func ComputeDayDataPoints(ctx context.Context, typeId int, histories []dbHistory
 			return nil, err
 		}
 
-		dayDataPoint, err := computeRegionDayDataPointOfType(history, day)
+		dayDataPoint, err := computeRegionDayDataPointOfType(history, yesterday)
 		if err != nil {
 			return nil, fmt.Errorf("compute day dp: %w", err)
 		}
@@ -133,7 +136,7 @@ func ComputeDayDataPoints(ctx context.Context, typeId int, histories []dbHistory
 	}
 	metricsRecordMu.RUnlock()
 	if len(dayDataPoints) > 0 {
-		globalDataPoint := computeGlobalDayDataPointOfType(dayDataPoints, day, typeId)
+		globalDataPoint := computeGlobalDayDataPointOfType(dayDataPoints, yesterday, typeId)
 		dayDataPoints = append(dayDataPoints, globalDataPoint)
 	}
 
@@ -144,22 +147,27 @@ func InsertDayDataPoints(ctx context.Context, dayDataPoints []DayDataPoint) erro
 	return dbInsertDayDataPoints(ctx, dayDataPoints)
 }
 
-func ClearDayMetrics(day time.Time) {
+func ClearBefore(today time.Time) {
+	utils.AssertIsDate(today)
 	metricsRecordMu.Lock()
-	delete(metricsRecord, day.Format(dateLayout))
+	for d := range metricsRecord {
+		if d.Before(today) {
+			delete(metricsRecord, d)
+		}
+	}
 	metricsRecordMu.Unlock()
 }
 
 // WARN: nillable return value
-func computeRegionDayDataPointOfType(history dbHistory, day time.Time) (*DayDataPoint, error) {
-	date := day.Format(dateLayout)
+func computeRegionDayDataPointOfType(history dbHistory, yesterday time.Time) (*DayDataPoint, error) {
+	utils.AssertIsDate(yesterday)
 	market := market{typeId: history.TypeId, regionId: history.RegionId}
-	metrics, ok := metricsRecord[date][market]
+	metrics, ok := metricsRecord[yesterday][market]
 	if !ok {
 		return nil, nil
 	}
 
-	historyDay, err := getHistoryDay(history, day)
+	historyDay, err := getHistoryDay(history, yesterday)
 	if err != nil {
 		return nil, fmt.Errorf("getHostiryDay: %w", err)
 	}
@@ -170,14 +178,15 @@ func computeRegionDayDataPointOfType(history dbHistory, day time.Time) (*DayData
 	return &DayDataPoint{
 		typeId:    history.RegionId,
 		regionId:  history.TypeId,
-		date:      date,
+		date:      yesterday,
 		volume:    historyDay.Volume,
 		sellPrice: metrics.sellPrice,
 		buyPrice:  metrics.buyPrice,
 	}, nil
 }
 
-func computeGlobalDayDataPointOfType(dayDataPoints []DayDataPoint, day time.Time, typeId int) DayDataPoint {
+func computeGlobalDayDataPointOfType(dayDataPoints []DayDataPoint, yesterday time.Time, typeId int) DayDataPoint {
+	utils.AssertIsDate(yesterday)
 	var sellPrice, buyPrice float64 = 0, 0
 	var volume float64 = 0
 
@@ -190,11 +199,10 @@ func computeGlobalDayDataPointOfType(dayDataPoints []DayDataPoint, day time.Time
 		}
 	}
 
-	date := day.Format(dateLayout)
 	return DayDataPoint{
 		typeId:    typeId,
 		regionId:  0,
-		date:      date,
+		date:      yesterday,
 		volume:    int64(volume),
 		sellPrice: sellPrice,
 		buyPrice:  buyPrice,
@@ -212,15 +220,15 @@ func unmarshalHistory(history []byte) ([]esiHistoryDay, error) {
 
 // return nil history day if not found
 // WARN: nillable return value
-func getHistoryDay(history dbHistory, day time.Time) (*esiHistoryDay, error) {
+func getHistoryDay(history dbHistory, yesterday time.Time) (*esiHistoryDay, error) {
 	unmarshaledHistory, err := unmarshalHistory(history.History)
 	if err != nil {
 		return nil, fmt.Errorf("invalid json from db: %w", err)
 	}
 
-	esiDay := day.Format(esi.DateLayout)
+	esiDate := yesterday.Format(esi.DateLayout)
 	for i := len(unmarshaledHistory) - 1; i >= 0; i-- {
-		if unmarshaledHistory[i].Date == esiDay {
+		if unmarshaledHistory[i].Date == esiDate {
 			historyDay := unmarshaledHistory[i] // to allow the gc to free unmarshaledHistory
 			return &historyDay, nil
 		}
@@ -309,19 +317,11 @@ func sortOrders(orders []*dbOrder) {
 	})
 }
 
-func setMarketMetrics(date string, market_ market, metrics marketMetrics) {
-	dateRecord, ok := metricsRecord[date]
+func setMarketMetrics(today time.Time, market_ market, metrics marketMetrics) {
+	dateRecord, ok := metricsRecord[today]
 	if !ok {
-		metricsRecord[date] = make(map[market]marketMetrics)
-		dateRecord = metricsRecord[date]
+		metricsRecord[today] = make(map[market]marketMetrics)
+		dateRecord = metricsRecord[today]
 	}
 	dateRecord[market_] = metrics
-}
-
-func elevenThatDay(date time.Time) time.Time {
-	return time.Date(date.Year(), date.Month(), date.Day(), 11, 0, 0, 0, date.Location())
-}
-
-func elevenTheDayBefore(date time.Time) time.Time {
-	return time.Date(date.Year(), date.Month(), date.Day()-1, 11, 0, 0, 0, date.Location())
 }

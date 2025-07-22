@@ -13,6 +13,7 @@ import (
 	"github.com/raph5/eve-market-browser/apps/store/items/locations"
 	"github.com/raph5/eve-market-browser/apps/store/items/orders"
 	"github.com/raph5/eve-market-browser/apps/store/items/timerecord"
+	"github.com/raph5/eve-market-browser/apps/store/lib/utils"
 )
 
 var (
@@ -105,7 +106,7 @@ func runHistoriesHoardling(ctx context.Context) {
 			continue
 		}
 
-		day := time.Now()
+		today := utils.GetDate(time.Now())
 		historyStatus.Set(0)
 		log.Print("Histories hoardling: downloading histories")
 
@@ -123,7 +124,7 @@ func runHistoriesHoardling(ctx context.Context) {
 			continue
 		}
 
-		err = histories.ComputeGobalHistories(ctx, day)
+		err = histories.ComputeGobalHistories(ctx, today)
 		if err != nil {
 			log.Printf("Histories hoardling error: compute global histories: %v", err)
 			if ctx.Err() != nil {
