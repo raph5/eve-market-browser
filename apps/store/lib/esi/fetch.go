@@ -148,6 +148,26 @@ func EsiFetch[T any](
 		return retry(ErrImplicitTimeout)
 	}
 
+  // Request rate timeout
+  if response.StatusCode == 429 {
+    var timeout time.Duration
+		secs, err := strconv.Atoi(response.Header.Get("Retry-After"))
+		if err != nil {
+			log.Print("Esi fetch: Can't decode Retry-After")
+			timeout = 10 * time.Second
+		} else if secs < 0 || secs > 120 {
+			log.Printf("Esi fetch: Retry-After out of range: %ds", secs)
+			timeout = 10 * time.Second
+		} else {
+			timeout = time.Duration(secs) * time.Second
+		}
+    declareEsiTimeout(timeout)
+
+    log.Printf("Esi fetch: %fs request rate timeout", timeout.Seconds())
+		reportEsiError(response.StatusCode, "")
+		return retry(ErrErrorRateTimeout)
+  }
+
 	// Error rate timeout
 	if response.StatusCode == 420 {
 		var timeout time.Duration
@@ -172,7 +192,7 @@ func EsiFetch[T any](
 	// NOTE: I dont think the call to UseNumber is usefull as I dont Unmarshal to
 	// interface{}. I might try to delete it in the future
 	decoder.UseNumber()
-	// Explicit timeout
+	// Gateway timeout
 	if response.StatusCode == 504 {
 		var timeoutError jsonTimeoutError
 		var timeout time.Duration
