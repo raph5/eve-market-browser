@@ -148,9 +148,9 @@ func EsiFetch[T any](
 		return retry(ErrImplicitTimeout)
 	}
 
-  // Request rate timeout
-  if response.StatusCode == 429 {
-    var timeout time.Duration
+	// Request rate timeout
+	if response.StatusCode == 429 {
+		var timeout time.Duration
 		secs, err := strconv.Atoi(response.Header.Get("Retry-After"))
 		if err != nil {
 			log.Print("Esi fetch: Can't decode Retry-After")
@@ -161,12 +161,12 @@ func EsiFetch[T any](
 		} else {
 			timeout = time.Duration(secs) * time.Second
 		}
-    declareEsiTimeout(timeout)
+		declareEsiTimeout(timeout)
 
-    log.Printf("Esi fetch: %fs request rate timeout", timeout.Seconds())
+		log.Printf("Esi fetch: %fs request rate timeout", timeout.Seconds())
 		reportEsiError(response.StatusCode, "")
 		return retry(ErrErrorRateTimeout)
-  }
+	}
 
 	// Error rate timeout
 	if response.StatusCode == 420 {
