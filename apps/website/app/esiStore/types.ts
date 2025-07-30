@@ -45,6 +45,7 @@ export interface Order {
   range: 'station' | 'region' | 'solarsystem' | '1' | '2' | '3' | '4' | '5' | '10' | '20' | '30' | '40',
   regionId: number,
   systemId: number,
+  systemSecurity: number,
   typeId: number,
   volumeRemain: number,
   volumeTotal: number

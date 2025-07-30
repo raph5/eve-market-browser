@@ -15,19 +15,20 @@ import (
 
 // orders type that the store will return
 type apiOrder struct {
-	Duration     int     `json:"duration"`
-	IsBuyOrder   bool    `json:"isBuyOrder"`
-	Issued       string  `json:"issued"`
-	Location     string  `json:"location"`
-	MinVolume    int     `json:"minVolume"`
-	OrderId      int     `json:"orderId"`
-	Price        float64 `json:"price"`
-	Range        string  `json:"range"`
-	RegionId     int     `json:"regionId"`
-	SystemId     int     `json:"systemId"`
-	TypeId       int     `json:"typeId"`
-	VolumeRemain int     `json:"volumeRemain"`
-	VolumeTotal  int     `json:"volumeTotal"`
+	Duration       int     `json:"duration"`
+	IsBuyOrder     bool    `json:"isBuyOrder"`
+	Issued         string  `json:"issued"`
+	Location       string  `json:"location"`
+	MinVolume      int     `json:"minVolume"`
+	OrderId        int     `json:"orderId"`
+	Price          float64 `json:"price"`
+	Range          string  `json:"range"`
+	RegionId       int     `json:"regionId"`
+	SystemId       int     `json:"systemId"`
+	SystemSecurity float32 `json:"systemSecurity"`
+	TypeId         int     `json:"typeId"`
+	VolumeRemain   int     `json:"volumeRemain"`
+	VolumeTotal    int     `json:"volumeTotal"`
 }
 
 // NOTE: even though I could split the fonction in two api and db function,
@@ -78,7 +79,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 		}
 		defer rows.Close()
 
-		locationStmt, err := db.PrepareRead(timeoutCtx, "SELECT Name FROM Location WHERE Id = ?")
+		locationStmt, err := db.PrepareRead(timeoutCtx, "SELECT Name, Security FROM Location WHERE Id = ?")
 		if err != nil {
 			log.Printf("Internal server error: %v", err)
 			http.Error(w, "Internal server error", 500)
@@ -111,7 +112,7 @@ func CreateHandler(ctx context.Context) http.HandlerFunc {
 				return
 			}
 
-			err = locationStmt.QueryRow(timeoutCtx, locationId).Scan(&order.Location)
+			err = locationStmt.QueryRow(timeoutCtx, locationId).Scan(&order.Location, &order.SystemSecurity)
 			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				log.Printf("Internal server error: %v", err)
 				http.Error(w, "Internal server error", 500)
