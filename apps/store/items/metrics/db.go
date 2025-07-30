@@ -80,7 +80,7 @@ func dbInsertDayDataPoints(ctx context.Context, dps []DayDataPoint) error {
 	defer stmt.Close()
 
 	for _, dp := range dps {
-		_, err := stmt.Exec(timeoutCtx, query, dp.typeId, dp.regionId, dp.date, dp.buyPrice, dp.sellPrice, dp.volume)
+		_, err := stmt.Exec(timeoutCtx, dp.typeId, dp.regionId, dp.date, dp.buyPrice, dp.sellPrice, dp.volume)
 		if err != nil {
 			return err
 		}

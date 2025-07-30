@@ -108,7 +108,7 @@ func ComputeGobalHistories(ctx context.Context, today time.Time) error {
 	if metricsEnabled {
 		err = metrics.InsertDayDataPoints(ctx, dayDataPoints)
 		if err != nil {
-			log.Printf("InsertDatDataPoints: %v\n", err)
+			log.Printf("InsertDayDataPoints: %v\n", err)
 		}
 		metrics.ClearBefore(today)
 	}
