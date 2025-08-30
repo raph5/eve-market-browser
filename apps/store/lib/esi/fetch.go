@@ -57,6 +57,7 @@ var ErrExplicitTimeout = errors.New("Esi explicit timeout")
 var semaphore = sem.New(MaxConcurrentRequests)
 var esiTimeout time.Time
 var esiTimeoutMu sync.Mutex
+// NOTE: I should wrap that into a mutex right?
 var accessToken string
 var accessTokenExpiry time.Time
 
