@@ -247,7 +247,7 @@ func EsiFetch[T any](
 		pages, err = strconv.Atoi(xPages)
 		if err != nil {
 			log.Print("Esi fetch: Can't decode X-Pages")
-		} else if pages < 0 || pages > 1000 {
+		} else if pages < 0 || pages > 10000 {
 			log.Printf("Esi fetch: X-Pages out of range: %d", pages)
 		}
 	}
