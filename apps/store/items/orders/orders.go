@@ -21,7 +21,7 @@ import (
 // EDIT: Just fetching orders and regions sequentially works fine 👉👈
 func Download(ctx context.Context) error {
 	metricsEnabled := ctx.Value("metricsEnabled").(bool)
-	orders := make([]dbOrder, 0, 1024)
+	orders := make([]dbOrder, 0, 1000)
 
 	for _, regionId := range regions.Regions {
 		var pageOrders []dbOrder

@@ -142,6 +142,7 @@ func main() {
 		cancel()
 	case <-ctx.Done():
 	}
+	signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 	mainWg.Wait()
 	log.Print("Store stopped")
 }
