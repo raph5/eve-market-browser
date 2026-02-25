@@ -420,7 +420,7 @@ func dbSetTimeRecord(ctx context.Context, key string, val time.Time) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer cancel()
 
-	_, err := dbWrite.ExecContext(timeoutCtx, "INSERT OR REPLACE INTO TimeRecord VALUES (?,?)", key, val)
+	_, err := dbWrite.ExecContext(timeoutCtx, "INSERT OR REPLACE INTO TimeRecord VALUES (?,?)", key, val.Unix())
 	if err != nil {
 		return err
 	}
