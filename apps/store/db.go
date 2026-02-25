@@ -41,7 +41,7 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
 
 	createTablesAndIndexs := `
   CREATE TABLE IF NOT EXISTS "Order" (
-    Id INTEGER PRIMARY KEY,
+    Id INTEGER,  -- Not guaranteed to be unique
     RegionId INTEGER,
     Duration INTEGER,
     IsBuyOrder INTEGER,
@@ -408,6 +408,8 @@ func dbReplaceOrders(ctx context.Context, orders []emd.Order) error {
 		return err
 	}
 
+	// Sometime there are two orders that have the same orderId. This rare so
+	// we don't do anything special in that case.
 	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO \"Order\" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
