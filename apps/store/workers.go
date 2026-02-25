@@ -202,7 +202,7 @@ func tickMetricWorker() {
 func apiWorker(ctx context.Context, socketPath string) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/order", createOrderHandler(ctx))
-	mux.HandleFunc("/history", createDayMetricHandler(ctx))
+	mux.HandleFunc("/day-metric", createDayMetricHandler(ctx))
 
 	_, err := os.Stat(socketPath)
 	if err == nil {
