@@ -48,7 +48,7 @@ func main() {
 	// Create context
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, "dbRead", dbRead)
-	// the dbWrite value is added only to the context of dbWorker
+	ctx = context.WithValue(ctx, "dbWrite", dbWrite)
 	ctx = emd.EnableLogging(ctx)
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
