@@ -42,8 +42,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Database init error: %v", err)
 	}
-  defer dbWrite.Close()
-  defer dbRead.Close()
+	defer dbWrite.Close()
+	defer dbRead.Close()
 
 	// Create context
 	ctx, cancel := context.WithCancel(context.Background())
@@ -53,30 +53,18 @@ func main() {
 	exitCh := make(chan os.Signal, 1)
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 
-	// Create main channels
-	orderDumpCh := make(chan orderDump)
-	historyDumpCh := make(chan historyDump)
-	newLocationCh := make(chan []emd.Location)
-
 	// Starting wrokers
 	var mainWg sync.WaitGroup
 	mainWg.Add(3)
 	go func() {
-		orderWorker(ctx, &secrets, orderDumpCh, newLocationCh)
+		orderWorker(ctx, &secrets)
 		log.Print("Order Worker: stopped")
 		mainWg.Done()
 		cancel()
 	}()
 	go func() {
-		historyWorker(ctx, historyDumpCh)
+		historyWorker(ctx)
 		log.Print("History Worker: stopped")
-		mainWg.Done()
-		cancel()
-	}()
-	go func() {
-		ctx = context.WithValue(ctx, "dbWrite", dbWrite)
-		dbWorker(ctx, newLocationCh, historyDumpCh, orderDumpCh)
-		log.Print("DB Worker: stopped")
 		mainWg.Done()
 		cancel()
 	}()
@@ -97,7 +85,7 @@ func main() {
 	}
 	signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 	mainWg.Wait()
-  dbWrite.Close()
-  dbRead.Close()
+	dbWrite.Close()
+	dbRead.Close()
 	log.Print("Web Server Stopped Gracefully")
 }

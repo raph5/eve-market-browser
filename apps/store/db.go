@@ -380,7 +380,7 @@ func dbReplaceOrders(ctx context.Context, orders []emd.Order) error {
 		return err
 	}
 
-	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO Location VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO \"Order\" VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}

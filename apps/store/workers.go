@@ -12,21 +12,9 @@ import (
 	emd "github.com/raph5/eve-market-dump"
 )
 
-type orderDump struct {
-	time  time.Time
-	order []emd.Order
-}
-
-type historyDump struct {
-	date    time.Time
-	metrics []emd.HistoryDay
-}
-
 func orderWorker(
 	ctx context.Context,
 	secrets *emd.ApiSecrets,
-	orderDumpCh chan<- orderDump,
-	newLocationCh chan<- []emd.Location, // send newly discovered locations through this channel
 ) {
 	expiration := time.Now()
 	knownLocations := map[uint64]struct{}{}
@@ -52,7 +40,17 @@ func orderWorker(
 			log.Printf("Order Worker Error: DownloadOrderDump: %v", err)
 			continue
 		}
-		orderDumpCh <- orderDump{time: now, order: orders}
+		err = dbReplaceOrders(ctx, orders)
+		if err != nil {
+			log.Printf("Order Worker Error: dbReplaceOrders: %v", err)
+			continue
+		}
+		err = dbSetTimeRecord(ctx, "OrdersValidity", now)
+		if err != nil {
+			log.Printf("Order Worker Error: dbSetTimeRecord: %v", err)
+			continue
+		}
+
 		expiration = expiration.Add(OrderFetchingPeriod)
 		log.Printf("Order Worker: orders download end")
 
@@ -67,7 +65,12 @@ func orderWorker(
 				log.Printf("Order Worker Error: DownloadLocationDump: %v", err)
 				continue
 			}
-			newLocationCh <- newLocations
+
+			err = dbAddLocations(ctx, newLocations)
+			if err != nil {
+				log.Printf("Order Worker Error: dbAddLocations: %v", err)
+				continue
+			}
 			log.Printf("Order Worker: location download end")
 		}
 
@@ -82,10 +85,7 @@ func orderWorker(
 	}
 }
 
-func historyWorker(
-	ctx context.Context,
-	historyDumpCh chan<- historyDump,
-) {
+func historyWorker(ctx context.Context) {
 	activeMarkets, err := dbGetActiveMarkets(ctx)
 	if err != nil {
 		log.Printf("Hisotry Worker Error: initial dbGetActiveMarkets: %v", err)
@@ -131,7 +131,11 @@ func historyWorker(
 			}
 
 			metrics = appendGlobalMetrics(metrics)
-			historyDumpCh <- historyDump{date: date, metrics: metrics}
+			err = dbAddDayMetrics(ctx, date, metrics)
+			if err != nil {
+				log.Printf("History Worker Error: dbAddDayMetrics: %v", err)
+				return
+			}
 		}
 
 		log.Printf("History Worker: full download end")
@@ -180,7 +184,12 @@ func historyWorker(
 		log.Printf("History Worker: incremental download end")
 
 		metrics = appendGlobalMetrics(metrics)
-		historyDumpCh <- historyDump{date: date, metrics: metrics}
+		err = dbAddDayMetrics(ctx, date, metrics)
+		if err != nil {
+			log.Printf("History Worker Error: dbAddDayMetrics: %v", err)
+			continue
+		}
+
 		expiration = expiration.Add(24 * time.Hour)
 	}
 }
@@ -241,38 +250,6 @@ func apiWorker(ctx context.Context, socketPath string) {
 	}
 
 	log.Print("Api Worker: not listening")
-}
-
-// handles db writes
-func dbWorker(
-	ctx context.Context,
-	newLocationCh <-chan []emd.Location,
-	historyDumpCh <-chan historyDump,
-	orderDumpCh <-chan orderDump,
-) {
-	for {
-		select {
-		case newLocations := <-newLocationCh:
-			err := dbAddLocations(ctx, newLocations)
-			if err != nil {
-				log.Printf("DB Worker Error: dbAddLocations: %v", err)
-			}
-		case dump := <-historyDumpCh:
-			err := dbAddDayMetrics(ctx, dump.date, dump.metrics)
-			if err != nil {
-				log.Printf("DB Worker Error: dbAddDayMetrics: %v", err)
-			}
-		case dump := <-orderDumpCh:
-			err := dbReplaceOrders(ctx, dump.order)
-			if err != nil {
-				log.Printf("DB Worker Error: dbReplaceOrders: %v", err)
-			}
-			err = dbSetTimeRecord(ctx, "OrdersValidity", dump.time)
-			if err != nil {
-				log.Printf("DB Worker Error: dbSetTimeRecord: %v", err)
-			}
-		}
-	}
 }
 
 func getElevenFifteenToday(now time.Time) time.Time {
