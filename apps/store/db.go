@@ -153,7 +153,35 @@ func dbGetActiveMarkets(ctx context.Context) ([]emd.HistoryMarket, error) {
 	return activeMarkets, nil
 }
 
-func dbGetLocationMap(ctx context.Context, locationId []uint64) (map[uint64]emd.Location, error) {
+func dbGetKnownLocationMap(ctx context.Context) (map[uint64]struct{}, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	locationMap := make(map[uint64]struct{})
+
+	rows, err := dbRead.QueryContext(timeoutCtx, "SELECT Id FROM Location")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uint64
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		locationMap[id] = struct{}{}
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return locationMap, nil
+}
+
+func dbGetLocationMapForIds(ctx context.Context, locationId []uint64) (map[uint64]emd.Location, error) {
 	dbRead := ctx.Value("dbRead").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()

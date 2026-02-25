@@ -17,8 +17,7 @@ func orderWorker(
 	secrets *emd.ApiSecrets,
 ) {
 	expiration := time.Now()
-	knownLocations := map[uint64]struct{}{}
-	forbiddenLocations := map[uint64]struct{}{}
+	forbiddenLocations := make(map[uint64]struct{})
 
 	for {
 		if err := ctx.Err(); err != nil {
@@ -54,6 +53,11 @@ func orderWorker(
 		expiration = expiration.Add(OrderFetchingPeriod)
 		log.Printf("Order Worker: orders download end")
 
+		knownLocations, err := dbGetKnownLocationMap(ctx)
+		if err != nil {
+			log.Printf("Order Worker Error: dbGetKnownLocationMap: %v", err)
+			continue
+		}
 		unknownLocation := getUnknownLocations(orders, knownLocations, forbiddenLocations)
 		if len(unknownLocation) > 0 {
 			log.Printf("Order Worker: location download start")
@@ -70,10 +74,6 @@ func orderWorker(
 			if err != nil {
 				log.Printf("Order Worker Error: dbAddLocations: %v", err)
 				continue
-			}
-
-			for _, loc := range newLocations {
-				knownLocations[loc.Id] = struct{}{}
 			}
 			log.Printf("Order Worker: location download end")
 		}

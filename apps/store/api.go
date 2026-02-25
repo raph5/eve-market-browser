@@ -53,7 +53,7 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 				locationIds = append(locationIds, orders[i].LocationId)
 			}
 		}
-		locationMap, err := dbGetLocationMap(timeoutCtx, locationIds)
+		locationMap, err := dbGetLocationMapForIds(timeoutCtx, locationIds)
 		if err != nil {
 			log.Printf("Internal server error: dbGetLocationMap: %v", err)
 			http.Error(w, "Internal server error", 500)
