@@ -23,8 +23,10 @@ func main() {
 
 	// Flags
 	var socketPath, dbPath string
+	var working bool
 	flag.StringVar(&socketPath, "socket-path", "/tmp/emb.sock", "Path for the socket of the unix socket server")
 	flag.StringVar(&dbPath, "db", "./data.db", "Path sqlite database")
+	flag.BoolVar(&working, "working", true, "Set working to false is you want the store to only serve data in DB and not to update itself. This is useful for testing")
 	flag.Parse()
 
 	// Init secrets
@@ -55,25 +57,28 @@ func main() {
 
 	// Starting wrokers
 	var mainWg sync.WaitGroup
-	mainWg.Add(3)
-	go func() {
-		orderWorker(ctx, &secrets)
-		log.Print("Order Worker: stopped")
-		mainWg.Done()
-		cancel()
-	}()
-	go func() {
-		historyWorker(ctx)
-		log.Print("History Worker: stopped")
-		mainWg.Done()
-		cancel()
-	}()
+	mainWg.Add(1)
 	go func() {
 		apiWorker(ctx, socketPath)
 		log.Print("Http Server Worker: stopped")
 		mainWg.Done()
 		cancel()
 	}()
+	if working {
+		mainWg.Add(2)
+		go func() {
+			orderWorker(ctx, &secrets)
+			log.Print("Order Worker: stopped")
+			mainWg.Done()
+			cancel()
+		}()
+		go func() {
+			historyWorker(ctx)
+			log.Print("History Worker: stopped")
+			mainWg.Done()
+			cancel()
+		}()
+	}
 	log.Print("Server Started")
 
 	// Handle store shutdown
