@@ -42,6 +42,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Database init error: %v", err)
 	}
+  defer dbWrite.Close()
+  defer dbRead.Close()
 
 	// Create context
 	ctx, cancel := context.WithCancel(context.Background())
@@ -95,5 +97,7 @@ func main() {
 	}
 	signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 	mainWg.Wait()
+  dbWrite.Close()
+  dbRead.Close()
 	log.Print("Web Server Stopped Gracefully")
 }
