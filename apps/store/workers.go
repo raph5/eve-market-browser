@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"net"
+	"net/http"
+	"os"
 	"slices"
 	"time"
 
@@ -50,7 +53,7 @@ func orderWorker(
 			continue
 		}
 		orderDumpCh <- orderDump{time: now, order: orders}
-		expiration = expiration.Add(10 * time.Minute)
+		expiration = expiration.Add(OrderFetchingPeriod)
 		log.Printf("Order Worker: orders download end")
 
 		unknownLocation := getUnknownLocations(orders, knownLocations, forbiddenLocations)
@@ -67,6 +70,15 @@ func orderWorker(
 			newLocationCh <- newLocations
 			log.Printf("Order Worker: location download end")
 		}
+
+		activeMarkets := getActiveMarkets(orders)
+		if len(activeMarkets) > 0 {
+			err := dbSetActiveMarkets(ctx, activeMarkets, now)
+			if err != nil {
+				log.Printf("Order Worker Error: dbAddActiveMarkets: %v", err)
+				continue
+			}
+		}
 	}
 }
 
@@ -76,14 +88,15 @@ func historyWorker(
 ) {
 	activeMarkets, err := dbGetActiveMarkets(ctx)
 	if err != nil {
-		log.Printf("Hisotry Worker Error: initial dbGetActiveMarketMap: %v", err)
+		log.Printf("Hisotry Worker Error: initial dbGetActiveMarkets: %v", err)
 		return
 	}
 
 	if len(activeMarkets) == 0 {
+		activeMarkets, err := dbGetActiveMarkets(ctx)
 		sleepWithContext(ctx, 15*time.Minute)
 		if err != nil {
-			log.Printf("Hisotry Worker Error: initial dbGetActiveMarketMap: %v", err)
+			log.Printf("Hisotry Worker Error: initial dbGetActiveMarkets: %v", err)
 			return
 		}
 		if len(activeMarkets) == 0 {
@@ -117,6 +130,7 @@ func historyWorker(
 				return
 			}
 
+			metrics = appendGlobalMetrics(metrics)
 			historyDumpCh <- historyDump{date: date, metrics: metrics}
 		}
 
@@ -165,15 +179,100 @@ func historyWorker(
 		}
 		log.Printf("History Worker: incremental download end")
 
+		metrics = appendGlobalMetrics(metrics)
 		historyDumpCh <- historyDump{date: date, metrics: metrics}
 		expiration = expiration.Add(24 * time.Hour)
 	}
 }
 
-func metricWorker() {
+func tickMetricWorker() {
 }
 
-func apiWorker() {
+func apiWorker(ctx context.Context, socketPath string) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/order", createOrderHandler(ctx))
+	mux.HandleFunc("/history", createDayMetricHandler(ctx))
+
+	_, err := os.Stat(socketPath)
+	if err == nil {
+		err = os.Remove(socketPath)
+		if err != nil {
+			log.Printf("Api Worker Error: %v", err)
+			return
+		}
+	}
+
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		log.Printf("Api Worker Error: %v", err)
+		return
+	}
+	defer listener.Close()
+
+	errCh := make(chan error)
+	server := http.Server{
+		Handler: mux,
+	}
+
+	go func() {
+		log.Printf("Api Worker: listening on %s", socketPath)
+		err := server.Serve(listener)
+		if err != nil {
+			errCh <- err
+			return
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case err = <-errCh:
+		log.Printf("Api Worker Error: %v", err)
+	}
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	err = os.Remove(socketPath)
+	if err != nil {
+		log.Printf("Api Worker Error: %v", err)
+	}
+	err = server.Shutdown(shutdownCtx)
+	if err != nil {
+		log.Printf("Api Worker Error: %v", err)
+	}
+
+	log.Print("Api Worker: not listening")
+}
+
+// handles db writes
+func dbWorker(
+	ctx context.Context,
+	newLocationCh <-chan []emd.Location,
+	historyDumpCh <-chan historyDump,
+	orderDumpCh <-chan orderDump,
+) {
+	for {
+		select {
+		case newLocations := <-newLocationCh:
+			err := dbAddLocations(ctx, newLocations)
+			if err != nil {
+				log.Printf("DB Worker Error: dbAddLocations: %v", err)
+			}
+		case dump := <-historyDumpCh:
+			err := dbAddDayMetrics(ctx, dump.date, dump.metrics)
+			if err != nil {
+				log.Printf("DB Worker Error: dbAddDayMetrics: %v", err)
+			}
+		case dump := <-orderDumpCh:
+			err := dbReplaceOrders(ctx, dump.order)
+			if err != nil {
+				log.Printf("DB Worker Error: dbReplaceOrders: %v", err)
+			}
+			err = dbSetTimeRecord(ctx, "OrdersValidity", dump.time)
+			if err != nil {
+				log.Printf("DB Worker Error: dbSetTimeRecord: %v", err)
+			}
+		}
+	}
 }
 
 func getElevenFifteenToday(now time.Time) time.Time {
@@ -188,7 +287,6 @@ func getYesterday(now time.Time) time.Time {
 	return time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
 }
 
-// TODO: remove if unused
 func getActiveMarkets(orders []emd.Order) []emd.HistoryMarket {
 	activeMarketsMap := make(map[emd.HistoryMarket]struct{}, 350_000)
 	activeMarkets := make([]emd.HistoryMarket, 0, 350_000)
@@ -217,6 +315,37 @@ func getUnknownLocations(orders []emd.Order, knownLocations map[uint64]struct{},
 		unknownLocations = append(unknownLocations, o.LocationId)
 	}
 	return unknownLocations
+}
+
+func appendGlobalMetrics(metrics []emd.HistoryDay) []emd.HistoryDay {
+	globalMetricMap := make(map[emd.HistoryMarket]emd.HistoryDay)
+	for _, day := range metrics {
+		market := emd.HistoryMarket{RegionId: day.RegionId, TypeId: day.TypeId}
+		gDay, ok := globalMetricMap[market]
+		if ok {
+			if day.Volume > 0 {
+				gDay.Average = (gDay.Average*float64(gDay.Volume) + day.Average*float64(day.Volume)) /
+					float64(gDay.Volume+day.Volume)
+				if gDay.Volume == 0 {
+					gDay.Lowest = day.Lowest
+					gDay.Highest = day.Highest
+				} else {
+					gDay.Lowest = min(gDay.Lowest, day.Lowest)
+					gDay.Highest = max(gDay.Highest, day.Highest)
+				}
+			}
+			gDay.OrderCount += day.OrderCount
+			gDay.Volume += day.Volume
+			globalMetricMap[market] = gDay
+		} else {
+			day.RegionId = 0
+			globalMetricMap[market] = day
+		}
+	}
+	for market := range globalMetricMap {
+		metrics = append(metrics, globalMetricMap[market])
+	}
+	return metrics
 }
 
 func sleepWithContext(ctx context.Context, duration time.Duration) error {
