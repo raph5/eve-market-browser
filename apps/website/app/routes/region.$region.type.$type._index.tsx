@@ -2,8 +2,51 @@ import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import Table, { Cell, Column } from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
-import { Link, json, useLoaderData, useRouteError } from "@remix-run/react"
-import { DAY, expiresIn, formatIsk, numberSort, stringSort } from "@app/utils"
+import { json, useLoaderData, useRouteError } from "@remix-run/react"
+import { numberSort, stringSort } from "@app/utils"
+
+const DAY = 60*60*24
+const HOUR = 60*60
+const MINUTE = 60
+const SECOND = 1
+
+const formater = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
+export function formatIsk(isk: number) {
+  return `${formater.format(isk)} ISK`
+}
+
+function formatExpiresIn(issued: number, duration: number, now: number) {
+  let diffTime = issued + duration * DAY - now
+  if (diffTime < 0) return 'expired'
+  
+  const days = Math.floor(diffTime / DAY)
+  diffTime -= days * DAY
+  const hours = Math.floor(diffTime / HOUR)
+  diffTime -= hours * HOUR
+  const minutes = Math.floor(diffTime / MINUTE)
+  diffTime -= minutes * MINUTE
+  const seconds = Math.floor(diffTime / SECOND)
+
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`
+}
+
+function formatRange(range: number): string {
+  switch (range) {
+    case -2: return "Station"
+    case -1: return "Solar System"
+    case 0: return "Region"
+    case 1: return "1 Jump"
+    case 2: return "2 Jump"
+    case 3: return "3 Jump"
+    case 4: return "4 Jump"
+    case 5: return "5 Jump"
+    case 10: return "10 Jump"
+    case 20: return "20 Jump"
+    case 30: return "30 Jump"
+    case 40: return "40 Jump"
+    default: return "Unknown"
+  }
+}
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
@@ -25,19 +68,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const orders = await esiStore.getOrders(typeId, regionId)
-  const time = Date.now()
+  const orderDump = await esiStore.getOrderDump(typeId, regionId)
+  const now = Date.now() / 1000
 
   return json({
     typeId,
     regionId,
-    orders,
-    time
+    orderDump,
+    now
   })
 }
 
 export default function MarketData() {
-  const { orders, time } = useLoaderData<typeof loader>()
+  const { orderDump, now } = useLoaderData<typeof loader>()
 
   const sellColumns: Column[] = [
     { value: 'quantity', label: 'Quantity', sorting: numberSort() },
@@ -54,32 +97,38 @@ export default function MarketData() {
     { value: 'expires', label: 'Expires in', sorting: numberSort() },
   ]
 
-  const sellData: Record<string, Cell>[] = orders.filter(order => !order.isBuyOrder).map(order => ({
-    quantity: [ order.volumeRemain, order.volumeRemain ],
-    price: [ order.price, formatIsk(order.price) ],
-    location: [
-      `${order.systemSecurity} ${order.location}`,
-      `${order.location} (${Math.round(order.systemSecurity * 10) / 10})`
-    ],
-    expires: [
-      Date.parse(order.issued) - time + order.duration*DAY,
-      expiresIn(order.issued, order.duration, time)
-    ]
-  }))
-  const buyData: Record<string, Cell>[] = orders.filter(order => order.isBuyOrder).map(order => ({
-    quantity: [ order.volumeRemain, order.volumeRemain ],
-    price: [ order.price, formatIsk(order.price) ],
-    location: [
-      `${order.systemSecurity} ${order.location}`,
-      `${order.location} (${Math.round(order.systemSecurity * 10) / 10})`
-    ],
-    expires: [
-      Date.parse(order.issued) - time + order.duration*DAY,
-      expiresIn(order.issued, order.duration, time)
-    ],
-    range: [ order.range, order.range ],
-    minVolume: [ order.minVolume, order.minVolume ]
-  }))
+  const sellData: Record<string, Cell>[] = orderDump.order.filter(o => !o.IsBuyOrder).map(order => {
+    const location = orderDump.location[order.LocationId]
+    return {
+      quantity: [ order.VolumeRemain, order.VolumeRemain ],
+      price: [ order.Price, formatIsk(order.Price) ],
+      location: [
+        `${location.Security} ${location.Name}`,
+        `${location.Name} (${Math.round(location.Security * 10) / 10})`
+      ],
+      expires: [
+        order.Issued - now + order.Duration*DAY,
+        formatExpiresIn(order.Issued, order.Duration, now)
+      ]
+    }
+  })
+  const buyData: Record<string, Cell>[] = orderDump.order.filter(o => o.IsBuyOrder).map(order => {
+    const location = orderDump.location[order.LocationId]
+    return {
+      quantity: [ order.VolumeRemain, order.VolumeRemain ],
+      price: [ order.Price, formatIsk(order.Price) ],
+      location: [
+        `${location.Security} ${location.Name}`,
+        `${location.Name} (${Math.round(location.Security * 10) / 10})`
+      ],
+      expires: [
+        order.Issued - now + order.Duration*DAY,
+        formatExpiresIn(order.Issued, order.Duration, now)
+      ],
+      range: [ order.Range, formatRange(order.Range) ],
+      minVolume: [ order.MinVolume, order.MinVolume ]
+    }
+  })
 
   return (
     <div className="market-data">

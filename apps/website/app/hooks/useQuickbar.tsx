@@ -1,7 +1,7 @@
 import { useLocalStorage } from "@hooks/useLocalStorage"
 import { uid } from "@app/utils"
 import { useCallback, useRef } from "react"
-import { Type } from "@app/esiStore/types"
+import { Type } from "@app/esiStore.server"
 
 export interface QuickbarState {
   [folder: string]: {

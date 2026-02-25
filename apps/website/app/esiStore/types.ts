@@ -1,26 +1,4 @@
 
-export interface Type {
-  id: number
-  name: string
-  meta: number
-}
-
-export interface Region {
-  id: number
-  name: string
-}
-
-export interface MarketGroup {
-  id: number
-  parentId: number | null
-  childsId: number[]
-  name: string
-  description: string
-  types: number[]
-  iconId: number
-  iconAlt: string
-}
-
 export interface HistoryDay {
   date: string,
   average: number,
@@ -32,21 +10,4 @@ export interface HistoryDay {
   volume: number,
   donchianTop: number,
   donchianBottom: number
-}
-
-export interface Order {
-  duration: number,
-  isBuyOrder: boolean,
-  issued: string,
-  location: string,
-  minVolume: number,
-  orderId: number,
-  price: number,
-  range: 'station' | 'region' | 'solarsystem' | '1' | '2' | '3' | '4' | '5' | '10' | '20' | '30' | '40',
-  regionId: number,
-  systemId: number,
-  systemSecurity: number,
-  typeId: number,
-  volumeRemain: number,
-  volumeTotal: number
 }

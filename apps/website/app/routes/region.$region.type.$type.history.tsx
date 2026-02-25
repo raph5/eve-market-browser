@@ -4,7 +4,6 @@ import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { json, useLoaderData, useRouteError } from "@remix-run/react"
 import { useEffect, useRef } from "react"
-import { NotFoundError } from "@app/esiStore/goStore"
 import { HistoryDay } from "@app/esiStore/types"
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -27,16 +26,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  let history: HistoryDay[]
-  try {
-    history = await esiStore.getHistory(typeId, regionId)
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      history = []
-    } else {
-      throw error
-    }
-  }
+  const history: HistoryDay[] = await esiStore.getHistory(typeId, regionId)
 
   return json({
     typeId,

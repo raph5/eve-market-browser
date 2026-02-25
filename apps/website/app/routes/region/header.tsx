@@ -1,7 +1,7 @@
 import "@scss/header.scss"
 import logo from "@assets/logo.png"
 import { Select } from "@components/select";
-import { type Region } from "@app/esiStore/types";
+import type { Region } from "@app/esiStore.server";
 import { useEffect, useState } from "react";
 import { Link, useMatches, useNavigate, useParams } from "@remix-run/react";
 import Label from "@components/label";
@@ -64,11 +64,6 @@ export default function Header({ regions }: HeaderProps) {
             <Link to="/about" className="header__link">About</Link>
           </li>
         </ul>
-
-        <span className="header__message">
-          Give me 2b for a new <a target="_blank" href="https://zkillboard.com/kill/127010599/">Vedmak & Pod</a><br/>
-          and I put your name here for two months 🤝
-        </span>
 
         {isMarketHeader && <>
           <Label value="Region :" className="header__region-label" htmlFor="regionSelect" />

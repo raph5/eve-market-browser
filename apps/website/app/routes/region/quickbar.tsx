@@ -1,4 +1,4 @@
-import { Type } from "@app/esiStore/types";
+import { Type } from "@app/esiStore.server";
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
 import QuickbarContext from "@contexts/quickbarContext";
