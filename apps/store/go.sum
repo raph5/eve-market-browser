@@ -1,6 +1,4 @@
 github.com/mattn/go-sqlite3 v1.14.34 h1:3NtcvcUnFBPsuRcno8pUtupspG/GM+9nZ88zgJcp6Zk=
 github.com/mattn/go-sqlite3 v1.14.34/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
-github.com/raph5/eve-market-dump v0.0.0-20260219130336-cb13d3f91999 h1:K8WoZ//EWXTfbEVU4JHyN+QhlfhY01Lly6/GszyOalA=
-github.com/raph5/eve-market-dump v0.0.0-20260219130336-cb13d3f91999/go.mod h1:bEKq0vZ2q4OxqyzHwMhY1RzPF893GZA5K/Ril3eWePk=
-github.com/raph5/eve-market-dump v0.1.0 h1:6Pc5yT/n40xA8+73P5X53O59g7KhZc6xz09oiv9VeWs=
-github.com/raph5/eve-market-dump v0.1.0/go.mod h1:bEKq0vZ2q4OxqyzHwMhY1RzPF893GZA5K/Ril3eWePk=
+github.com/raph5/eve-market-dump v0.1.1 h1:cNB0XfTUBiV9fGTifwuIidle/yJB4DQionpvCqcr96A=
+github.com/raph5/eve-market-dump v0.1.1/go.mod h1:bEKq0vZ2q4OxqyzHwMhY1RzPF893GZA5K/Ril3eWePk=
