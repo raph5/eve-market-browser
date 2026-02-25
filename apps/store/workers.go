@@ -75,12 +75,10 @@ func orderWorker(
 		}
 
 		activeMarkets := getActiveMarkets(orders)
-		if len(activeMarkets) > 0 {
-			err := dbSetActiveMarkets(ctx, activeMarkets, now)
-			if err != nil {
-				log.Printf("Order Worker Error: dbAddActiveMarkets: %v", err)
-				continue
-			}
+		err = dbSetActiveMarkets(ctx, activeMarkets, now)
+		if err != nil {
+			log.Printf("Order Worker Error: dbAddActiveMarkets: %v", err)
+			continue
 		}
 	}
 }
