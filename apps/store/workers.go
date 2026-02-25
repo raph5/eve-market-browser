@@ -71,6 +71,10 @@ func orderWorker(
 				log.Printf("Order Worker Error: dbAddLocations: %v", err)
 				continue
 			}
+
+			for _, loc := range newLocations {
+				knownLocations[loc.Id] = struct{}{}
+			}
 			log.Printf("Order Worker: location download end")
 		}
 
@@ -92,7 +96,7 @@ func historyWorker(ctx context.Context) {
 
 	if len(activeMarkets) == 0 {
 		activeMarkets, err := dbGetActiveMarkets(ctx)
-		sleepWithContext(ctx, 20 * time.Minute)
+		sleepWithContext(ctx, 20*time.Minute)
 		if err != nil {
 			log.Printf("Hisotry Worker Error: initial dbGetActiveMarkets: %v", err)
 			return
