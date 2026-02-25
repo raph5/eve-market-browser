@@ -239,7 +239,7 @@ func dbGetOrdersForType(ctx context.Context, typeId uint64) ([]emd.Order, error)
 	dbRead := ctx.Value("dbRead").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
-	orders := make([]emd.Order, 512)
+	orders := make([]emd.Order, 0, 512)
 
 	rows, err := dbRead.QueryContext(timeoutCtx, `SELECT * FROM "Order" WHERE TypeId = ?`, typeId)
 	if err != nil {
