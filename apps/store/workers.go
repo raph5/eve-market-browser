@@ -53,6 +53,13 @@ func orderWorker(
 		expiration = expiration.Add(OrderFetchingPeriod)
 		log.Printf("Order Worker: orders download end")
 
+		activeMarkets := getActiveMarkets(orders)
+		err = dbSetActiveMarkets(ctx, activeMarkets, now)
+		if err != nil {
+			log.Printf("Order Worker Error: dbAddActiveMarkets: %v", err)
+			continue
+		}
+
 		knownLocations, err := dbGetKnownLocationMap(ctx)
 		if err != nil {
 			log.Printf("Order Worker Error: dbGetKnownLocationMap: %v", err)
@@ -76,13 +83,6 @@ func orderWorker(
 				continue
 			}
 			log.Printf("Order Worker: location download end")
-		}
-
-		activeMarkets := getActiveMarkets(orders)
-		err = dbSetActiveMarkets(ctx, activeMarkets, now)
-		if err != nil {
-			log.Printf("Order Worker Error: dbAddActiveMarkets: %v", err)
-			continue
 		}
 	}
 }
