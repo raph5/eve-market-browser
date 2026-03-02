@@ -70,7 +70,7 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 
 				locationMap[locationIds[i]] = emd.Location{
 					Id:       locationIds[i],
-					Name:     "Unknown Player Structure",
+					Name:     s.name + " - Unknown Player Structure",
 					SystemId: s.id,
 					Security: s.security,
 					RegionId: s.regionId,

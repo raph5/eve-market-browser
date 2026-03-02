@@ -15,6 +15,7 @@ type system struct {
 	id       uint64
 	regionId uint64
 	security float32
+	name     string
 }
 
 //go:embed data/systems.csv
@@ -44,7 +45,7 @@ func readSystemSvg() ([]system, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reader error: %w", err)
 	}
-	if record[0] != "regionID" || record[1] != "solarSystemID" || record[2] != "security" {
+	if record[0] != "regionID" || record[1] != "solarSystemID" || record[2] != "solarSystemName" || record[3] != "security" {
 		return nil, fmt.Errorf("invalid system csv header %v", record)
 	}
 
@@ -66,7 +67,7 @@ func readSystemSvg() ([]system, error) {
 		if err != nil {
 			return nil, fmt.Errorf("id in not a valid uint64: %w", err)
 		}
-		security, err := strconv.ParseFloat(record[2], 32)
+		security, err := strconv.ParseFloat(record[3], 32)
 		if err != nil {
 			return nil, fmt.Errorf("security in not a valid float32: %w", err)
 		}
@@ -74,6 +75,7 @@ func readSystemSvg() ([]system, error) {
 		systemSlice = append(systemSlice, system{
 			id:       id,
 			regionId: regionId,
+			name:     record[2],
 			security: float32(security),
 		})
 	}
