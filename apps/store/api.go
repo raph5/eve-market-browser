@@ -62,7 +62,7 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 			return
 		}
 		for i := range locationIds {
-			if _, ok := locationMap[locationIds[i]]; ok {
+			if _, ok := locationMap[locationIds[i]]; !ok {
 				s, err := getSystemById(locationSystem[i])
 				if err != nil {
 					log.Printf("getSystemById: %v", err)
