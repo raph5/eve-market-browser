@@ -1,6 +1,48 @@
 @import './var.scss';
 
 .table {
+  background-color: $background-0;
+  border-spacing: 0;
+
+  &__cell {
+    white-space: nowrap;
+    font-family: $font;
+    font-size: 14px;
+    font-weight: normal;
+    text-align: start;
+    height: 22px;
+    padding: 3px 0;
+    box-sizing: border-box;
+    color: $font-color;
+    padding-left: 16px;
+
+    &:first-child {
+      padding-left: 0px;
+    }
+
+    // TODO: add position sticky
+    &--head {
+      color: $font-color-light;
+      user-select: none;
+
+      > div {
+        display: flex;
+      }
+    }
+    &--number {
+      text-align: right;
+    }
+  }
+  &__head-icon {
+    height: 15px;
+    margin-left: auto;
+    color: $font-color;
+    background-color: $background-0;
+  }
+}
+
+/*
+.table {
   width: 100%;
   position: relative;
   display: grid;
@@ -55,3 +97,4 @@
     @include light-glow;
   }
 }
+*/

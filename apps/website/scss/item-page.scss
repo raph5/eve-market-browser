@@ -107,6 +107,7 @@
   }
   &__table {
     height: 100%;
+    overflow: auto;
   }
 }
 
@@ -199,6 +200,7 @@
 }
 
 @media (max-width: $mobile-width) {
+  // TODO: Check if thats relvent
   .market-data .table {
     max-height: 70vh;
     min-height: 20vh;
@@ -207,4 +209,21 @@
   .price-history {
     height: 70vh;
   }
+}
+
+.security {
+  font-weight: bold;
+  color: "#ff0000";
+  margin-right: 6px;
+
+  &[data-sec="1.0"] { color: #2b73df }
+  &[data-sec="0.9"] { color: #3998e8 }
+  &[data-sec="0.8"] { color: #4dc9f2 }
+  &[data-sec="0.7"] { color: #61dba4 }
+  &[data-sec="0.6"] { color: #70e454 }
+  &[data-sec="0.5"] { color: #f2fb81 }
+  &[data-sec="0.4"] { color: #d96b07 }
+  &[data-sec="0.3"] { color: #cb430f }
+  &[data-sec="0.2"] { color: #b91117 }
+  &[data-sec="0.1"] { color: #712020 }
 }

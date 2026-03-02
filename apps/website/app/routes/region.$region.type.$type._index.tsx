@@ -1,6 +1,6 @@
 import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
-import Table, { Cell, Column } from "@components/table"
+import * as Table from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { json, useLoaderData, useRouteError } from "@remix-run/react"
 import { numberSort, stringSort } from "@app/utils"
@@ -48,6 +48,10 @@ function formatRange(range: number): string {
   }
 }
 
+function formatSecurity(sec: number): string {
+  return sec.toFixed(1);
+}
+
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
     throw json("Type or Region Not Found", { status: 404 })
@@ -81,77 +85,108 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function MarketData() {
   const { orderDump, now } = useLoaderData<typeof loader>()
+  const sellOrder = orderDump.order.filter(o => !o.IsBuyOrder)
+  const buyOrder = orderDump.order.filter(o => o.IsBuyOrder)
 
-  const sellColumns: Column[] = [
-    { value: 'quantity', label: 'Quantity', sorting: numberSort() },
-    { value: 'price', label: 'Price', sorting: numberSort() },
-    { value: 'location', label: 'Location', sorting: stringSort() },
-    { value: 'expires', label: 'Expires in', sorting: numberSort() },
-  ]
-  const buyColumns: Column[] = [
-    { value: 'quantity', label: 'Quantity', sorting: numberSort() },
-    { value: 'price', label: 'Price', sorting: numberSort() },
-    { value: 'range', label: 'Range', sorting: stringSort() },
-    { value: 'location', label: 'Location', sorting: stringSort() },
-    { value: 'minVolume', label: 'Min Volume', sorting: numberSort() },
-    { value: 'expires', label: 'Expires in', sorting: numberSort() },
-  ]
+  const sellOrderValues: Record<string, Record<string, any>> = {}
+  for (const o of sellOrder) {
+    const location = orderDump.location[o.LocationId]
+    sellOrderValues[o.OrderId] = {
+      quantity: o.VolumeRemain,
+      price: o.Price,
+      location: `${location.Security} ${location.Name}`,
+      expires: o.Issued - now + o.Duration*DAY,
+    }
+  }
+  const buyOrderValues: Record<string, Record<string, any>> = {}
+  for (const o of buyOrder) {
+    const location = orderDump.location[o.LocationId]
+    buyOrderValues[o.OrderId] = {
+      quantity: o.VolumeRemain,
+      price: o.Price,
+      range: `${location.Security} ${location.Name}`,
+      location: o.Issued - now + o.Duration*DAY,
+      min: o.Range,
+      expires: o.MinVolume,
+    }
+  }
 
-  const sellData: Record<string, Cell>[] = orderDump.order.filter(o => !o.IsBuyOrder).map(order => {
-    const location = orderDump.location[order.LocationId]
-    return {
-      quantity: [ order.VolumeRemain, order.VolumeRemain ],
-      price: [ order.Price, formatIsk(order.Price) ],
-      location: [
-        `${location.Security} ${location.Name}`,
-        `${location.Name} (${Math.round(location.Security * 10) / 10})`
-      ],
-      expires: [
-        order.Issued - now + order.Duration*DAY,
-        formatExpiresIn(order.Issued, order.Duration, now)
-      ]
-    }
-  })
-  const buyData: Record<string, Cell>[] = orderDump.order.filter(o => o.IsBuyOrder).map(order => {
-    const location = orderDump.location[order.LocationId]
-    return {
-      quantity: [ order.VolumeRemain, order.VolumeRemain ],
-      price: [ order.Price, formatIsk(order.Price) ],
-      location: [
-        `${location.Security} ${location.Name}`,
-        `${location.Name} (${Math.round(location.Security * 10) / 10})`
-      ],
-      expires: [
-        order.Issued - now + order.Duration*DAY,
-        formatExpiresIn(order.Issued, order.Duration, now)
-      ],
-      range: [ order.Range, formatRange(order.Range) ],
-      minVolume: [ order.MinVolume, order.MinVolume ]
-    }
-  })
+  const buyColumnType: Record<string, 'number'|'string'> = {
+    quantity: 'number',
+    price: 'number',
+    range: 'number',
+    location: 'string',
+    min: 'number',
+    expires: 'number',
+  }
+  const sellColumnType: Record<string, 'number'|'string'> = {
+    quantity: 'number',
+    price: 'number',
+    location: 'string',
+    expires: 'number',
+  }
 
   return (
     <div className="market-data">
       <div className="market-data__section">
         <h3 className="market-data__heading">Sellers</h3>
-        <Table
-          className="market-data__table"
-          columns={sellColumns}
-          data={sellData}
-          columnTemplate="max-content max-content max-content max-content"
-          defaultSorting={{ column: 'price', direction: 'ascending' }}
-        />
+        <div className="market-data__table">
+          <Table.Root
+            columnType={sellColumnType}
+            values={sellOrderValues}
+            defaultSorting={{column: 'price', direction: 'ascending'}}
+          >
+            <Table.Row>
+              <Table.Head column="quantity">Quantity</Table.Head>
+              <Table.Head column="price">Price</Table.Head>
+              <Table.Head column="location">Location</Table.Head>
+              <Table.Head column="expires">Expires</Table.Head>
+            </Table.Row>
+            {sellOrder.map(o => {
+              const location = orderDump.location[o.LocationId]
+              return <Table.Row key={o.OrderId} rowId={o.OrderId}>
+                <Table.Cell column="quantity">{o.VolumeRemain}</Table.Cell>
+                <Table.Cell column="price">{formatIsk(o.Price)}</Table.Cell>
+                <Table.Cell column="location">{`${location.Name} (${Math.round(location.Security * 10) / 10})`}</Table.Cell>
+                <Table.Cell column="expires">{formatExpiresIn(o.Issued, o.Duration, now)}</Table.Cell>
+              </Table.Row>
+            })}
+          </Table.Root>
+        </div>
       </div>
       <div className="market-data__separator" role="separator"></div>
       <div className="market-data__section">
         <h3 className="market-data__heading">Buyers</h3>
-        <Table
-          className="market-data__table"
-          columns={buyColumns}
-          data={buyData}
-          columnTemplate="max-content max-content max-content max-content max-content max-content"
-          defaultSorting={{ column: 'price', direction: 'descending' }}
-        />
+        <div className="market-data__table">
+          <Table.Root
+            columnType={buyColumnType}
+            values={buyOrderValues}
+            defaultSorting={{column: 'price', direction: 'descending'}}
+          >
+            <Table.Row>
+              <Table.Head column="quantity">Quantity</Table.Head>
+              <Table.Head column="price">Price</Table.Head>
+              <Table.Head column="range">Range</Table.Head>
+              <Table.Head column="location">Location</Table.Head>
+              <Table.Head column="min">Min</Table.Head>
+              <Table.Head column="expires">Expires</Table.Head>
+            </Table.Row>
+            {buyOrder.map(o => {
+              const location = orderDump.location[o.LocationId]
+              return <Table.Row key={o.OrderId} rowId={o.OrderId}>
+                <Table.Cell column="quantity">{o.VolumeRemain}</Table.Cell>
+                <Table.Cell column="price">{formatIsk(o.Price)}</Table.Cell>
+                <Table.Cell column="location">
+                  <span className="security" data-sec={formatSecurity(location.Security)}>{formatSecurity(location.Security)}</span>                  
+                  {location.Name}
+                </Table.Cell>
+                <Table.Cell column="range">{formatRange(o.Range)}</Table.Cell>
+                <Table.Cell column="min">{o.MinVolume}</Table.Cell>
+                <Table.Cell column="expires">{formatExpiresIn(o.Issued, o.Duration, now)}</Table.Cell>
+              </Table.Row>
+            })}
+          </Table.Root>
+        </div>
       </div>
     </div>
   )

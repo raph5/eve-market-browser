@@ -48,9 +48,11 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		locationIds := make([]uint64, 0, 128)
+		locationSystem := make([]uint64, 0, 128)
 		for i := range orders {
 			if !slices.Contains(locationIds, orders[i].LocationId) {
 				locationIds = append(locationIds, orders[i].LocationId)
+				locationSystem = append(locationSystem, orders[i].SystemId)
 			}
 		}
 		locationMap, err := dbGetLocationMapForIds(timeoutCtx, locationIds)
@@ -59,6 +61,17 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 			http.Error(w, "Internal server error", 500)
 			return
 		}
+    for i := range locationIds {
+      if _, ok := locationMap[locationIds[i]]; ok {
+        locationMap[locationIds[i]] = emd.Location{
+          Id: locationIds[i],
+          Name: "Unknown Player Structure",
+          SystemId: locationSystem[i],
+          Security: 0, // TODO:
+          RegionId: 0, // TODO:
+        }
+      }
+    }
 
 		validity, err := dbGetTimeRecord(timeoutCtx, "OrdersValidity")
 		if err != nil {
