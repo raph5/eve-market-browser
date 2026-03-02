@@ -196,7 +196,10 @@ func dbGetLocationMapForIds(ctx context.Context, locationId []uint64) (map[uint6
 	for _, id := range locationId {
 		var l emd.Location
 		err = stmt.QueryRowContext(timeoutCtx, id).Scan(&l.Id, &l.TypeId, &l.OwnerId, &l.SystemId, &l.RegionId, &l.Name, &l.Security)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
 			return nil, err
 		}
 		locationMap[id] = l
