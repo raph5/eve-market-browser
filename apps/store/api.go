@@ -61,17 +61,22 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 			http.Error(w, "Internal server error", 500)
 			return
 		}
-    for i := range locationIds {
-      if _, ok := locationMap[locationIds[i]]; ok {
-        locationMap[locationIds[i]] = emd.Location{
-          Id: locationIds[i],
-          Name: "Unknown Player Structure",
-          SystemId: locationSystem[i],
-          Security: 0, // TODO:
-          RegionId: 0, // TODO:
-        }
-      }
-    }
+		for i := range locationIds {
+			if _, ok := locationMap[locationIds[i]]; ok {
+				s, err := getSystemById(locationSystem[i])
+				if err != nil {
+					log.Printf("getSystemById: %v", err)
+				}
+
+				locationMap[locationIds[i]] = emd.Location{
+					Id:       locationIds[i],
+					Name:     "Unknown Player Structure",
+					SystemId: s.id,
+					Security: s.security,
+					RegionId: s.regionId,
+				}
+			}
+		}
 
 		validity, err := dbGetTimeRecord(timeoutCtx, "OrdersValidity")
 		if err != nil {
