@@ -139,3 +139,4 @@ function getType(types: EsiType[], typeId: number): EsiType {
   }
   throw Error(`Cant find type ${typeId} in types`)
 }
+
