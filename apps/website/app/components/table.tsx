@@ -13,6 +13,7 @@ export interface Sorting {
   direction: 'ascending'|'descending'
 }
 
+const SelectionContext = createContext<any>(null)
 const SortingContext = createContext<any>(null)
 const ColumnTypeContext = createContext<Record<string, 'number'|'string'>>({});
 
@@ -25,6 +26,7 @@ export interface RootProps extends React.HTMLAttributes<HTMLTableElement> {
 
 export function Root({children, defaultSorting, values, columnType, className, ...props}: RootProps) {
   const [sorting, setSorting] = useState(defaultSorting)
+  const [selection, setSelection] = useState(new Set())
 
   const [head, ...rows] = Children.toArray(children)
   assert(isValidElement(head))
@@ -47,16 +49,18 @@ export function Root({children, defaultSorting, values, columnType, className, .
 
   return (
     <SortingContext.Provider value={[sorting, setSorting]}>
-      <ColumnTypeContext.Provider value={columnType}>
-        <table className={classNames(className, "table")} {...props}>
-          <thead>
-            {head}
-          </thead>
-          <tbody>
-            {rows}
-          </tbody>
-        </table>
-      </ColumnTypeContext.Provider>
+      <SelectionContext.Provider value={[selection, setSelection]}>
+        <ColumnTypeContext.Provider value={columnType}>
+          <table className={classNames(className, "table")} {...props}>
+            <thead>
+              {head}
+            </thead>
+            <tbody>
+              {rows}
+            </tbody>
+          </table>
+        </ColumnTypeContext.Provider>
+      </SelectionContext.Provider>
     </SortingContext.Provider>
   )
 }
@@ -67,8 +71,22 @@ export interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
 }
 
 export function Row({children, rowId, className, ...props}: RowProps) {
+  const [selection, setSelection] = useContext(SelectionContext);
+
+  function handleClick(e: any) {
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      setSelection(new Set(selection).add(rowId))
+      e.preventDefault()
+    } else {
+      setSelection(new Set([rowId]))
+    }
+  }
+
   return (
-    <tr className={classNames(className, "table__row")} {...props}>
+    <tr
+      className={classNames(className, "table__row", selection.has(rowId) && "table__row--selected")}
+      onClick={handleClick}
+      {...props}>
       {children}
     </tr>
   )
@@ -82,8 +100,18 @@ export interface HeadProps extends React.HTMLAttributes<HTMLTableCellElement> {
 export function Head({children, column, className, ...props}: HeadProps) {
   const [sorting, setSorting] = useContext(SortingContext);
 
+  function handleClick() {
+    if (sorting.column == column && sorting.direction == 'ascending') {
+      setSorting({column: column, direction: 'descending'})
+    } else if (sorting.column == column && sorting.direction == 'descending') {
+      setSorting({column: column, direction: 'ascending'})
+    } else {
+      setSorting({column: column, direction: 'ascending'})
+    }
+  }
+
   return (
-    <th className={classNames(className, "table__cell table__cell--head")} {...props}>
+    <th className={classNames(className, "table__cell table__cell--head")} {...props} onClick={handleClick}>
       <div>
         {children}
         {sorting.column == column && sorting.direction == 'descending' &&
@@ -109,7 +137,7 @@ export interface CellProps extends React.HTMLAttributes<HTMLTableCellElement> {
 export function Cell({children, column, className, ...props}: CellProps) {
   const columnType = useContext(ColumnTypeContext)
   const type = columnType[column]
-
+  
   return (
     <td className={classNames(className, "table__cell", type == 'number' && "table__cell--number")} {...props}>
       {children}

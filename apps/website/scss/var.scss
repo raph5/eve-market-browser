@@ -84,15 +84,6 @@ $mobile-width: 500px;
   border-radius: 4px;
 }
 
-// TODO: remove light-glow and glow from codebase
-@mixin light-glow() {
-  background-color: $primary-3;
-}
-
-@mixin glow() {
-  background-color: $primary-2;
-}
-
 @mixin handle-data-depth($step: 16px, $offset: 0px) {
   @for $depth from 0 to 10 {
     &[data-depth="#{$depth}"] {

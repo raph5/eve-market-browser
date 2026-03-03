@@ -213,17 +213,20 @@
 
 .security {
   font-weight: bold;
-  color: "#ff0000";
+  font-size: 14px;
+  // TODO: fix size
+  line-height: 16px;
+  color: #892860;
   margin-right: 6px;
 
-  &[data-sec="1.0"] { color: #2b73df }
-  &[data-sec="0.9"] { color: #3998e8 }
-  &[data-sec="0.8"] { color: #4dc9f2 }
-  &[data-sec="0.7"] { color: #61dba4 }
-  &[data-sec="0.6"] { color: #70e454 }
-  &[data-sec="0.5"] { color: #f2fb81 }
-  &[data-sec="0.4"] { color: #d96b07 }
-  &[data-sec="0.3"] { color: #cb430f }
-  &[data-sec="0.2"] { color: #b91117 }
-  &[data-sec="0.1"] { color: #712020 }
+  &[data-sec="1.0"] { color: #2679d5 }
+  &[data-sec="0.9"] { color: #339cd9 }
+  &[data-sec="0.8"] { color: #4ac5de }
+  &[data-sec="0.7"] { color: #65d4a9 }
+  &[data-sec="0.6"] { color: #7add56 }
+  &[data-sec="0.5"] { color: #e5e98a }
+  &[data-sec="0.4"] { color: #d37103 }
+  &[data-sec="0.3"] { color: #ca4108 }
+  &[data-sec="0.2"] { color: #ba060f }
+  &[data-sec="0.1"] { color: #781a1a }
 }

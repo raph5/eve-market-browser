@@ -3,6 +3,7 @@
 .table {
   background-color: $background-0;
   border-spacing: 0;
+  width: 100%;
 
   &__cell {
     white-space: nowrap;
@@ -29,7 +30,7 @@
         display: flex;
       }
     }
-    &--number {
+    &--right {
       text-align: right;
     }
   }
@@ -38,6 +39,15 @@
     margin-left: auto;
     color: $font-color;
     background-color: $background-0;
+  }
+}
+
+tbody {
+  .table__row--selected {
+    background-color: $primary-2 !important;
+  }
+  .table__row:hover {
+    background-color: $primary-3;
   }
 }
 

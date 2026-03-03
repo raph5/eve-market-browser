@@ -94,7 +94,7 @@ export default function MarketData() {
     sellOrderValues[o.OrderId] = {
       quantity: o.VolumeRemain,
       price: o.Price,
-      location: `${location.Security} ${location.Name}`,
+      location: `${formatSecurity(location.Security)} ${location.Name}`,
       expires: o.Issued - now + o.Duration*DAY,
     }
   }
@@ -104,10 +104,10 @@ export default function MarketData() {
     buyOrderValues[o.OrderId] = {
       quantity: o.VolumeRemain,
       price: o.Price,
-      range: `${location.Security} ${location.Name}`,
-      location: o.Issued - now + o.Duration*DAY,
-      min: o.Range,
-      expires: o.MinVolume,
+      location: `${formatSecurity(location.Security)} ${location.Name}`,
+      expires: o.Issued - now + o.Duration*DAY,
+      range: o.Range,
+      min: o.MinVolume,
     }
   }
 
@@ -145,9 +145,12 @@ export default function MarketData() {
             {sellOrder.map(o => {
               const location = orderDump.location[o.LocationId]
               return <Table.Row key={o.OrderId} rowId={o.OrderId}>
-                <Table.Cell column="quantity">{o.VolumeRemain}</Table.Cell>
-                <Table.Cell column="price">{formatIsk(o.Price)}</Table.Cell>
-                <Table.Cell column="location">{`${location.Name} (${Math.round(location.Security * 10) / 10})`}</Table.Cell>
+                <Table.Cell className="table__cell--right" column="quantity">{o.VolumeRemain}</Table.Cell>
+                <Table.Cell className="table__cell--right" column="price">{formatIsk(o.Price)}</Table.Cell>
+                <Table.Cell column="location">
+                  <span className="security" data-sec={formatSecurity(location.Security)}>{formatSecurity(location.Security)}</span>                  
+                  {location.Name}
+                </Table.Cell>
                 <Table.Cell column="expires">{formatExpiresIn(o.Issued, o.Duration, now)}</Table.Cell>
               </Table.Row>
             })}
@@ -168,20 +171,20 @@ export default function MarketData() {
               <Table.Head column="price">Price</Table.Head>
               <Table.Head column="range">Range</Table.Head>
               <Table.Head column="location">Location</Table.Head>
-              <Table.Head column="min">Min</Table.Head>
+              <Table.Head column="min">Min Volume</Table.Head>
               <Table.Head column="expires">Expires</Table.Head>
             </Table.Row>
             {buyOrder.map(o => {
               const location = orderDump.location[o.LocationId]
               return <Table.Row key={o.OrderId} rowId={o.OrderId}>
-                <Table.Cell column="quantity">{o.VolumeRemain}</Table.Cell>
-                <Table.Cell column="price">{formatIsk(o.Price)}</Table.Cell>
+                <Table.Cell className="table__cell--right" column="quantity">{o.VolumeRemain}</Table.Cell>
+                <Table.Cell className="table__cell--right" column="price">{formatIsk(o.Price)}</Table.Cell>
+                <Table.Cell column="range">{formatRange(o.Range)}</Table.Cell>
                 <Table.Cell column="location">
                   <span className="security" data-sec={formatSecurity(location.Security)}>{formatSecurity(location.Security)}</span>                  
                   {location.Name}
                 </Table.Cell>
-                <Table.Cell column="range">{formatRange(o.Range)}</Table.Cell>
-                <Table.Cell column="min">{o.MinVolume}</Table.Cell>
+                <Table.Cell className="table__cell--right" column="min">{o.MinVolume}</Table.Cell>
                 <Table.Cell column="expires">{formatExpiresIn(o.Issued, o.Duration, now)}</Table.Cell>
               </Table.Row>
             })}
