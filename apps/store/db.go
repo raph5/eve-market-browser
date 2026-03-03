@@ -339,6 +339,7 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 	defer cancel()
 
 	dateUnix := date.Unix()
+	// TODO: add INSERT OR REPLACE
 	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO DayMetric VALUES (?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
