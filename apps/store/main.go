@@ -60,7 +60,7 @@ func main() {
 	mainWg.Add(1)
 	go func() {
 		apiWorker(ctx, socketPath)
-		log.Print("Http Server Worker: stopped")
+		log.Print("Api Worker: stopped")
 		mainWg.Done()
 		cancel()
 	}()

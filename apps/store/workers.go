@@ -250,8 +250,6 @@ func apiWorker(ctx context.Context, socketPath string) {
 	if err != nil {
 		log.Printf("Api Worker Error: %v", err)
 	}
-
-	log.Print("Api Worker: not listening")
 }
 
 func getElevenFifteenToday(now time.Time) time.Time {
