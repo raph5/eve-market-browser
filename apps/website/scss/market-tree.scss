@@ -1,5 +1,29 @@
 @import './var.scss';
 
+@keyframes group-blink {
+  10% {
+    background-color: $primary-2;
+  }
+  50% {
+    background-color: mix($primary-2, $background-3, 20%);
+  }
+  100% {
+    background-color: $background-3;
+  }
+}
+
+@keyframes item-blink {
+  10% {
+    background-color: $primary-0;
+  }
+  50% {
+    background-color: mix($primary-0, $primary-1, 20%);
+  }
+  100% {
+    background-color: $primary-1;
+  }
+}
+
 .market-tree {
   height: 100%;
   display: grid;
@@ -90,6 +114,9 @@
     &:hover {
       background-color: $primary-2;
     }
+    &--blink {
+      animation: group-blink linear 500ms;
+    }
   }
   &__label {
     min-width: 0;
@@ -127,7 +154,7 @@
       opacity: 1;
     }
   }
-  &[aria-selected=true] {
+  &[aria-selected=true], &[data-selected=true] {
     background-color: $primary-1;
 
     .market-item__button {
@@ -138,6 +165,9 @@
         background: linear-gradient(90deg, transparent, $primary-1);
       }
     }
+  }
+  &--blink {
+    animation: item-blink linear 300ms;
   }
 
   &__link {

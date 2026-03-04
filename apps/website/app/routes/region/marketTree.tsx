@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react"
+import { forwardRef, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import TreeView from "react-composable-treeview"
 import EveIcon, { iconSrc } from "@components/eveIcon"
 import classNames from "classnames"
@@ -18,6 +18,10 @@ import "@scss/market-tree.scss"
 import { getRarityIcon, getRarityName, getMetaRarity } from "@app/meta"
 import { usePath } from "@hooks/usePath"
 
+export interface MarketTreeRef {
+  openGroup: (groupId: number) => void,
+  openType: (typeId: number) => void,
+}
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
   types: Type[]
@@ -44,7 +48,6 @@ interface MarketTypeProps {
   type: Type
 }
 
-
 interface MarketTreeContextType {
   region: string
   types: Type[]
@@ -57,67 +60,121 @@ const MarketTreeContext = createContext<MarketTreeContextType>({
   marketGroups: [],
 })
 
+type RefsContextType = Record<string, React.RefObject<HTMLDivElement|HTMLLIElement>>
 
-export function MarketTree({
+const RefsContext = createContext<RefsContextType>({});
+
+export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   types,
   marketGroups,
   className,
   treeValue,
   onTreeValueChange,
   ...props
-}: MarketTreeProps) {
+}, ref) => {
   const [search, setSearch, results] = useTypeSearch(types)
   const params = useParams()
+  const refs = useRef<RefsContextType>({})
 
   const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
   const region = params.region as string
+
+  function blink(id: string) {
+    if (id.substring(0, 6) == "group:") {
+      refs.current[id].current?.classList.add("market-group__trigger--blink")
+      setTimeout(() => {
+        refs.current[id].current?.classList.remove("market-group__trigger--blink")
+      }, 500)
+    } else {
+      refs.current[id].current?.classList.add("market-item--blink")
+      setTimeout(() => {
+        refs.current[id].current?.classList.remove("market-item--blink")
+      }, 500)
+    }
+  }
 
   function collapseTree() {
     onTreeValueChange(new Set())
   }
 
+  function openGroup(groupId: number) {
+    let g = getMarketGroup(marketGroups, groupId);
+    while (1) {
+      treeValue.add(`group:${g.id}`)
+      if (g.parentId == null) break;
+      g = getMarketGroup(marketGroups, g.parentId);
+    }
+    onTreeValueChange(new Set(treeValue))
+    setTimeout(() => blink(`group:${groupId}`), 20)
+  }
+
+  function openType(typeId: number) {
+    for (let g of marketGroups) {
+      if (g.types.includes(typeId)) {
+        while (1) {
+          treeValue.add(`group:${g.id}`)
+          if (g.parentId == null) break;
+          g = getMarketGroup(marketGroups, g.parentId);
+        }
+        onTreeValueChange(new Set(treeValue))
+        setTimeout(() => blink(`type:${typeId}`), 20)
+        return
+      }
+    }
+    console.error("marketTreeValueOpenType: unknown type")
+    return treeValue
+  }
+
+  useImperativeHandle(ref, () => ({openGroup, openType}));
+
+  // TODO: scroll to if out of focus
+
   return (
     <MarketTreeContext.Provider value={{ types, marketGroups, region }}>
-      <div className="market-tree">
-        <div className="market-tree__header">
-          <SearchBar
-            className="market-tree__search-bar"
-            value={search}
-            onValueChange={setSearch}
-            placeholder="Search"
-            focusShortcut />
-          <button onClick={collapseTree} className="market-tree__button" title="Collapse all folders">
-            <img src={collapseIcon} className="market-tree__button-icon" />
-          </button>
-        </div>
-        <div className="market-tree__body">
-          <TreeView.Root
-            style={search.length > 3 ? { display: 'none' } : {}}
-            value={treeValue}
-            onValueChange={onTreeValueChange}
-            className={classNames(classNames, 'market-tree__tree')}
-            {...props}
-          >
-            {rootGroups.map(group => (
-              <MarketGroup group={group} key={group.id} />
-            ))}
-          </TreeView.Root>
-
-          {search.length > 3 &&
-            <ul className="market-tree__results">
-              {results.map(type => (
-                <MarketType type={type} key={type.id} />
+      <RefsContext.Provider value={refs.current}>
+        <div className="market-tree">
+          <div className="market-tree__header">
+            <SearchBar
+              className="market-tree__search-bar"
+              value={search}
+              onValueChange={setSearch}
+              placeholder="Search"
+              focusShortcut />
+            <button onClick={collapseTree} className="market-tree__button" title="Collapse all folders">
+              <img src={collapseIcon} className="market-tree__button-icon" />
+            </button>
+          </div>
+          <div className="market-tree__body">
+            <TreeView.Root
+              style={search.length > 3 ? { display: 'none' } : {}}
+              value={treeValue}
+              onValueChange={onTreeValueChange}
+              className={classNames(classNames, 'market-tree__tree')}
+              {...props}
+            >
+              {rootGroups.map(group => (
+                <MarketGroup group={group} key={group.id} />
               ))}
-            </ul>
-          }
+            </TreeView.Root>
+
+            {search.length > 3 &&
+              <ul className="market-tree__results">
+                {results.map(type => (
+                  <MarketType type={type} key={type.id} />
+                ))}
+              </ul>
+            }
+          </div>
         </div>
-      </div>
+      </RefsContext.Provider>
     </MarketTreeContext.Provider>
   )
-}
+})
 
 function MarketGroup({ group }: MarketGroupProps) {
   const { types, marketGroups } = useContext(MarketTreeContext)
+  const refs = useContext(RefsContext);
+  refs[`group:${group.id}`] = useRef<HTMLDivElement>(null);
 
   let rarityGroupCount = 0
   const rarityGroups: Type[][] = []
@@ -135,7 +192,10 @@ function MarketGroup({ group }: MarketGroupProps) {
 
   return (
     <TreeView.Group value={`group:${group.id}`} className="market-group">
-      <TreeView.Trigger className="market-group__trigger">
+      <TreeView.Trigger
+        ref={refs[`group:${group.id}`] as React.RefObject<HTMLDivElement>}
+        className="market-group__trigger"
+      >
         <img src={triangleRightIcon} className="market-group__triangle" />
         <EveIcon src={iconSrc(group.iconId)} alt="" className="market-group__icon" />
         <span className="market-group__label">{group.name}</span>
@@ -191,9 +251,12 @@ function MarketItem({ type }: MarketItemProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
+  const params = useParams()
   const quickbar = useContext(QuickbarContext)
   const inQuickbar = useMemo(() => quickbar.has(type.id), [type, quickbar.state])
   const [linkHref, setLinkHref] = useState(path.setTypeId(type.id))
+  const refs = useContext(RefsContext);
+  refs[`type:${type.id}`] = useRef(null);
 
   function handleKeyDown(event: React.KeyboardEvent) {
     if (event.key == 'Enter') {
@@ -207,7 +270,13 @@ function MarketItem({ type }: MarketItemProps) {
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
-        <TreeView.Item value={`type:${type.id}`} onKeyDown={handleKeyDown} className="market-item">
+        <TreeView.Item
+          ref={refs[`type:${type.id}`] as React.RefObject<HTMLLIElement>}
+          value={`type:${type.id}`}
+          onKeyDown={handleKeyDown}
+          className="market-item"
+          data-selected={params.type == type.id.toString()}
+        >
           <Link to={linkHref} tabIndex={-1} className="market-item__link">
             {type.name}
           </Link>

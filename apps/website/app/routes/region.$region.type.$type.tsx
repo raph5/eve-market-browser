@@ -9,6 +9,8 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
 import { MarketGroup, Type as EsiType } from "@app/esiStore.server";
+import MarketTreeContext from "@app/contexts/marketTreeContext";
+import targetIcon from "@assets/target.png"
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -55,6 +57,7 @@ export default function Type() {
   const { marketGroups, types } = useOutletContext<RegionContext>()
   const { typeId, regionId } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
+  const marketTree = useContext(MarketTreeContext);
   const [inQuickbar, setInQuickbar] = useState(false)
   const matches = useMatches()
   const type = getType(types, typeId)
@@ -74,8 +77,18 @@ export default function Type() {
       <div className="item-header">
         <EveIcon className="item-header__icon" alt={`${type.name} icon`} src={typeIconSrc(typeId)} />
         <div className="item-header__info">
-          <span className="item-header__breadcrumbs">{breadcrumbs.join(' / ')}</span>
-          <h2 className="item-header__name">{type.name}</h2>
+          <span className="item-header__breadcrumbs">
+            {breadcrumbs.map((bc, index) => (<span key={bc.id}>
+              {index > 0 && ' / '}
+              <button key={bc.id} onClick={() => marketTree.openGroup(bc.id)}>{bc.name}</button>
+            </span>))}
+          </span>
+          <div className="item-header__name-box">
+            <h2 className="item-header__name">{type.name}</h2>
+            <button className="item-header__target" onClick={() => marketTree.openType(type.id)}>
+              <img src={targetIcon} />
+            </button>
+          </div>
         </div>
         <div className="item-header__action">
           {inQuickbar ? (
@@ -114,19 +127,19 @@ export function ErrorBoundary() {
   return <ErrorMessage error={error} />
 }
 
-function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): string[] {
-  const bc: string[] = []
+function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): MarketGroup[] {
+  const bc: MarketGroup[] = []
 
   let group = marketGroups.find(g => g.types.includes(typeId))
   if(group === undefined) return []
 
   while(group.parentId) {
-    bc.unshift(group.name)
+    bc.unshift(group)
     // @ts-ignore
     group = marketGroups.find(g => g.id === group.parentId)
     if(group === undefined) return []
   }
-  bc.unshift(group.name)
+  bc.unshift(group)
 
   return bc
 }
