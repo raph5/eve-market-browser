@@ -96,7 +96,7 @@ func historyWorker(ctx context.Context) {
 
 	if len(activeMarkets) == 0 {
 		sleepWithContext(ctx, 30*time.Minute)
-		activeMarkets, err := dbGetActiveMarkets(ctx)
+		activeMarkets, err = dbGetActiveMarkets(ctx)
 		if err != nil {
 			log.Printf("Hisotry Worker Error: initial dbGetActiveMarkets: %v", err)
 			return
