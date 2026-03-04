@@ -57,7 +57,7 @@ export default function Layout() {
   const navRef = useRef<NavigationRef>(null)
 
   const openGroup = (groupId: number) => navRef.current?.marketTree.openGroup(groupId)
-  const openType = (typeId: number) => navRef.current?.marketTree.openType(typeId)
+  const openType = (typeId: number, blink: boolean) => navRef.current?.marketTree.openType(typeId, blink)
 
   return (
     <QuickbarContext.Provider value={quickbar}>

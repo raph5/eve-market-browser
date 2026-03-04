@@ -147,11 +147,28 @@
   &:focus-visible {
     outline: ridge $primary 2px;
   }
+  &--blink {
+    animation: item-blink linear 300ms;
+  }
+  &[data-in-quickbar=true] {
+    .market-item__button {
+      opacity: 1;
+
+      &::after {
+        background: linear-gradient(90deg, transparent, $background-2);
+      }
+    }
+  }
   &:hover {
     background-color: $primary-3;
 
     .market-item__button {
+      background-color: $primary-3;
       opacity: 1;
+
+      &::after {
+        background: linear-gradient(90deg, transparent, $primary-3);
+      }
     }
   }
   &[aria-selected=true], &[data-selected=true] {
@@ -165,9 +182,6 @@
         background: linear-gradient(90deg, transparent, $primary-1);
       }
     }
-  }
-  &--blink {
-    animation: item-blink linear 300ms;
   }
 
   &__link {
@@ -197,7 +211,7 @@
     align-items: center;
     justify-content: center;
     opacity: 0;
-    background-color: $primary-3;
+    background-color: $background-2;
 
     &-icon {
       width: 16px;

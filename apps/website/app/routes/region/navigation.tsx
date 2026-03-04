@@ -15,7 +15,7 @@ export interface QuickItem {
 export interface NavigationRef {
   marketTree: {
     openGroup: (groupId: number) => void,
-    openType: (typeId: number) => void,
+    openType: (typeId: number, blink: boolean) => void,
   }
 }
 
@@ -43,7 +43,7 @@ const Navigation = forwardRef<NavigationRef, NavigationProps>(({ types, marketGr
   useImperativeHandle(ref, () => ({
     marketTree: {
       openGroup: (groupId: number) => marketTreeRef.current?.openGroup(groupId),
-      openType: (groupId: number) => marketTreeRef.current?.openType(groupId),
+      openType: (groupId: number, blink: boolean) => marketTreeRef.current?.openType(groupId, blink),
     }
   }))
 

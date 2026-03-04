@@ -4,7 +4,7 @@ import { Link, Outlet, useLoaderData, useLocation, useMatches, useOutletContext,
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "./region/route";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
@@ -57,10 +57,18 @@ export default function Type() {
   const { marketGroups, types } = useOutletContext<RegionContext>()
   const { typeId, regionId } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
-  const marketTree = useContext(MarketTreeContext);
+  const marketTree = useContext(MarketTreeContext)
   const [inQuickbar, setInQuickbar] = useState(false)
   const matches = useMatches()
   const type = getType(types, typeId)
+
+  const isMarketTreeInitialized = useRef(false)
+  useEffect(() => {
+    if (!isMarketTreeInitialized.current) {
+      isMarketTreeInitialized.current = true
+      marketTree.openType(typeId, false)
+    }
+  }, [])
 
   const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
 
@@ -85,7 +93,7 @@ export default function Type() {
           </span>
           <div className="item-header__name-box">
             <h2 className="item-header__name">{type.name}</h2>
-            <button className="item-header__target" onClick={() => marketTree.openType(type.id)}>
+            <button className="item-header__target" onClick={() => marketTree.openType(type.id, true)}>
               <img src={targetIcon} />
             </button>
           </div>

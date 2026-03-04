@@ -20,7 +20,7 @@ import { usePath } from "@hooks/usePath"
 
 export interface MarketTreeRef {
   openGroup: (groupId: number) => void,
-  openType: (typeId: number) => void,
+  openType: (typeId: number, blink: boolean) => void,
 }
 
 export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElement>, 'defaultValue'> {
@@ -79,7 +79,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
   const region = params.region as string
 
-  function blink(id: string) {
+  function animateBlink(id: string) {
     if (id.substring(0, 6) == "group:") {
       refs.current[id].current?.classList.add("market-group__trigger--blink")
       setTimeout(() => {
@@ -105,10 +105,10 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
       g = getMarketGroup(marketGroups, g.parentId);
     }
     onTreeValueChange(new Set(treeValue))
-    setTimeout(() => blink(`group:${groupId}`), 20)
+    setTimeout(() => animateBlink(`group:${groupId}`), 20)
   }
 
-  function openType(typeId: number) {
+  function openType(typeId: number, blink: boolean) {
     for (let g of marketGroups) {
       if (g.types.includes(typeId)) {
         while (1) {
@@ -117,7 +117,9 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
           g = getMarketGroup(marketGroups, g.parentId);
         }
         onTreeValueChange(new Set(treeValue))
-        setTimeout(() => blink(`type:${typeId}`), 20)
+        if (blink) {
+          setTimeout(() => animateBlink(`type:${typeId}`), 20)
+        }
         return
       }
     }
@@ -276,6 +278,7 @@ function MarketItem({ type }: MarketItemProps) {
           onKeyDown={handleKeyDown}
           className="market-item"
           data-selected={params.type == type.id.toString()}
+          data-in-quickbar={inQuickbar}
         >
           <Link to={linkHref} tabIndex={-1} className="market-item__link">
             {type.name}
@@ -330,7 +333,7 @@ function MarketType({ type }: MarketTypeProps) {
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
-        <li onKeyDown={handleKeyDown} className="market-item">
+        <li onKeyDown={handleKeyDown} className="market-item" data-in-quickbar={inQuickbar}>
           <Link to={linkHref} tabIndex={-1} className="market-item__link">
             {type.name}
           </Link>
