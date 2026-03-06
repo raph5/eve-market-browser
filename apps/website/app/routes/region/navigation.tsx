@@ -1,9 +1,9 @@
 import type { MarketGroup, Type } from "@app/esiStore.server"
 import "@scss/navigation.scss"
 import { Tab, TabRef, TabsRoot } from "@components/tabs"
-import { MarketTree } from "./marketTree"
+import { MarketTree, MarketTreeRef } from "./marketTree"
 import { Quickbar } from "./quickbar"
-import { useContext, useEffect, useRef, useState } from "react"
+import { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from "react"
 import QuickbarContext from "@contexts/quickbarContext"
 
 export interface QuickItem {
@@ -12,14 +12,22 @@ export interface QuickItem {
   folder: string
 }
 
+export interface NavigationRef {
+  marketTree: {
+    openGroup: (groupId: number) => void,
+    openType: (typeId: number, blink: boolean) => void,
+  }
+}
+
 export interface NavigationProps {
   types: Type[]
   marketGroups: MarketGroup[]
 }
 
-export default function Navigation({ types, marketGroups }: NavigationProps) {
+const Navigation = forwardRef<NavigationRef, NavigationProps>(({ types, marketGroups }, ref) => {
   const quickbar = useContext(QuickbarContext)
   const tabsRef = useRef<TabRef>(null)
+  const marketTreeRef = useRef<MarketTreeRef>(null)
   const [marketTreeValue, setMarketTreeValue] = useState<Set<string>>(new Set())
   const [quickbarTreeValue, setQuickbarTreeValue] = useState<Set<string>>(new Set())
 
@@ -32,11 +40,19 @@ export default function Navigation({ types, marketGroups }: NavigationProps) {
     { value: 'quickbar', label: 'Quickbar' }
   ]
 
+  useImperativeHandle(ref, () => ({
+    marketTree: {
+      openGroup: (groupId: number) => marketTreeRef.current?.openGroup(groupId),
+      openType: (groupId: number, blink: boolean) => marketTreeRef.current?.openType(groupId, blink),
+    }
+  }))
+
   return (
     <nav className="nav">
       <TabsRoot className="nav__tabs" tabs={tabs} defaultValue="browse" ref={tabsRef}>
         <Tab className="nav__tab" value="browse">
           <MarketTree
+            ref={marketTreeRef}
             types={types}
             marketGroups={marketGroups}
             treeValue={marketTreeValue}
@@ -53,4 +69,6 @@ export default function Navigation({ types, marketGroups }: NavigationProps) {
       </TabsRoot>
     </nav>
   )
-}
+})
+
+export default Navigation

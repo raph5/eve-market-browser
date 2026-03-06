@@ -38,7 +38,8 @@ for line in type_file:
     id = type_data["_key"]
     type_record[id] = type_data["name"]["en"]
     group_id = type_data.get("marketGroupID", None)
-    if group_id != None:
+    published = type_data.get("published", True)
+    if group_id != None and published:
         group_record[group_id]["types"].append(id)
 type_file.close()
 

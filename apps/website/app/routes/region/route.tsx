@@ -1,13 +1,15 @@
 import { esiStore } from "@app/esiStore.server";
 import { json } from "@remix-run/node";
 import { MetaFunction, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
-import Navigation from "./navigation";
+import Navigation, { NavigationRef } from "./navigation";
 import { ErrorMessage } from "@components/errorMessage";
 import { MarketGroup, Region, Type } from "@app/esiStore.server";
 import Header from "./header";
 import { useQuickbar } from "@hooks/useQuickbar";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/app.scss"
+import { useRef, useState } from "react";
+import MarketTreeContext from "@app/contexts/marketTreeContext";
 
 export interface RegionContext {
   types: Type[]
@@ -52,16 +54,22 @@ export async function loader() {
 export default function Layout() {
   const { types, marketGroups, regions } = useLoaderData<typeof loader>();
   const quickbar = useQuickbar(types)
+  const navRef = useRef<NavigationRef>(null)
+
+  const openGroup = (groupId: number) => navRef.current?.marketTree.openGroup(groupId)
+  const openType = (typeId: number, blink: boolean) => navRef.current?.marketTree.openType(typeId, blink)
 
   return (
     <QuickbarContext.Provider value={quickbar}>
-      <div className="app">
-        <Header regions={regions} />
-        <Navigation types={types} marketGroups={marketGroups} />
-        <main>
-          <Outlet context={{ types, marketGroups, regions }} />
-        </main>
-      </div>
+      <MarketTreeContext.Provider value={{openGroup, openType}}>
+        <div className="app">
+          <Header regions={regions} />
+          <Navigation ref={navRef} types={types} marketGroups={marketGroups} />
+          <main>
+            <Outlet context={{ types, marketGroups, regions }} />
+          </main>
+        </div>
+      </MarketTreeContext.Provider>
     </QuickbarContext.Provider>
   );
 }
