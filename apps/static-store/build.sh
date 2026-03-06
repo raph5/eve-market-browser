@@ -25,6 +25,7 @@ unzip -q $sde_zip -d $sde_path
 [[ -f "$sde_path/types.jsonl" ]] || { echo "types.jsonl is missing from SDE" >&2; exit 1; }
 [[ -f "$sde_path/marketGroups.jsonl" ]] || { echo "marketGroups.jsonl is missing from SDE" >&2; exit 1; }
 [[ -f "$sde_path/mapRegions.jsonl" ]] || { echo "mapRegions.jsonl is missing from SDE" >&2; exit 1; }
+[[ -f "$sde_path/blueprints.jsonl" ]] || { echo "blueprints.jsonl is missing from SDE" >&2; exit 1; }
 
 ./build-regions.py \
   $sde_path/mapRegions.jsonl \
@@ -40,5 +41,10 @@ unzip -q $sde_zip -d $sde_path
   $sde_path/types.jsonl \
   $out_dir/market-group.json \
   > $out_dir/types.json
+
+./build-blueprints.py \
+  $sde_path/blueprints.jsonl \
+  $out_dir/market-group.json \
+  > $out_dir/blueprints.json
 
 rm -r $sde_path
