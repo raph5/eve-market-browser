@@ -16,7 +16,7 @@ for group in market_group_list:
     for type_id in group["types"]:
         used_type.add(type_id)
 
-blueprint_record = {}
+blueprints = []
 for line in blueprint_file: 
     bp = json.loads(line)
     activities = []
@@ -30,15 +30,20 @@ for line in blueprint_file:
         products = a.get("products", [])
         for p in products:
             if p["typeID"] in used_type:
-                blueprint_record[p["typeID"]] = {
-                    "quantity": p["quantity"],
+                blueprints.append({
+                    "product": {
+                        "typeId": p["typeID"],
+                        "quantity": p["quantity"],
+                    },
                     "blueprint": bp["blueprintTypeID"],
                     "time": a["time"],
                     "materials": [
-                        {"typeId": m["typeID"], "quantity": m["quantity"]}
-                        for m in a.get("materials", [])
+                        {
+                            "typeId": m["typeID"],
+                            "quantity": m["quantity"],
+                        } for m in a.get("materials", [])
                     ]
-                }
+                })
 blueprint_file.close()
 
-json.dump(blueprint_record, sys.stdout, separators=(',', ':'))
+json.dump(blueprints, sys.stdout, separators=(',', ':'))
