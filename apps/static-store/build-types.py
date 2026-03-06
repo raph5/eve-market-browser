@@ -22,11 +22,13 @@ for line in type_file:
     id = type_data["_key"]
     name = type_data["name"]["en"]
     meta = type_data.get("metaGroupID", 1)
+    volume = type_data.get("volume", 0)
     if id in used_type:
         type_list.append({
             "id": id,
             "name": name,
             "meta": meta,
+            "volume": volume,
         })
 type_file.close()
 
