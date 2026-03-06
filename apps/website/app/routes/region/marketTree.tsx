@@ -84,12 +84,12 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
       refs.current[id].current?.classList.add("market-group__trigger--blink")
       setTimeout(() => {
         refs.current[id].current?.classList.remove("market-group__trigger--blink")
-      }, 500)
+      }, 300)
     } else {
       refs.current[id].current?.classList.add("market-item--blink")
       setTimeout(() => {
         refs.current[id].current?.classList.remove("market-item--blink")
-      }, 500)
+      }, 300)
     }
   }
 
