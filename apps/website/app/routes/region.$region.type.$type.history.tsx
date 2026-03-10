@@ -1,4 +1,4 @@
-import { esiStore } from "@app/esiStore.server"
+import { DayMetric, esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
@@ -26,7 +26,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const history: HistoryDay[] = await esiStore.getHistory(typeId, regionId)
+  const history: DayMetric[] = await esiStore.getHistory(typeId, regionId)
 
   return json({
     typeId,
@@ -37,6 +37,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function PriceHistory() {
   const { history } = useLoaderData<typeof loader>()
+  console.log(history)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

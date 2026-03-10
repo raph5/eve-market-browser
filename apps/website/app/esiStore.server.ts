@@ -1,4 +1,3 @@
-import type { HistoryDay } from "@app/esiStore/types"
 import { readFile } from "node:fs/promises"
 import { unixSocketFetch } from "./utils";
 
@@ -26,29 +25,29 @@ export interface MarketGroup {
 }
 
 export interface Location {
-  Id: number,
-  TypeId: number,
-  OwnerId: number,
-  SystemId: number,
-  RegionId: number,
-  Security: number,
-  Name: string,
+  Id: number
+  TypeId: number
+  OwnerId: number
+  SystemId: number
+  RegionId: number
+  Security: number
+  Name: string
 }
 
 export interface Order {
-  IsBuyOrder: boolean,
-  Range: number,
-  Duration: number,
-  Issued: number,
-  MinVolume: number,
-  VolumeRemain: number,
-  VolumeTotal: number,
-  LocationId: number,
-  SystemId: number,
-  TypeId: number,
-  RegionId: number,
-  OrderId: number,
-  Price: number,
+  IsBuyOrder: boolean
+  Range: number
+  Duration: number
+  Issued: number
+  MinVolume: number
+  VolumeRemain: number
+  VolumeTotal: number
+  LocationId: number
+  SystemId: number
+  TypeId: number
+  RegionId: number
+  OrderId: number
+  Price: number
 }
 
 export interface OrderDump {
@@ -57,15 +56,24 @@ export interface OrderDump {
   validity: number
 }
 
+export interface DayMetric {
+	Date: number
+	Average: number
+	Highest: number
+	Lowest: number
+	OrderCount: number
+	Volume: number
+}
+
 export interface Blueprint {
   product: {
-    typeId: number,
-    quantity: number,
+    typeId: number
+    quantity: number
   },
-  blueprint: number,
-  time: number,
+  blueprint: number
+  time: number
   materials: {
-    typeId: number,
+    typeId: number
     quantity: number
   }[],
 }
@@ -115,7 +123,7 @@ class EsiStore {
       .then(res => JSON.parse(res))
   }
 
-  async getHistory(typeId: number, regionId: number): Promise<HistoryDay[]> {
+  async getHistory(typeId: number, regionId: number): Promise<DayMetric[]> {
     return unixSocketFetch(socketPath, `/day-metric?region=${regionId}&type=${typeId}`)
       .then(res => JSON.parse(res))
   }
