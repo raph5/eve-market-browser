@@ -214,7 +214,7 @@ func dbGetDayMetricsForTypeAndRegion(ctx context.Context, typeId uint64, regionI
 	dayMetric := make([]dbDayMetric, 0, 512)
 
 	query := `SELECT Date, OrderCount, Volume, Average, Highest, Lowest FROM DayMetric
-WHERE TypeId = ? AND RegionId = ?
+WHERE TypeId = 52568 AND RegionId = 10000002
 ORDER BY Date`
 	rows, err := dbRead.QueryContext(timeoutCtx, query, typeId, regionId)
 	if err != nil {
