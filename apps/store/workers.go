@@ -297,10 +297,9 @@ func getUnknownLocations(orders []emd.Order, knownLocations map[uint64]struct{},
 }
 
 func appendGlobalMetrics(metrics []emd.HistoryDay) []emd.HistoryDay {
-	globalMetricMap := make(map[emd.HistoryMarket]emd.HistoryDay)
+	globalMetricMap := make(map[uint64]emd.HistoryDay)
 	for _, day := range metrics {
-		market := emd.HistoryMarket{RegionId: day.RegionId, TypeId: day.TypeId}
-		gDay, ok := globalMetricMap[market]
+		gDay, ok := globalMetricMap[day.TypeId]
 		if ok {
 			if day.Volume > 0 {
 				gDay.Average = (gDay.Average*float64(gDay.Volume) + day.Average*float64(day.Volume)) /
@@ -315,14 +314,14 @@ func appendGlobalMetrics(metrics []emd.HistoryDay) []emd.HistoryDay {
 			}
 			gDay.OrderCount += day.OrderCount
 			gDay.Volume += day.Volume
-			globalMetricMap[market] = gDay
+			globalMetricMap[day.TypeId] = gDay
 		} else {
 			day.RegionId = 0
-			globalMetricMap[market] = day
+			globalMetricMap[day.TypeId] = day
 		}
 	}
-	for market := range globalMetricMap {
-		metrics = append(metrics, globalMetricMap[market])
+	for typeId := range globalMetricMap {
+		metrics = append(metrics, globalMetricMap[typeId])
 	}
 	return metrics
 }
