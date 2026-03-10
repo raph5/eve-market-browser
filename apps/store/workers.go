@@ -115,8 +115,6 @@ func historyWorker(ctx context.Context) {
 		return
 	}
 
-	workerStart := time.Now()
-
 	if fullDownloadNeeded {
 		log.Printf("History Worker: full download start")
 		snapshot, err := emd.DownloadFullHistoryDump(ctx, activeMarkets)
@@ -150,12 +148,12 @@ func historyWorker(ctx context.Context) {
 		}
 	}
 
-	elevenFifteenTomorrow := getElevenFifteenTomorrow(workerStart)
-	elevenFifteenToday := getElevenFifteenToday(workerStart)
-	expiration := elevenFifteenTomorrow
-	if workerStart.Before(elevenFifteenToday) {
-		expiration = elevenFifteenToday
+	lastDayMetricInDB, err := dbGetDayMetricsLastDate(ctx)
+	if err != nil {
+		log.Printf("History Worker Error: dbGetDayMetricsLastDate: %v", err)
+		return
 	}
+	expiration := getElevenFifteenTomorrow(lastDayMetricInDB)
 
 	for {
 		if err := ctx.Err(); err != nil {
@@ -252,10 +250,6 @@ func apiWorker(ctx context.Context, socketPath string) {
 	if err != nil {
 		log.Printf("Api Worker Error: %v", err)
 	}
-}
-
-func getElevenFifteenToday(now time.Time) time.Time {
-	return time.Date(now.Year(), now.Month(), now.Day(), 11, 15, 0, 0, now.Location())
 }
 
 func getElevenFifteenTomorrow(now time.Time) time.Time {

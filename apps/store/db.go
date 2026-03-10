@@ -238,6 +238,19 @@ ORDER BY Date`
 	return dayMetric, nil
 }
 
+func dbGetDayMetricsLastDate(ctx context.Context) (time.Time, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
+	var dateUnix int64
+	err := dbRead.QueryRowContext(timeoutCtx, "SELECT max(Date) FROM DayMetric").Scan(&dateUnix)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(dateUnix, 0), nil
+}
+
 func dbGetOrdersForType(ctx context.Context, typeId uint64) ([]emd.Order, error) {
 	dbRead := ctx.Value("dbRead").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
