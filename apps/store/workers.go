@@ -12,6 +12,8 @@ import (
 	emd "github.com/raph5/eve-market-dump"
 )
 
+// BUG: Sometimes orderWorker takes around a minute to stop when `ctx` is
+// canceled. I don't know why.
 func orderWorker(
 	ctx context.Context,
 	secrets *emd.ApiSecrets,

@@ -37,6 +37,9 @@ Build remix app `npm run build`
 
 ## TODO
 
+- Delete dir apps/website/app/esiStore
+- Add client side error boudaries
+
 - Improve search experience
 - Test quickbar exports
 - Find a way to reduce the rate of database locks
