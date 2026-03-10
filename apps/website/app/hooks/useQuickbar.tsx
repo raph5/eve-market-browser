@@ -511,5 +511,5 @@ function getTypeName(types: any[], typeId: number): string {
       return types[i].name
     }
   }
-  return "Unknown Type"
+  return `Unknown Item ${typeId}`
 }

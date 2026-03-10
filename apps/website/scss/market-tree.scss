@@ -41,6 +41,7 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
   &__search-bar {
     width: 100%;

@@ -6,6 +6,7 @@ export interface Type {
   id: number
   name: string
   meta: number
+  volume: number
 }
 
 export interface Region {
@@ -56,6 +57,19 @@ export interface OrderDump {
   validity: number
 }
 
+export interface Blueprint {
+  product: {
+    typeId: number,
+    quantity: number,
+  },
+  blueprint: number,
+  time: number,
+  materials: {
+    typeId: number,
+    quantity: number
+  }[],
+}
+
 const socketPath = "/tmp/emb.sock"
 
 class EsiStore {
@@ -63,6 +77,7 @@ class EsiStore {
   public regions: Promise<Region[]>
   public marketGroups: Promise<MarketGroup[]>
   public types: Promise<Type[]>
+  public blueprints: Promise<Blueprint[]>
 
   constructor(cacheFolder: string) {
     this.regions = readFile(`${cacheFolder}/regions.json`, { encoding: 'utf8' })
@@ -70,6 +85,8 @@ class EsiStore {
     this.marketGroups = readFile(`${cacheFolder}/market-group.json`, { encoding: 'utf8' })
       .then(mg => JSON.parse(mg))
     this.types = readFile(`${cacheFolder}/types.json`, { encoding: 'utf8' })
+      .then(t => JSON.parse(t))
+    this.blueprints = readFile(`${cacheFolder}/blueprints.json`, { encoding: 'utf8' })
       .then(t => JSON.parse(t))
   }
 

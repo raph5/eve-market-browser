@@ -488,5 +488,5 @@ function getType(types: Type[], typeId: number): Type {
       return types[i]
     }
   }
-  throw Error(`Cant find type ${typeId} in types`)
+  return {id: typeId, name: `Unknown Item ${typeId}`, meta: 1, volume: 0}
 }

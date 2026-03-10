@@ -75,10 +75,19 @@ export function Row({children, rowId, className, ...props}: RowProps) {
 
   function handleClick(e: any) {
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
-      setSelection(new Set(selection).add(rowId))
+      if (selection.has(rowId)) {
+        const newSelection = new Set(selection).delete(rowId)
+        setSelection(newSelection)
+      } else {
+        setSelection(new Set(selection).add(rowId))
+      }
       e.preventDefault()
     } else {
-      setSelection(new Set([rowId]))
+      if (selection.has(rowId)) {
+        setSelection(new Set([]))
+      } else {
+        setSelection(new Set([rowId]))
+      }
     }
   }
 

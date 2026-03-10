@@ -1,4 +1,4 @@
-import { esiStore } from "@app/esiStore.server";
+import { Blueprint, esiStore } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Link, Outlet, useLoaderData, useLocation, useMatches, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { typeIconSrc } from "@components/eveIcon";
@@ -10,7 +10,16 @@ import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
 import { MarketGroup, Type as EsiType } from "@app/esiStore.server";
 import MarketTreeContext from "@app/contexts/marketTreeContext";
+import { esiFetch } from "@app/esiFetch";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Tab, TabsRoot } from "@components/tabs";
 import targetIcon from "@assets/target.png"
+import infoIcon from "@assets/info-transparent.png"
+import showInfoIcon from "@assets/info.png"
+import closeIcon from "@assets/close.png"
+import nanoIcon from "@assets/nano.png"
+import bulkheadsIcon from "@assets/bulkheads.png"
+import cargoIcon from "@assets/cargo.png"
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -48,14 +57,16 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
+  const blueprints = await esiStore.blueprints
+
   return json(
-    { typeId, typeName, regionId, regionName },
+    { typeId, typeName, regionId, regionName, blueprints },
   )
 }
 
 export default function Type() {
   const { marketGroups, types } = useOutletContext<RegionContext>()
-  const { typeId, regionId } = useLoaderData<typeof loader>()
+  const { typeId, regionId, blueprints } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
   const [inQuickbar, setInQuickbar] = useState(false)
@@ -109,6 +120,7 @@ export default function Type() {
               <span>Add To Quickbar</span>
             </button>
           )}
+          <ShowInfo typeId={typeId} blueprints={blueprints} />
         </div>
       </div>
       <div className="item-body">
@@ -135,6 +147,116 @@ export function ErrorBoundary() {
   return <ErrorMessage error={error} />
 }
 
+interface TypeData {
+  id: number,
+  name: string,
+  description: string,
+  volume?: number,
+  packaged_volume?: number,
+  capacity?: number,
+  mass?: number,
+}
+
+interface ShowInfoProps {
+  blueprints: Blueprint[],
+  typeId: number,
+}
+
+function ShowInfo({typeId, blueprints}: ShowInfoProps) {
+  const [type, setType] = useState<TypeData|null>(null);
+  const [error, setError] = useState<Error|null>(null);
+
+  const description = useMemo(() => (
+    type && sanitizeHtml(removeUnsupportedTags(type.description))
+  ), [type]) ?? ""
+
+  useEffect(() => {
+    esiFetch("GET", `/universe/types/${typeId}`, {}, 1)
+      .then(repsonse => {
+        setType(repsonse.data as TypeData)
+        setError(null)
+      })
+      .catch(error => {
+        setType(null)
+        setError(error)
+      });
+  }, [typeId]);
+
+  const tabs = [
+    { value: 'attributes', label: 'Attributes' },
+    { value: 'industry', label: 'Industry' },
+    { value: 'description', label: 'Description' },
+  ]
+
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger className="button show-info__tirgger" title="Show Info">
+        <img src={infoIcon} className="" />
+        <span>Show Info</span>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="dialog__overlay" />
+        <Dialog.Content className="dialog show-info">
+          {type != null && <>
+            <div className="show-info__header">
+              <img src={showInfoIcon} className="show-info__header-icon"/>
+              <Dialog.Title className="show-info__header-title">Information</Dialog.Title>
+              <Dialog.Close className="show-info__header-close">
+                <img src={closeIcon} />
+              </Dialog.Close>
+            </div>
+
+            <div className="show-info__banner">
+              <EveIcon className="show-info__banner-icon" alt={`${type.name} icon`} src={typeIconSrc(typeId)} />
+              <div className="show-info__banner-text">
+                <span className="show-info__name">{type.name}</span>
+                {/* TODO: Add Price estimate */}
+              </div>
+            </div>
+
+            <TabsRoot tabs={tabs} defaultValue="attributes">
+              <Tab value="attributes" className="show-info__attributes">
+                {type.volume &&
+                  <div className="show-info__line">
+                    <img src={nanoIcon} />
+                    <span>Volume</span>
+                    <span>
+                      {type.volume} TODO
+                      {type.packaged_volume && type.packaged_volume != type.volume && `(${type.packaged_volume}))`}
+                    </span>
+                  </div>
+                }
+                {!!type.capacity &&
+                  <div className="show-info__line">
+                    <img src={cargoIcon} />
+                    <span>Capacity</span>
+                    <span>{type.capacity}</span>
+                  </div>
+                }
+                {!!type.mass &&
+                  <div className="show-info__line">
+                      <img src={bulkheadsIcon} />
+                    <span>Mass</span>
+                    <span>{type.mass}</span>
+                  </div>
+                }
+              </Tab>
+              <Tab value="industry" className="show-info__industry"></Tab>
+              <Tab value="description" className="show-info__description">
+                {/* TODO: Check for the rendering of the PLEX description */}
+                <span dangerouslySetInnerHTML={{__html: description}} />
+              </Tab>
+            </TabsRoot>
+          </>}
+          {error != null &&
+            <ErrorMessage className="show-info__error" error={error} />
+          }
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): MarketGroup[] {
   const bc: MarketGroup[] = []
 
@@ -152,12 +274,42 @@ function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): Market
   return bc
 }
 
+function sanitizeHtml(input: string): string {
+  input = input.replaceAll("<b>", "@b@");
+  input = input.replaceAll("</b>", "@/b@");
+  input = input.replaceAll("<i>", "@i@");
+  input = input.replaceAll("</i>", "@/i@");
+  input = input.replaceAll("<", "&lt");
+  input = input.replaceAll(">", "&gt");
+  input = input.replaceAll("@b@", "<b>");
+  input = input.replaceAll("@/b@", "</b>");
+  input = input.replaceAll("@i@", "<i>");
+  input = input.replaceAll("@/i@", "</i>");
+  return input;
+}
+
+function removeUnsupportedTags(input: string): string {
+  input = input.replaceAll(/<font.+?>/g, "")
+  input = input.replaceAll("</font>", "")
+  input = input.replaceAll(/<url.+?>/g, "")
+  input = input.replaceAll("</url>", "")
+  return input;
+}
+
 function getType(types: EsiType[], typeId: number): EsiType {
   for(let i=0; i<types.length; i++) {
     if(types[i].id == typeId) {
       return types[i]
     }
   }
-  throw Error(`Cant find type ${typeId} in types`)
+  return {id: typeId, name: `Unknown Item ${typeId}`, meta: 1, volume: 0}
 }
 
+function getBlueprint(blueprints: Blueprint[], typeId: number): Blueprint {
+  for(let i=0; i<blueprints.length; i++) {
+    if(blueprints[i].product.typeId == typeId) {
+      return blueprints[i]
+    }
+  }
+  return {product: {typeId: typeId, quantity: 0}, time: 0, blueprint: 0, materials: []}
+}

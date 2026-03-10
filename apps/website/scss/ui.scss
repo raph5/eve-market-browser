@@ -8,6 +8,7 @@
   font-family: $font;
   padding: 4px 8px;
   cursor: pointer;
+  // TODO: add gap
 
   > * {
     vertical-align: middle;
@@ -51,12 +52,13 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background-color: $background-1;
-  border: solid 1px $border-1;
+  border: solid 1px $background-4;
   padding: 12px;
   width: 350px;
   min-height: 200px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 0 40px #0006;
 
   &::after {
     content: "";
@@ -65,8 +67,7 @@
     left: -1px;
     right: -1px;
     height: 1px;
-    background-color: $primary-0;
-    box-shadow: 0 0 2px $primary-0;
+    background-color: darken($primary, 30);
   }
 
   &__header {
@@ -91,7 +92,7 @@
   }
   &__title {
     grid-area: title;
-    font-size: 20px;
+    font-size: 18px;
     margin: 0;
     display: flex;
     align-items: center;
@@ -129,7 +130,7 @@
     right: 0;
     width: 100%;
     height: 100%;
-    background-color: transparentize(darken($primary, 60), 0.5);
+    background-color: transparentize(darken($primary, 60), 0.7);
   }
 }
 

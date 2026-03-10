@@ -75,21 +75,37 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   const [search, setSearch, results] = useTypeSearch(types)
   const params = useParams()
   const refs = useRef<RefsContextType>({})
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
   const region = params.region as string
 
   function animateBlink(id: string) {
     if (id.substring(0, 6) == "group:") {
-      refs.current[id].current?.classList.add("market-group__trigger--blink")
+      refs.current[id]?.current?.classList.add("market-group__trigger--blink")
       setTimeout(() => {
-        refs.current[id].current?.classList.remove("market-group__trigger--blink")
+        refs.current[id]?.current?.classList.remove("market-group__trigger--blink")
       }, 300)
     } else {
-      refs.current[id].current?.classList.add("market-item--blink")
+      refs.current[id]?.current?.classList.add("market-item--blink")
       setTimeout(() => {
-        refs.current[id].current?.classList.remove("market-item--blink")
+        refs.current[id]?.current?.classList.remove("market-item--blink")
       }, 300)
+    }
+  }
+
+  function scrollIntoView(id: string) {
+    const el = refs.current[id]?.current;
+    const body = bodyRef.current;
+    if (!el || !body) return;
+    const elBox = el.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+
+    const margin = 150;
+    if (elBox.y - bodyBox.y < margin) {
+      body.scrollTo(0, el.offsetTop - bodyBox.y - margin)
+    } else if (elBox.y - bodyBox.y > bodyBox.height - margin) {
+      body.scrollTo(0, el.offsetTop - bodyBox.y - bodyBox.height + margin)
     }
   }
 
@@ -120,6 +136,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
         if (blink) {
           setTimeout(() => animateBlink(`type:${typeId}`), 20)
         }
+        scrollIntoView(`type:${typeId}`)
         return
       }
     }
@@ -128,8 +145,6 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   }
 
   useImperativeHandle(ref, () => ({openGroup, openType}));
-
-  // TODO: scroll to if out of focus
 
   return (
     <MarketTreeContext.Provider value={{ types, marketGroups, region }}>
@@ -146,7 +161,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
               <img src={collapseIcon} className="market-tree__button-icon" />
             </button>
           </div>
-          <div className="market-tree__body">
+          <div className="market-tree__body" ref={bodyRef}>
             <TreeView.Root
               style={search.length > 3 ? { display: 'none' } : {}}
               value={treeValue}
@@ -373,7 +388,7 @@ function getType(types: Type[], typeId: number): Type {
       return types[i]
     }
   }
-  throw Error(`Cant find type ${typeId} in types`)
+  return {id: typeId, name: `Unknown Item ${typeId}`, meta: 1, volume: 0}
 }
 
 function getMarketGroup(groups: EsiMarketGroup[], groupId: number): EsiMarketGroup {
@@ -382,5 +397,14 @@ function getMarketGroup(groups: EsiMarketGroup[], groupId: number): EsiMarketGro
       return groups[i]
     }
   }
-  throw Error(`Cant find group ${groupId} in market groups`)
+  return {
+    id: groupId,
+    parentId: null,
+    description: `Unknwon Market Group ${groupId}`,
+    name: `Unknwon Market Group ${groupId}`,
+    types: [],
+    iconId: 0,
+    iconAlt: `Unknwon Market Group ${groupId}`,
+    childsId: [],
+  }
 }
