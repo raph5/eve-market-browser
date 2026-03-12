@@ -1,4 +1,3 @@
-import { HistoryDay } from "@app/esiStore/types"
 import { GraphContext } from "./context"
 import { HistoryBox } from "./objects/historyBox"
 import { Object2d, ObjectHtml, hitBox } from "./types"
@@ -13,6 +12,7 @@ import { MinMax } from "./objects/minMax"
 import { GraphBg } from "./objects/graphBg"
 import { Volume } from "./objects/volume"
 import { Tooltip } from "./objects/tooltip"
+import { DayMetric } from "@app/esiStore.server"
 
 export class Graph {
 
@@ -32,7 +32,7 @@ export class Graph {
   private _actualCursor = 'unset'
 
   constructor(
-    history: HistoryDay[],
+    history: DayMetric[],
     private container: HTMLElement,
     autoStart: boolean = true
   ) {
@@ -101,7 +101,7 @@ export class Graph {
     }
   }
 
-  setHistory(history: HistoryDay[]) {
+  setHistory(history: DayMetric[]) {
     this.context.history = history
   }
 

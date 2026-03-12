@@ -19,13 +19,6 @@ type dbDayMetric struct {
 	Volume     uint64
 }
 
-type dbTickMetric struct {
-	Time       uint64
-	LocationId uint64
-	Average    float64
-	Volume     uint64
-}
-
 func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
 	dbWrite, err := sql.Open("sqlite3", dbPath+"?_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL&_txlock=immediate")
 	if err != nil {
@@ -361,6 +354,28 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 
 	for _, d := range dayMetrics {
 		_, err := stmt.Exec(d.TypeId, d.RegionId, dateUnix, d.OrderCount, d.Volume, d.Average, d.Highest, d.Lowest)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMetric) error {
+	dbWrite := ctx.Value("dbWrite").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
+	timeUnix := _time.Unix()
+	// TODO: add INSERT OR REPLACE
+	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO DayMetric VALUES (?,?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, t := range tickMetrics {
+		_, err := stmt.Exec(t.typeId, timeUnix, t.locationId, t.average, t.volume)
 		if err != nil {
 			return err
 		}

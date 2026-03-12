@@ -75,7 +75,7 @@ export class Average implements Object2d {
       this.focusedDay = day
       this.tooltipX = dotX,
       this.tooltipY = dotY,
-      this.tooltipHtml = `${formatDate(new Date(date))}<br>${formatPrice(average)}`
+      this.tooltipHtml = `${formatDate(new Date(date * 1000))}<br>${formatPrice(average)}`
     }
     else {
       this.focusedDay = -1

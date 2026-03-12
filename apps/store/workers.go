@@ -12,10 +12,16 @@ import (
 	emd "github.com/raph5/eve-market-dump"
 )
 
+type orderDump struct {
+  time time.Time
+  orders []emd.Order
+}
+
 // BUG: Sometimes orderWorker takes around a minute to stop when `ctx` is
 // canceled. I don't know why.
 func orderWorker(
 	ctx context.Context,
+  ordersDumpCh chan<- orderDump,
 	secrets *emd.ApiSecrets,
 ) {
 	expiration := time.Now()
@@ -35,6 +41,7 @@ func orderWorker(
 			continue
 		}
 
+    now = time.Now()
 		log.Printf("Order Worker: orders download start")
 		orders, err := emd.DownloadOrderDump(ctx)
 		if err != nil {
@@ -54,6 +61,8 @@ func orderWorker(
 
 		expiration = expiration.Add(OrderFetchingPeriod)
 		log.Printf("Order Worker: orders download end")
+
+    ordersDumpCh <- orderDump{now, orders}
 
 		activeMarkets := getActiveMarkets(orders)
 		err = dbSetActiveMarkets(ctx, activeMarkets, now)
@@ -87,6 +96,28 @@ func orderWorker(
 			log.Printf("Order Worker: location download end")
 		}
 	}
+}
+
+func tickMetricWorker(
+  ctx context.Context,
+  ordersDumpCh <-chan orderDump,
+) {
+  oldOrderDump := <-ordersDumpCh
+
+  for {
+    var newOrderDump orderDump
+    select {
+    case newOrderDump = <-ordersDumpCh:
+    case <-ctx.Done():
+      return
+    }
+
+    tickMetrics := getTickMeitrcs(oldOrderDump.orders, newOrderDump.orders)
+    err := dbAddTickMetrics(ctx, newOrderDump.time, tickMetrics)
+		if err != nil {
+			log.Printf("TickMetric Worker Error: dbAddTickMetrics: %v", err)
+		}
+  }
 }
 
 func historyWorker(ctx context.Context) {
@@ -194,9 +225,6 @@ func historyWorker(ctx context.Context) {
 
 		expiration = expiration.Add(24 * time.Hour)
 	}
-}
-
-func tickMetricWorker() {
 }
 
 func apiWorker(ctx context.Context, socketPath string) {

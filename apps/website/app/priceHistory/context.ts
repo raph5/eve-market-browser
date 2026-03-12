@@ -1,9 +1,9 @@
-import { HistoryDay } from "@app/esiStore/types";
+import { DayMetric } from "@app/esiStore.server";
 import { Tooltip } from "./objects/tooltip";
 
 export class GraphContext {
 
-  history: HistoryDay[] = []  
+  history: DayMetric[] = []  
 
   startDay = 0
   endDay = 0

@@ -16,9 +16,9 @@
   font-family: $font;
   font-size: 14px;
 
-  &[data-state=closed] {
-    @include sharp-border-radius-right(1px, 10px, $border-1);
-  }
+  // &[data-state=closed] {
+  //   @include sharp-border-radius-right(1px, 10px, $border-1);
+  // }
   &[data-state=open] {
     border-bottom-color: transparent;
 

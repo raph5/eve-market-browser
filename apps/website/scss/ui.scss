@@ -54,11 +54,14 @@
   background-color: $background-1;
   border: solid 1px $background-4;
   padding: 12px;
-  width: 350px;
-  min-height: 200px;
+  width: 375px;
+  min-height: 225px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 40px #0006;
+  box-sizing: border-box;
+  max-width: 100vw;
+  max-height: 100vh;
 
   &::after {
     content: "";

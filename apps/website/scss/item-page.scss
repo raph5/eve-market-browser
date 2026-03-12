@@ -13,13 +13,16 @@
   width: 100%;
   display: flex;
   gap: 8px;
+  margin-bottom: 16px;
 
   &__icon {
+    grid-area: icon;
     width: 64px;
     height: 64px;
   }
   &__info {
-    min-height: 80px;
+    grid-area: info;
+    min-height: 64px;
   }
   &__breadcrumbs {
     font-size: 14px;
@@ -51,13 +54,38 @@
     }
   }
   &__action {
+    grid-area: action;
     margin-left: auto;
     gap: 8px;
     display: flex;
+    flex-wrap: wrap;
 
     button {
-      height: fit-content;
+      height: 28px;
+      box-sizing: border-box;
     }
+  }
+  
+  &__volume {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: $font-color-secondary;
+  }
+  &__volume-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+    transform: translate(0, -0.5px);
+  }
+
+  @media (max-width: 900px) {
+    display: grid;
+    row-gap: 16px;
+    grid-template-columns: min-content auto;
+    grid-template-areas: "icon info"
+                         "action action";
   }
 }
 
@@ -259,7 +287,8 @@
 }
 
 .show-info {
-  height: 500px;
+  height: 600px;
+  width: 380px;
   max-height: 80vh;
 
   &:has(&__error) {
@@ -268,10 +297,8 @@
     justify-content: center;
   }
 
-  &__tirgger {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  &__tirgger img {
+    margin-right: 4px;
   }
 
   &__header {
@@ -299,30 +326,59 @@
     display: flex;
     color: $font;
     margin-bottom: 8px;
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  &__tab-root {
+    height: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: max-content auto;
+  }
+  &__tab {
+    height: 100%;
+    overflow: auto;
   }
 
   &__description {
     padding: 8px;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   &__line {
     display: flex;
-    background: $background-2;
-    padding: 4px;
+    align-items: center;
+    padding: 3px;
+    font-size: 13px;
 
     &:hover {
-      background: $background-3;
+      background: $background-2;
     }
-
-    img {
-      width: 24px;
-      height: 24px;
-    }
-    span {
-      &:last-child {
-        margin-left: auto;
-      }
-    }
+  }
+  &__line-icon {
+    width: 22px;
+    height: 22px;
+  }
+  &__line-label {
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+  }
+  &__line-value {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+  &__line-title {
+    font-size: 13px;
+    padding: 4px 6px;
+    background-color: $background-3;
+  }
+  &__line-link {
+    margin-left: auto;
+    text-decoration: none;
+    padding: 2px 6px;
+    font-size: 12px;
   }
 }

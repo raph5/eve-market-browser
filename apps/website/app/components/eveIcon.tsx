@@ -9,6 +9,7 @@ export interface EveIconProps {
 
 export const iconSrc = (iconId: number) => `/icons/${iconId}.png`
 export const typeIconSrc = (type: string|number) => `https://images.evetech.net/types/${type}/icon`
+export const blueprintIconSrc = (type: string|number) => `https://images.evetech.net/types/${type}/bp`
 
 export default function EveIcon({ src, alt, className }: EveIconProps) {
   const imgRef = useRef<HTMLImageElement>(null);
