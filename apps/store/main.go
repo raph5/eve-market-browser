@@ -56,6 +56,7 @@ func main() {
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 
 	// Starting wrokers
+  orderDumpCh := make(chan orderDump, 4)
 	var mainWg sync.WaitGroup
 	mainWg.Add(1)
 	go func() {
@@ -67,13 +68,19 @@ func main() {
 	if working {
 		mainWg.Add(2)
 		go func() {
-			orderWorker(ctx, &secrets)
+			orderWorker(ctx, orderDumpCh, &secrets)
 			log.Print("Order Worker: stopped")
 			mainWg.Done()
 			cancel()
 		}()
 		go func() {
 			historyWorker(ctx)
+			log.Print("History Worker: stopped")
+			mainWg.Done()
+			cancel()
+		}()
+		go func() {
+			tickMetricWorker(ctx, orderDumpCh)
 			log.Print("History Worker: stopped")
 			mainWg.Done()
 			cancel()

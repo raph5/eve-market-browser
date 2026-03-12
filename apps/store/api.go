@@ -160,7 +160,6 @@ func createDayMetricHandler(ctx context.Context) http.HandlerFunc {
 	}
 }
 
-// BUG: fix
 func computeApiDayMetrics(dayMetrics []dbDayMetric) []apiDayMetric {
 	if len(dayMetrics) == 0 {
 		return make([]apiDayMetric, 0)
