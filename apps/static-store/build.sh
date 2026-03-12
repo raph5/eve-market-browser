@@ -15,12 +15,13 @@ version_number=$(curl -s $version_url | jq .buildNumber)
 [[ -n "$version_number" ]] || { echo "empty version_number" >&2; exit 1; }
 
 sde_url=https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-$version_number-jsonl.zip
-sde_zip=/tmp/eve-online-static-data-$version_number-jsonl.zip
+# sde_zip=/tmp/eve-online-static-data-$version_number-jsonl.zip
+sde_zip=/Users/raphaelguyader/Downloads/eve-online-static-data-3156467-jsonl.zip
 sde_path=/tmp/eve-online-static-data-$version_number-jsonl
 
 rm -rf $sde_path
 mkdir -p $sde_path
-curl -s $sde_url > $sde_zip
+# curl -s $sde_url > $sde_zip
 unzip -q $sde_zip -d $sde_path
 [[ -f "$sde_path/types.jsonl" ]] || { echo "types.jsonl is missing from SDE" >&2; exit 1; }
 [[ -f "$sde_path/marketGroups.jsonl" ]] || { echo "marketGroups.jsonl is missing from SDE" >&2; exit 1; }
@@ -43,6 +44,7 @@ unzip -q $sde_zip -d $sde_path
   > $out_dir/types.json
 
 ./build-blueprints.py \
+  $sde_path/types.jsonl \
   $sde_path/blueprints.jsonl \
   $out_dir/market-group.json \
   > $out_dir/blueprints.json
