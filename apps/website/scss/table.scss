@@ -4,6 +4,7 @@
   background-color: $background-0;
   border-spacing: 0;
   width: 100%;
+  position: relative;
 
   &__cell {
     white-space: nowrap;
@@ -40,14 +41,19 @@
     color: $font-color;
     background-color: $background-0;
   }
-}
 
-tbody {
-  .table__row--selected {
-    background-color: $primary-2 !important;
+  thead {
+    position: sticky;
+    top: 0;
+    background-color: $background-0;
   }
-  .table__row:hover {
-    background-color: $primary-3;
+  tbody {
+    .table__row--selected {
+      background-color: $primary-2 !important;
+    }
+    .table__row:hover {
+      background-color: $primary-3;
+    }
   }
 }
 

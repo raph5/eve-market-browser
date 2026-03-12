@@ -1,7 +1,7 @@
 import { GraphContext } from "./context"
-import { HistoryDay } from "@app/esiStore/types";
 import { GRAPH_PADDING_TOP, GRAPH_PADDING_X, HISTORY_HEIGHT } from "./var"
 import { hitBox } from "./types"
+import { DayMetric } from "@app/esiStore.server";
 
 export function isInHitBox(x: number, y: number, hitBox: hitBox) {
   return x >= hitBox[0] && x <= hitBox[2] && y >= hitBox[1] && y <= hitBox[3]
@@ -72,7 +72,7 @@ export function formatDate(date: Date) {
     return `${year}.${month}.${day}`;
 }
 
-export function getStartEndPrice(history: HistoryDay[], startDay: number, endDay: number) {
+export function getStartEndPrice(history: DayMetric[], startDay: number, endDay: number) {
   console.assert(startDay < endDay)
   const margin = Math.floor(0.1 * (endDay - startDay))
   // return the margin-th lowest and highest prices as start and end prices

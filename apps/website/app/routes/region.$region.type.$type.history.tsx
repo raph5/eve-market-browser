@@ -4,7 +4,6 @@ import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
 import { json, useLoaderData, useRouteError } from "@remix-run/react"
 import { useEffect, useRef } from "react"
-import { HistoryDay } from "@app/esiStore/types"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
@@ -26,32 +25,31 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const history: DayMetric[] = await esiStore.getHistory(typeId, regionId)
+  const dayMetrics: DayMetric[] = await esiStore.getDayMetic(typeId, regionId)
 
   return json({
     typeId,
     regionId,
-    history
+    dayMetrics
   })
 }
 
 export default function PriceHistory() {
-  const { history } = useLoaderData<typeof loader>()
-  console.log(history)
+  const { dayMetrics } = useLoaderData<typeof loader>()
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if(history.length >= 2) {
+    if(dayMetrics.length >= 2) {
       if(containerRef.current == null) {
         console.error("cant initialize price history graph")
         return
       }
-      const graph = new Graph(history, containerRef.current)
+      const graph = new Graph(dayMetrics, containerRef.current)
       return graph.destroy.bind(graph)
     }
-  }, [history])
+  }, [dayMetrics])
 
-  return history.length < 2 ? (
+  return dayMetrics.length < 2 ? (
     <div className="price-history__fallback">
       <p>No history data available</p>
     </div>

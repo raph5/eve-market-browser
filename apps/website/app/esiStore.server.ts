@@ -57,24 +57,31 @@ export interface OrderDump {
 }
 
 export interface DayMetric {
-	Date: number
-	Average: number
-	Highest: number
-	Lowest: number
-	OrderCount: number
-	Volume: number
+  date: number
+  average: number
+  average5d: number
+  average20d: number
+  highest: number
+  lowest: number
+  orderCount: number
+  volume: number
+  donchianTop: number
+  donchianBottom: number
 }
 
 export interface Blueprint {
   product: {
     typeId: number
     quantity: number
+    name: string
   },
   blueprint: number
+  blueprintName: string
   time: number
   materials: {
     typeId: number
     quantity: number
+    name: string
   }[],
 }
 
@@ -123,7 +130,7 @@ class EsiStore {
       .then(res => JSON.parse(res))
   }
 
-  async getHistory(typeId: number, regionId: number): Promise<DayMetric[]> {
+  async getDayMetic(typeId: number, regionId: number): Promise<DayMetric[]> {
     return unixSocketFetch(socketPath, `/day-metric?region=${regionId}&type=${typeId}`)
       .then(res => JSON.parse(res))
   }

@@ -20,7 +20,7 @@ export class HistoryBg implements Object2d {
     this._maxAvg = this.context.history[0].average
     this._separators = []
     for(let i=0; i<this.context.history.length; i++) {
-      const date = new Date(this.context.history[i].date)
+      const date = new Date(this.context.history[i].date * 1000)
       if(date.getDate() == 1) {
         this._separators.push(i)
       }

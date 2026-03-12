@@ -49,13 +49,15 @@ interface MarketTypeProps {
 }
 
 interface MarketTreeContextType {
-  region: string
+  regionId: string
+  typeId: string,
   types: Type[]
   marketGroups: EsiMarketGroup[]
 }
 
 const MarketTreeContext = createContext<MarketTreeContextType>({
-  region: '0',
+  regionId: '0',
+  typeId: '0',
   types: [],
   marketGroups: [],
 })
@@ -78,7 +80,8 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
-  const region = params.region as string
+  const regionId = params.region as string
+  const typeId = params.type as string
 
   function animateBlink(id: string) {
     if (id.substring(0, 6) == "group:") {
@@ -141,13 +144,12 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
       }
     }
     console.error("marketTreeValueOpenType: unknown type")
-    return treeValue
   }
 
   useImperativeHandle(ref, () => ({openGroup, openType}));
 
   return (
-    <MarketTreeContext.Provider value={{ types, marketGroups, region }}>
+    <MarketTreeContext.Provider value={{ types, marketGroups, regionId, typeId }}>
       <RefsContext.Provider value={refs.current}>
         <div className="market-tree">
           <div className="market-tree__header">
@@ -163,7 +165,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
           </div>
           <div className="market-tree__body" ref={bodyRef}>
             <TreeView.Root
-              style={search.length > 3 ? { display: 'none' } : {}}
+              style={search.length > 2 ? { display: 'none' } : {}}
               value={treeValue}
               onValueChange={onTreeValueChange}
               className={classNames(classNames, 'market-tree__tree')}
@@ -174,7 +176,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
               ))}
             </TreeView.Root>
 
-            {search.length > 3 &&
+            {search.length > 2 &&
               <ul className="market-tree__results">
                 {results.map(type => (
                   <MarketType type={type} key={type.id} />
@@ -268,8 +270,8 @@ function MarketItem({ type }: MarketItemProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
-  const params = useParams()
   const quickbar = useContext(QuickbarContext)
+  const { typeId } = useContext(MarketTreeContext)
   const inQuickbar = useMemo(() => quickbar.has(type.id), [type, quickbar.state])
   const [linkHref, setLinkHref] = useState(path.setTypeId(type.id))
   const refs = useContext(RefsContext);
@@ -292,7 +294,7 @@ function MarketItem({ type }: MarketItemProps) {
           value={`type:${type.id}`}
           onKeyDown={handleKeyDown}
           className="market-item"
-          data-selected={params.type == type.id.toString()}
+          data-selected={typeId == type.id.toString()}
           data-in-quickbar={inQuickbar}
         >
           <Link to={linkHref} tabIndex={-1} className="market-item__link">

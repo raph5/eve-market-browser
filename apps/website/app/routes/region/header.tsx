@@ -8,36 +8,12 @@ import Label from "@components/label";
 import { usePath } from "@hooks/usePath";
 
 export interface HeaderProps {
-  regions?: Region[]
 }
 
-export default function Header({ regions }: HeaderProps) {
-  const navigate = useNavigate()
+export default function Header({}: HeaderProps) {
   const matches = useMatches()
-  const params = useParams()
-  const path = usePath()
 
-  /**
-   * The header can be render in two ways:
-   * If the user is on the market page (/region/...) then `Header` will be
-   * provided with a `regions` param and the header will have a select widget
-   * for choosing the market region.
-   * Else `regions` will be undef and the header will be rendered without the
-   * select widget.
-   */
-  const isMarketHeader = regions != undefined;
-
-  let isValidRegion = false
-  if (isMarketHeader) {
-    isValidRegion = params.region == '0' || regions.findIndex(r => r.id.toString() == params.region) != -1
-  }
-
-  const [selectValue, setSelectValue] = useState(isValidRegion ? params.region : '')
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    setSelectValue(isValidRegion ? params.region : '')
-  }, [params])
 
   function openDropdown() {
     setDropdownOpen(true)
@@ -64,19 +40,6 @@ export default function Header({ regions }: HeaderProps) {
             <Link to="/about" className="header__link">About</Link>
           </li>
         </ul>
-
-        {isMarketHeader && <>
-          <Label value="Region :" className="header__region-label" htmlFor="regionSelect" />
-          <Select
-            id="htmlFor"
-            placeholder="Select a region"
-            items={[
-              {key: '0', name: "All Regions"},
-              ...regions.map(({ id, name }) => ({ key: id.toString(), name }))
-            ]}
-            value={selectValue}
-            onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
-        </>}
       </header>
 
       <header className="header header--mobile">
@@ -98,25 +61,6 @@ export default function Header({ regions }: HeaderProps) {
               <Link to="/about" onClick={unfreez} className="header__link">About</Link>
             </li>
           </ul>
-
-          {isMarketHeader && <>
-            <div className="header__region">
-              <Label value="Region :" className="header__region-label" htmlFor="regionSelect" />
-              <select
-                className="header__region-select select"
-                value={selectValue}
-                onChange={(event) => {
-                  closeDropdown()
-                  navigate(path.setRegionId(event.target.value))
-                }}
-              >
-                <option value="0">All Regions</option>
-                {regions.map(({ id, name }) => (
-                  <option value={id} key={id}>{name}</option>
-                ))}
-              </select>
-            </div>
-          </>}
         </div>
       </header>
     </>

@@ -76,7 +76,8 @@ export function Row({children, rowId, className, ...props}: RowProps) {
   function handleClick(e: any) {
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
       if (selection.has(rowId)) {
-        const newSelection = new Set(selection).delete(rowId)
+        const newSelection = new Set(selection)
+        newSelection.delete(rowId)
         setSelection(newSelection)
       } else {
         setSelection(new Set(selection).add(rowId))

@@ -1,10 +1,10 @@
 import { Blueprint, esiStore } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useLocation, useMatches, useOutletContext, useRouteError } from "@remix-run/react";
-import EveIcon, { typeIconSrc } from "@components/eveIcon";
+import { Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
+import EveIcon, { blueprintIconSrc, typeIconSrc } from "@components/eveIcon";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "./region/route";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
@@ -13,13 +13,16 @@ import MarketTreeContext from "@app/contexts/marketTreeContext";
 import { esiFetch } from "@app/esiFetch";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Tab, TabsRoot } from "@components/tabs";
+import { Select } from "@components/select";
 import targetIcon from "@assets/target.png"
 import infoIcon from "@assets/info-transparent.png"
 import showInfoIcon from "@assets/info.png"
 import closeIcon from "@assets/close.png"
 import nanoIcon from "@assets/nano.png"
+import nanoWhiteIcon from "@assets/nano-white.png"
 import bulkheadsIcon from "@assets/bulkheads.png"
 import cargoIcon from "@assets/cargo.png"
+import { usePath } from "@app/hooks/usePath";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -65,21 +68,20 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function Type() {
-  const { marketGroups, types } = useOutletContext<RegionContext>()
+  const { marketGroups, types, regions } = useOutletContext<RegionContext>()
   const { typeId, regionId, blueprints } = useLoaderData<typeof loader>()
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
   const [inQuickbar, setInQuickbar] = useState(false)
   const matches = useMatches()
   const type = getType(types, typeId)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const path = usePath()
 
-  const isMarketTreeInitialized = useRef(false)
   useEffect(() => {
-    if (!isMarketTreeInitialized.current) {
-      isMarketTreeInitialized.current = true
-      marketTree.openType(typeId, false)
-    }
-  }, [])
+    setTimeout(() => marketTree.openType(typeId, false), 20)
+  }, [location])
 
   const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
 
@@ -108,6 +110,12 @@ export default function Type() {
               <img src={targetIcon} />
             </button>
           </div>
+          {!!type.volume &&
+            <div className="item-header__volume">
+              <img className="item-header__volume-icon" src={nanoWhiteIcon} />
+              <span className="item-header__volume-value">{formatNumber(type.volume)} m3</span>
+            </div>
+          }
         </div>
         <div className="item-header__action">
           {inQuickbar ? (
@@ -120,7 +128,16 @@ export default function Type() {
               <span>Add To Quickbar</span>
             </button>
           )}
-          <ShowInfo typeId={typeId} blueprints={blueprints} />
+          <ShowInfo typeId={typeId} regionId={regionId} blueprints={blueprints} types={types} />
+          <Select
+            className="item-header__select"
+            placeholder="Select a region"
+            items={[
+              {key: '0', name: "All Regions"},
+              ...regions.map(({ id, name }) => ({ key: id.toString(), name }))
+            ]}
+            value={regionId.toString()}
+            onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
         </div>
       </div>
       <div className="item-body">
@@ -159,13 +176,17 @@ interface TypeData {
 
 interface ShowInfoProps {
   blueprints: Blueprint[],
+  types: EsiType[],
   typeId: number,
+  regionId: number,
 }
 
-function ShowInfo({typeId, blueprints}: ShowInfoProps) {
+function ShowInfo({typeId, regionId, blueprints, types}: ShowInfoProps) {
   const [type, setType] = useState<TypeData|null>(null);
   const [error, setError] = useState<Error|null>(null);
+  const [open, setOpen] = useState(false);
 
+  const blueprint = getBlueprint(blueprints, typeId);
   const description = useMemo(() => (
     type && sanitizeHtml(removeUnsupportedTags(type.description))
   ), [type]) ?? ""
@@ -182,14 +203,23 @@ function ShowInfo({typeId, blueprints}: ShowInfoProps) {
       });
   }, [typeId]);
 
-  const tabs = [
+  const tabs = blueprint.blueprint != 0 ? [
     { value: 'attributes', label: 'Attributes' },
     { value: 'industry', label: 'Industry' },
     { value: 'description', label: 'Description' },
+  ] : [
+    { value: 'attributes', label: 'Attributes' },
+    { value: 'description', label: 'Description' },
   ]
 
+  function handleOpenClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (!event.metaKey && !event.ctrlKey) {
+      setOpen(false)
+    }
+  }
+
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger className="button show-info__tirgger" title="Show Info">
         <img src={infoIcon} className="" />
         <span>Show Info</span>
@@ -214,36 +244,67 @@ function ShowInfo({typeId, blueprints}: ShowInfoProps) {
               </div>
             </div>
 
-            <TabsRoot tabs={tabs} defaultValue="attributes">
-              <Tab value="attributes" className="show-info__attributes">
-                {type.volume &&
+            <TabsRoot tabs={tabs} defaultValue="attributes" className="show-info__tab-root">
+              <Tab value="attributes" className="show-info__tab show-info__attributes">
+                {!!type.volume &&
                   <div className="show-info__line">
-                    <img src={nanoIcon} />
-                    <span>Volume</span>
-                    <span>
-                      {type.volume} TODO
-                      {type.packaged_volume && type.packaged_volume != type.volume && `(${type.packaged_volume}))`}
+                    <img className="show-info__line-icon" src={nanoIcon} />
+                    <span className="show-info__line-label">Volume</span>
+                    <span className="show-info__line-value">
+                      {formatNumber(type.volume)} m3
+                      {' '}
+                      {type.packaged_volume && type.packaged_volume != type.volume &&
+                        <>({formatNumber(type.packaged_volume)} m3 Packaged)</>
+                      }
                     </span>
                   </div>
                 }
                 {!!type.capacity &&
                   <div className="show-info__line">
-                    <img src={cargoIcon} />
-                    <span>Capacity</span>
-                    <span>{type.capacity}</span>
+                    <img className="show-info__line-icon" src={cargoIcon} />
+                    <span className="show-info__line-label">Capacity</span>
+                    <span className="show-info__line-value">{formatNumber(type.capacity)} m3</span>
                   </div>
                 }
                 {!!type.mass &&
                   <div className="show-info__line">
-                      <img src={bulkheadsIcon} />
-                    <span>Mass</span>
-                    <span>{type.mass}</span>
+                    <img className="show-info__line-icon" src={bulkheadsIcon} />
+                    <span className="show-info__line-label">Mass</span>
+                    <span className="show-info__line-value">{formatNumber(type.mass)} kg</span>
                   </div>
                 }
               </Tab>
-              <Tab value="industry" className="show-info__industry"></Tab>
-              <Tab value="description" className="show-info__description">
-                {/* TODO: Check for the rendering of the PLEX description */}
+              {blueprint.blueprint != 0 &&
+                <Tab value="industry" className="show-info__tab show-info__industry">
+                  <div className="show-info__line-title">Blueprint</div>
+                  <div className="show-info__line">
+                    <EveIcon className="show-info__line-icon" alt={`${blueprint.blueprintName} icon`} src={blueprintIconSrc(blueprint.blueprint)} />
+                    <span className="show-info__line-label">{blueprint.blueprintName}</span>
+                  </div>
+                  <div className="show-info__line-title">Materials</div>
+                  {blueprint.materials.map(m => (
+                    <div className="show-info__line">
+                      <EveIcon className="show-info__line-icon" alt={`${m.typeId} icon`} src={typeIconSrc(m.typeId)} />
+                      {/* TODO: Format quanty */}
+                      {m.quantity > 1 ? (
+                        <span className="show-info__line-label">{m.name} ({m.quantity} Units)</span>
+                      ) : (
+                        <span className="show-info__line-label">{m.name} ({m.quantity} Unit)</span>
+                      )}
+                      {types.findIndex(t => t.id == typeId) != -1 &&
+                        <Link
+                          className="button show-info__line-link"
+                          to={`/region/${regionId}/type/${m.typeId}`}
+                          onClick={handleOpenClick}
+                        >
+                          Open
+                        </Link>
+                      }
+                    </div>
+                  ))}
+                </Tab>
+              }
+              <Tab value="description" className="show-info__tab show-info__description">
                 <span dangerouslySetInnerHTML={{__html: description}} />
               </Tab>
             </TabsRoot>
@@ -293,6 +354,10 @@ function removeUnsupportedTags(input: string): string {
   input = input.replaceAll("</font>", "")
   input = input.replaceAll(/<url.+?>/g, "")
   input = input.replaceAll("</url>", "")
+  input = input.replaceAll(/<a.+?>/g, "")
+  input = input.replaceAll("</a>", "")
+  input = input.replaceAll(/<color.+?>/g, "")
+  input = input.replaceAll("</color>", "")
   return input;
 }
 
@@ -311,5 +376,23 @@ function getBlueprint(blueprints: Blueprint[], typeId: number): Blueprint {
       return blueprints[i]
     }
   }
-  return {product: {typeId: typeId, quantity: 0}, time: 0, blueprint: 0, materials: []}
+  return {product: {typeId: typeId, quantity: 0, name: ''}, time: 0, blueprint: 0, blueprintName: '', materials: []}
+}
+
+function formatNumber(n: number): React.ReactNode {
+  let precision = 1
+  let [integral, fractional] = n.toFixed(precision).split('.')
+  while (n%1 != 0 && fractional.slice(-1) == '0') {
+    precision += 1;
+    [integral, fractional] = n.toFixed(precision).split('.')
+  }
+  let out: (React.ReactElement|string)[] = []
+  while (integral.length > 0) {
+    if (out.length > 0) out.unshift(<>&thinsp;</>)
+    out.unshift(integral.slice(-3))
+    integral = integral.slice(0, -3)
+  }
+  out.push('.')
+  out.push(fractional)
+  return out
 }
