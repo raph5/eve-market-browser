@@ -17,8 +17,6 @@ type orderDump struct {
   orders []emd.Order
 }
 
-// BUG: Sometimes orderWorker takes around a minute to stop when `ctx` is
-// canceled. I don't know why.
 func orderWorker(
 	ctx context.Context,
   ordersDumpCh chan<- orderDump,
