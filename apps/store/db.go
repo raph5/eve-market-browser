@@ -368,7 +368,7 @@ func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMe
 
 	timeUnix := _time.Unix()
 	// TODO: add INSERT OR REPLACE
-	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO DayMetric VALUES (?,?,?,?,?)")
+	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO TickMetric VALUES (?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
