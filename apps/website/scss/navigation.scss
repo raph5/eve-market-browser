@@ -1,6 +1,7 @@
 @import './var.scss';
 
 .nav {
+  $sponsors-height: 0px;
   width: 100%;
   height: 100%;
   background-color: $background-2;
@@ -9,7 +10,7 @@
   box-sizing: border-box;
 
   &__tabs {
-    height: 100%;
+    height: calc(100% - $sponsors-height);
     width: 100%;
     display: grid;
     grid-template-rows: max-content auto;
@@ -19,5 +20,10 @@
     width: 100%;
     min-height: 0;
     min-width: 0;
+  }
+
+  &__sponsors {
+    height: $sponsors-height;
+    overflow: hidden;
   }
 }

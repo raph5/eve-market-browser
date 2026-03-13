@@ -59,6 +59,8 @@
     gap: 8px;
     display: flex;
     flex-wrap: wrap;
+    height: min-content;
+    justify-content: flex-end;
 
     button {
       height: 28px;
@@ -339,6 +341,7 @@
   &__tab {
     height: 100%;
     overflow: auto;
+    box-sizing: border-box;
   }
 
   &__description {

@@ -8,7 +8,7 @@ import Header from "./header";
 import { useQuickbar } from "@hooks/useQuickbar";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/app.scss"
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import MarketTreeContext from "@app/contexts/marketTreeContext";
 
 export interface RegionContext {
@@ -63,7 +63,7 @@ export default function Layout() {
     <QuickbarContext.Provider value={quickbar}>
       <MarketTreeContext.Provider value={{openGroup, openType}}>
         <div className="app">
-          <Header regions={regions} />
+          <Header />
           <Navigation ref={navRef} types={types} marketGroups={marketGroups} />
           <main>
             <Outlet context={{ types, marketGroups, regions }} />

@@ -1,5 +1,5 @@
 import { Type } from "@app/esiStore.server";
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import TreeView from "react-composable-treeview";
 import QuickbarContext from "@contexts/quickbarContext";
 import { stringSort } from "@app/utils";
@@ -56,9 +56,13 @@ const QuickbarComponentContext = createContext<QuickbarContextType>({
 export function Quickbar({ types, treeValue, onTreeValueChange }: QuickbarProps) {
   const quickbar = useContext(QuickbarContext)
   const rootRef = useRef<HTMLUListElement>(null)
-  const isQuickbarEmpty = Object.keys(quickbar.state).length == 1
-    && quickbar.state.__root__.types.length == 0
-    && quickbar.state.__root__.childFolders.length == 0
+  const [isQuickbarEmpty, setIsQuickbarEmpty] = useState(true)
+
+  useEffect(() => {
+    setIsQuickbarEmpty(Object.keys(quickbar.state).length == 1
+      && quickbar.state.__root__.types.length == 0
+      && quickbar.state.__root__.childFolders.length == 0)
+  }, [])
 
   const drop = useCallback((event: React.DragEvent) => {
     const dragData: QuickbarDataTransfer = JSON.parse(

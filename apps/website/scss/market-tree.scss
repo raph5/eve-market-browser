@@ -184,6 +184,17 @@
       }
     }
   }
+  &[data-focused=true] {
+    background-color: $primary-3;
+
+    .market-item__button {
+      background-color: $primary-3;
+
+      &::after {
+        background: linear-gradient(90deg, transparent, $primary-3);
+      }
+    }
+  }
 
   &__link {
     padding-left: calc(var(--depth) * 16px + 4px);

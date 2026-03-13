@@ -44,8 +44,9 @@ interface MarketItemProps {
   type: Type
 }
 
-interface MarketTypeProps {
+interface MarketResultProps {
   type: Type
+  focused: boolean
 }
 
 interface MarketTreeContextType {
@@ -78,10 +79,19 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   const params = useParams()
   const refs = useRef<RefsContextType>({})
   const bodyRef = useRef<HTMLDivElement>(null);
+  const searchResultsRef = useRef<SearchResultsRef>(null);
+  const displaySearch = search.length > 2
 
   const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
   const regionId = params.region as string
   const typeId = params.type as string
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key == "ArrowDown") {
+      event.preventDefault()
+      searchResultsRef.current?.focus()
+    }
+  }
 
   function animateBlink(id: string) {
     if (id.substring(0, 6) == "group:") {
@@ -124,7 +134,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
       g = getMarketGroup(marketGroups, g.parentId);
     }
     onTreeValueChange(new Set(treeValue))
-    setTimeout(() => animateBlink(`group:${groupId}`), 20)
+    setTimeout(() => animateBlink(`group:${groupId}`), 0)
   }
 
   function openType(typeId: number, blink: boolean) {
@@ -137,9 +147,9 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
         }
         onTreeValueChange(new Set(treeValue))
         if (blink) {
-          setTimeout(() => animateBlink(`type:${typeId}`), 20)
+          setTimeout(() => animateBlink(`type:${typeId}`), 0)
         }
-        scrollIntoView(`type:${typeId}`)
+        setTimeout(() => scrollIntoView(`type:${typeId}`), 0)
         return
       }
     }
@@ -157,6 +167,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
               className="market-tree__search-bar"
               value={search}
               onValueChange={setSearch}
+              onKeyDown={handleKeyDown}
               placeholder="Search"
               focusShortcut />
             <button onClick={collapseTree} className="market-tree__button" title="Collapse all folders">
@@ -165,7 +176,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
           </div>
           <div className="market-tree__body" ref={bodyRef}>
             <TreeView.Root
-              style={search.length > 2 ? { display: 'none' } : {}}
+              style={{ display: displaySearch ? 'none' : 'unset'}}
               value={treeValue}
               onValueChange={onTreeValueChange}
               className={classNames(classNames, 'market-tree__tree')}
@@ -176,13 +187,12 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
               ))}
             </TreeView.Root>
 
-            {search.length > 2 &&
-              <ul className="market-tree__results">
-                {results.map(type => (
-                  <MarketType type={type} key={type.id} />
-                ))}
-              </ul>
-            }
+            <SearchResults
+              results={results}
+              marketGroups={marketGroups}
+              display={displaySearch}
+              ref={searchResultsRef}
+            />
           </div>
         </div>
       </RefsContext.Provider>
@@ -330,7 +340,7 @@ function MarketItem({ type }: MarketItemProps) {
   )
 }
 
-function MarketType({ type }: MarketTypeProps) {
+function MarketResult({ type, focused }: MarketResultProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
@@ -350,7 +360,7 @@ function MarketType({ type }: MarketTypeProps) {
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
-        <li onKeyDown={handleKeyDown} className="market-item" data-in-quickbar={inQuickbar}>
+        <li onKeyDown={handleKeyDown} className="market-item" data-in-quickbar={inQuickbar} data-focused={focused}>
           <Link to={linkHref} tabIndex={-1} className="market-item__link">
             {type.name}
           </Link>
@@ -384,6 +394,91 @@ function MarketType({ type }: MarketTypeProps) {
   )
 }
 
+interface SearchResultsRef {
+  focus: () => void
+}
+
+interface SearchResultsProps {
+  results: Type[]
+  marketGroups: EsiMarketGroup[]
+  display: boolean
+}
+
+const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
+  results,
+  marketGroups,
+  display,
+}, ref) => {
+  interface ResultGroup {
+    types: Type[]
+    id: number
+    iconId: number
+    name: string
+  }
+
+  const treeRef = useRef<HTMLLIElement>(null)
+  const [treeValue, setTreeValue] = useState(new Set<string>())
+
+  const groups = useMemo(() => {
+    const groups: ResultGroup[] = []
+    for (const type of results) {
+      let typeGroup = getMarketGroupWithType(marketGroups, type.id)
+      while (typeGroup.parentId != null) {
+        typeGroup = getMarketGroup(marketGroups, typeGroup.parentId)
+      }
+      const groupIndex = groups.findIndex(g => g.id == typeGroup.id)
+      if (groupIndex == -1) {
+        groups.push({
+          types: [type],
+          id: typeGroup.id,
+          name: typeGroup.name,
+          iconId: typeGroup.iconId
+        })
+      } else {
+        groups[groupIndex].types.push(type)
+      }
+      groups.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return groups
+  }, [results])
+
+  useImperativeHandle(ref, () => ({
+    focus() {
+      // TODO: fix focus
+      treeRef.current?.focus()
+    }
+  }));
+
+  return (
+    <TreeView.Root
+      style={{ display: display ? 'unset' : 'none'}}
+      value={treeValue}
+      onValueChange={setTreeValue}
+      className={classNames(classNames, 'market-tree__tree')}
+    >
+      {groups.map((group, index) => (
+        <TreeView.Group
+          ref={index == 0 ? treeRef : undefined}
+          key={group.id}
+          value={`group:${group.id}`}
+          className="market-group"
+        >
+          <TreeView.Trigger className="market-group__trigger">
+            <img src={triangleRightIcon} className="market-group__triangle" />
+            <EveIcon src={iconSrc(group.iconId)} alt="" className="market-group__icon" />
+            <span className="market-group__label">{group.name}</span>
+          </TreeView.Trigger>
+          <TreeView.Content className="market-group__content">
+            {group.types.map(t => (
+              <MarketItem type={t} key={t.id} />
+            ))}
+          </TreeView.Content>
+        </TreeView.Group>
+      ))}
+    </TreeView.Root>
+  )
+})
+
 function getType(types: Type[], typeId: number): Type {
   for(let i=0; i<types.length; i++) {
     if(types[i].id == typeId) {
@@ -407,6 +502,24 @@ function getMarketGroup(groups: EsiMarketGroup[], groupId: number): EsiMarketGro
     types: [],
     iconId: 0,
     iconAlt: `Unknwon Market Group ${groupId}`,
+    childsId: [],
+  }
+}
+
+function getMarketGroupWithType(groups: EsiMarketGroup[], typeId: number): EsiMarketGroup {
+  for(let i=0; i<groups.length; i++) {
+    if(groups[i].types.includes(typeId)) {
+      return groups[i]
+    }
+  }
+  return {
+    id: 0,
+    parentId: null,
+    description: `Unknwon Market Group`,
+    name: `Unknwon Market Group`,
+    types: [],
+    iconId: 0,
+    iconAlt: `Unknwon Market Group`,
     childsId: [],
   }
 }

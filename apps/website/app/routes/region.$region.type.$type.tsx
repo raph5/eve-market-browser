@@ -4,7 +4,7 @@ import { Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useO
 import EveIcon, { blueprintIconSrc, typeIconSrc } from "@components/eveIcon";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "./region/route";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
@@ -80,7 +80,12 @@ export default function Type() {
   const path = usePath()
 
   useEffect(() => {
-    setTimeout(() => marketTree.openType(typeId, false), 20)
+    // @ts-ignore
+    if (!window.asPageLoaded) {
+      // @ts-ignoretpye
+      window.asPageLoaded = true
+      setTimeout(() => marketTree.openType(typeId, false), 20)
+    }
   }, [location])
 
   const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
@@ -283,9 +288,8 @@ function ShowInfo({typeId, regionId, blueprints, types}: ShowInfoProps) {
                   </div>
                   <div className="show-info__line-title">Materials</div>
                   {blueprint.materials.map(m => (
-                    <div className="show-info__line">
+                    <div className="show-info__line" key={m.typeId}>
                       <EveIcon className="show-info__line-icon" alt={`${m.typeId} icon`} src={typeIconSrc(m.typeId)} />
-                      {/* TODO: Format quanty */}
                       {m.quantity > 1 ? (
                         <span className="show-info__line-label">{m.name} ({m.quantity} Units)</span>
                       ) : (

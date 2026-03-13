@@ -5,6 +5,7 @@ import { MarketTree, MarketTreeRef } from "./marketTree"
 import { Quickbar } from "./quickbar"
 import { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from "react"
 import QuickbarContext from "@contexts/quickbarContext"
+import patreonLogo from "@assets/patreon.svg"
 
 export interface QuickItem {
   type: number
@@ -42,8 +43,14 @@ const Navigation = forwardRef<NavigationRef, NavigationProps>(({ types, marketGr
 
   useImperativeHandle(ref, () => ({
     marketTree: {
-      openGroup: (groupId: number) => marketTreeRef.current?.openGroup(groupId),
-      openType: (groupId: number, blink: boolean) => marketTreeRef.current?.openType(groupId, blink),
+      openGroup: (groupId: number) => {
+        tabsRef.current?.open("browse")
+        marketTreeRef.current?.openGroup(groupId)
+      },
+      openType: (groupId: number, blink: boolean) => {
+        tabsRef.current?.open("browse")
+        marketTreeRef.current?.openType(groupId, blink)
+      },
     }
   }))
 
@@ -67,6 +74,13 @@ const Navigation = forwardRef<NavigationRef, NavigationProps>(({ types, marketGr
           />
         </Tab>
       </TabsRoot>
+      <div className="nav__sponsors">
+        {/* Help me fuel the server! */}
+        {/* <button className="button button--accent"> */}
+        {/*   <img className="button__icon" src={patreonLogo} /> */}
+        {/*   <span>Patreon</span> */}
+        {/* </button> */}
+      </div>
     </nav>
   )
 })

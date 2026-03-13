@@ -30,6 +30,14 @@
       background-color: lighten($primary-2, 4);
     }
   }
+  &--accent {
+    background-color: $accent-2;
+    border-color: $accent-0;
+
+    &:hover, &:focus {
+      background-color: lighten($accent-2, 4);
+    }
+  }
   &--text-center {
     text-align: center;
   }

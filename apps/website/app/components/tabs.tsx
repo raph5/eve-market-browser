@@ -1,8 +1,7 @@
-import * as RadixTabs from '@radix-ui/react-tabs';
 import classNames from 'classnames';
 import type React from 'react';
 import "@scss/tabs.scss"
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { createContext, forwardRef, useContext, useImperativeHandle, useRef, useState } from 'react';
 
 export interface TabsRootProps {
   className?: string
@@ -19,10 +18,13 @@ export interface TabProps {
 
 export interface TabRef {
   blink: (tab: string) => void
+  open: (tab: string) => void
 }
 
+const TabsContext = createContext("");
+
 export const TabsRoot = forwardRef<TabRef, TabsRootProps>(({ tabs, className, children, defaultValue }, ref) => {
-  const pageAsLoaded = useRef(false)
+  const [selection, setSelection] = useState(defaultValue ?? tabs[0].value);
   const tabsRef = useRef<Record<string, React.RefObject<HTMLButtonElement>>>({})
   for(const tab of tabs) {
     tabsRef.current[tab.value] = useRef<HTMLButtonElement>(null)
@@ -30,35 +32,45 @@ export const TabsRoot = forwardRef<TabRef, TabsRootProps>(({ tabs, className, ch
 
   useImperativeHandle(ref, () => ({
     blink(tab: string) {
-      if(!pageAsLoaded.current) return
       tabsRef.current[tab].current?.classList.add('tabs__trigger--blink')
       setTimeout(() => tabsRef.current[tab].current?.classList.remove('tabs__trigger--blink'), 500)
+    },
+    open(tab: string) {
+      setSelection(tab)
     }
   }))
 
-  useEffect(() => {
-    setTimeout(() => pageAsLoaded.current = true, 1000)
-  }, [])
-
   return (
-    <RadixTabs.Root className={classNames('tabs', className)} defaultValue={defaultValue}>
-      <RadixTabs.List className="tabs__list">
-        {tabs.map((tab => (
-          <RadixTabs.Trigger ref={tabsRef.current[tab.value]} value={tab.value} className="tabs__trigger" key={tab.value}>
-            {tab.label}
-          </RadixTabs.Trigger>
-        )))}
-      </RadixTabs.List>
-      {children}
-    </RadixTabs.Root>
+    <TabsContext.Provider value={selection}>
+      <div className={classNames('tabs', className)} defaultValue={defaultValue}>
+        <div className="tabs__list">
+          {tabs.map((tab => (
+            <button
+              ref={tabsRef.current[tab.value]}
+              className="tabs__trigger"
+              key={tab.value}
+              onClick={() => setSelection(tab.value)}
+              data-state={tab.value == selection ? "active" : ""}
+            >
+              {tab.label}
+            </button>
+          )))}
+        </div>
+        {children}
+      </div>
+    </TabsContext.Provider>
   )
 })
 
 export function Tab({ children, className, value }: TabProps) {
+  const selection = useContext(TabsContext);
 
   return (
-    <RadixTabs.Content className={classNames('tabs__content', className)} value={value}>
+    <div
+      className={classNames('tabs__content', className)}
+      style={{display: value == selection ? 'unset' : 'none'}}
+    >
       {children}
-    </RadixTabs.Content>
+    </div>
   )
 }

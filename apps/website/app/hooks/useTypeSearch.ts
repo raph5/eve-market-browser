@@ -1,5 +1,5 @@
 import { Type } from "@app/esiStore.server";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 function getMatches(search: string, types: Type[]) {
   const matches: Type[] = []

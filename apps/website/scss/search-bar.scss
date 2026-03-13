@@ -15,8 +15,16 @@
   &__icon {
     color: $font-color-light;
     margin: 0 6px;
+    width: 13px;
+    height: 13px;
+    opacity: 0.8;
   }
   &__input {
     width: 100%;
+  }
+  &__close {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
   }
 }
