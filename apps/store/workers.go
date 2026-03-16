@@ -100,7 +100,12 @@ func tickMetricWorker(
 	ctx context.Context,
 	ordersDumpCh <-chan orderDump,
 ) {
-	oldOrderDump := <-ordersDumpCh
+	var oldOrderDump orderDump
+	select {
+	case oldOrderDump = <-ordersDumpCh:
+	case <-ctx.Done():
+		return
+	}
 
 	for {
 		var newOrderDump orderDump
