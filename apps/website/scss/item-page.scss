@@ -384,4 +384,10 @@
     padding: 2px 6px;
     font-size: 12px;
   }
+
+  &__attributes, &__industry {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
 }

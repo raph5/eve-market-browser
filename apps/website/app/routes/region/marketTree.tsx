@@ -176,7 +176,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
           </div>
           <div className="market-tree__body" ref={bodyRef}>
             <TreeView.Root
-              style={{ display: displaySearch ? 'none' : 'unset'}}
+              style={{ display: displaySearch ? 'none' : undefined}}
               value={treeValue}
               onValueChange={onTreeValueChange}
               className={classNames(classNames, 'market-tree__tree')}
@@ -416,8 +416,12 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
     name: string
   }
 
+  const rootGroups = useMemo(() => (
+    marketGroups.filter(g => g.parentId == null).map(g => `group:${g.id}`)
+  ), [marketGroups])
+
   const treeRef = useRef<HTMLLIElement>(null)
-  const [treeValue, setTreeValue] = useState(new Set<string>())
+  const [treeValue, setTreeValue] = useState(new Set<string>(rootGroups))
 
   const groups = useMemo(() => {
     const groups: ResultGroup[] = []
@@ -444,14 +448,13 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
 
   useImperativeHandle(ref, () => ({
     focus() {
-      // TODO: fix focus
       treeRef.current?.focus()
     }
   }));
 
   return (
     <TreeView.Root
-      style={{ display: display ? 'unset' : 'none'}}
+      style={{ display: display ? undefined : 'none'}}
       value={treeValue}
       onValueChange={setTreeValue}
       className={classNames(classNames, 'market-tree__tree')}

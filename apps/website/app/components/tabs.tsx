@@ -33,7 +33,7 @@ export const TabsRoot = forwardRef<TabRef, TabsRootProps>(({ tabs, className, ch
   useImperativeHandle(ref, () => ({
     blink(tab: string) {
       tabsRef.current[tab].current?.classList.add('tabs__trigger--blink')
-      setTimeout(() => tabsRef.current[tab].current?.classList.remove('tabs__trigger--blink'), 500)
+      setTimeout(() => tabsRef.current[tab].current?.classList.remove('tabs__trigger--blink'), 300)
     },
     open(tab: string) {
       setSelection(tab)
@@ -68,7 +68,7 @@ export function Tab({ children, className, value }: TabProps) {
   return (
     <div
       className={classNames('tabs__content', className)}
-      style={{display: value == selection ? 'unset' : 'none'}}
+      style={{display: value == selection ? undefined : 'none'}}
     >
       {children}
     </div>

@@ -53,10 +53,13 @@ export function SearchBar({
         onKeyDown={onKeyDown}
         ref={inputRef}
       />
-      {value.length > 1 &&
+      {value.length > 0 &&
         <button className="search-bar__close" onClick={() => onValueChange('')}>
           <img src={closeIcon} className="search-bar__icon" />
         </button>
+      }
+      {value.length == 0 &&
+        <span className="search-bar__keybind">Ctrl K</span>
       }
     </div>
   )

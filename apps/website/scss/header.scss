@@ -10,12 +10,16 @@
   padding: 0 16px;
   box-sizing: border-box;
   top: 0;
+  position: relative;
 
   &__message {
     font-size: 12px;
     margin-left: auto;
     text-align: center;
     color: $alert;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 0);
 
     a {
       color: $alert;

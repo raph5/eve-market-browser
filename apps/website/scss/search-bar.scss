@@ -3,7 +3,8 @@
 .search-bar {
   display: inline-flex;
   align-items: center;
-  height: 24px;
+  height: 28px;
+  padding: 0 2px;
   background-color: $background-1;
   border: solid 1px $border-1;
   color: $font-color;
@@ -11,6 +12,11 @@
   font-family: $font;
   font-size: 14px;
   box-sizing: border-box;
+  position: relative;
+
+  &:has(.search-bar__input:focus) {
+    border-color: lighten($border-1, 5);
+  }
 
   &__icon {
     color: $font-color-light;
@@ -20,11 +26,28 @@
     opacity: 0.8;
   }
   &__input {
+    height: 100%;
     width: 100%;
   }
   &__close {
     display: flex;
     align-items: center;
     cursor: pointer;
+  }
+  &__keybind {
+    $bg: $background-3;
+    position: absolute;
+    top: 50%;
+    right: 3.5px;
+    transform: translate(0, -50%);
+    pointer-events: none;
+    color: $font-color-light;
+    font-size: 11px;
+    background-color: $bg;
+    padding: 2px 4px;
+    border-radius: 3px;
+    box-shadow: 0 1px 0 lighten($bg, 15),
+      inset 0 1px 0 lighten($bg, 3),
+      0 0 3px #0004;
   }
 }

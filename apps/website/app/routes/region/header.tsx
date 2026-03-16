@@ -118,13 +118,13 @@ function LoginButton() {
 
         {/* background/frame */}
         <linearGradient id="pf-svg-sso-bg-gradient">
-          <stop offset="0" stopColor="#0c0f14"></stop>
-          <stop offset=".071" stopColor="#0c0f14"></stop>
+          <stop offset="0" stopColor="#0F1217"></stop>
+          <stop offset=".071" stopColor="#13161C"></stop>
           <stop offset="1" stopColor="#05070B"></stop>
         </linearGradient>
         <linearGradient id="pf-svg-sso-bg-darken">
-          <stop offset="0" style={{"stopColor": "#0c0f14", "stopOpacity": 0}}></stop>
-          <stop offset=".071" style={{"stopColor": "#0c0f14", "stopOpacity": .071}}></stop>
+          <stop offset="0" style={{"stopColor": "#0F1217", "stopOpacity": 0}}></stop>
+          <stop offset=".071" style={{"stopColor": "#13161C", "stopOpacity": .071}}></stop>
           <stop offset="1" style={{"stopColor": "#05070B", "stopOpacity": 1}}></stop>
         </linearGradient>
         <linearGradient id="pf-svg-sso-bg-frame">
@@ -135,12 +135,12 @@ function LoginButton() {
         <linearGradient xlinkHref="#pf-svg-sso-bg-gradient" id="k" x1="-4.95" y1="-1.747" x2="-3.712" y2="90.884" gradientUnits="userSpaceOnUse"></linearGradient>
         <linearGradient xlinkHref="#pf-svg-sso-bg-darken" id="m" x1="-4.95" y1="-1.747" x2="-3.712" y2="90.884" gradientUnits="userSpaceOnUse"></linearGradient>
         <linearGradient id="pf-svg-sso-animation-gradient" x1="0%" y1="0%" x2="100%" y2="0">
-          <stop offset="20%" style={{"stopColor": "#43454a", "stopOpacity": 0}}></stop>
+          <stop offset="10%" style={{"stopColor": "#43454a", "stopOpacity": 0}}></stop>
           <stop offset="30%" style={{"stopColor": "#58A7BF", "stopOpacity": 1}}></stop>
-          <stop offset="45%" style={{"stopColor": "#81c2d6", "stopOpacity": 1}}></stop>
-          <stop offset="55%" style={{"stopColor": "#81c2d6", "stopOpacity": 1}}></stop>
+          <stop offset="45%" style={{"stopColor": "#96d1e3", "stopOpacity": 1}}></stop>
+          <stop offset="55%" style={{"stopColor": "#96d1e3", "stopOpacity": 1}}></stop>
           <stop offset="70%" style={{"stopColor": "#58A7BF", "stopOpacity": 1}}></stop>
-          <stop offset="80%" style={{"stopColor": "#43454a", "stopOpacity": 0}}></stop>
+          <stop offset="90%" style={{"stopColor": "#43454a", "stopOpacity": 0}}></stop>
         </linearGradient>
       </defs>
 
