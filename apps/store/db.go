@@ -231,6 +231,19 @@ ORDER BY Date`
 	return dayMetric, nil
 }
 
+func dbGetDayMetricsLastDate(ctx context.Context) (time.Time, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
+	var dateUnix int64
+	err := dbRead.QueryRowContext(timeoutCtx, "SELECT max(Date) FROM DayMetric").Scan(&dateUnix)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(dateUnix, 0), nil
+}
+
 func dbGetOrdersForType(ctx context.Context, typeId uint64) ([]emd.Order, error) {
 	dbRead := ctx.Value("dbRead").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
@@ -340,7 +353,7 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 	defer stmt.Close()
 
 	for _, d := range dayMetrics {
-		_, err := stmt.Exec(d.TypeId, d.RegionId, dateUnix, d.OrderCount, d.Volume, d.Average, d.Highest, d.Lowest)
+		_, err := stmt.ExecContext(timeoutCtx, d.TypeId, d.RegionId, dateUnix, d.OrderCount, d.Volume, d.Average, d.Highest, d.Lowest)
 		if err != nil {
 			return err
 		}
@@ -362,7 +375,7 @@ func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMe
 	defer stmt.Close()
 
 	for _, t := range tickMetrics {
-		_, err := stmt.Exec(t.typeId, timeUnix, t.locationId, t.average, t.volume)
+		_, err := stmt.ExecContext(timeoutCtx, t.typeId, timeUnix, t.locationId, t.average, t.volume)
 		if err != nil {
 			return err
 		}
@@ -382,7 +395,7 @@ func dbAddLocations(ctx context.Context, newLocations []emd.Location) error {
 	defer stmt.Close()
 
 	for _, l := range newLocations {
-		_, err := stmt.Exec(l.Id, l.TypeId, l.OwnerId, l.SystemId, l.RegionId, l.Name, l.Security)
+		_, err := stmt.ExecContext(timeoutCtx, l.Id, l.TypeId, l.OwnerId, l.SystemId, l.RegionId, l.Name, l.Security)
 		if err != nil {
 			return err
 		}
@@ -403,7 +416,7 @@ func dbSetActiveMarkets(ctx context.Context, markets []emd.HistoryMarket, now ti
 
 	nowUnix := now.Unix()
 	for _, m := range markets {
-		_, err := stmt.Exec(m.TypeId, m.RegionId, nowUnix)
+		_, err := stmt.ExecContext(timeoutCtx, m.TypeId, m.RegionId, nowUnix)
 		if err != nil {
 			return err
 		}
