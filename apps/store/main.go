@@ -81,7 +81,7 @@ func main() {
 		}()
 		go func() {
 			tickMetricWorker(ctx, orderDumpCh)
-			log.Print("History Worker: stopped")
+			log.Print("Tick Metric Worker: stopped")
 			mainWg.Done()
 			cancel()
 		}()
