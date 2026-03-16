@@ -344,9 +344,15 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
+	tx, err := dbWrite.BeginTx(timeoutCtx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	dateUnix := date.Unix()
 	// TODO: add INSERT OR REPLACE
-	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO DayMetric VALUES (?,?,?,?,?,?,?,?)")
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO DayMetric VALUES (?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -358,6 +364,11 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 			return err
 		}
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -366,9 +377,15 @@ func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMe
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
+	tx, err := dbWrite.BeginTx(timeoutCtx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	timeUnix := _time.Unix()
 	// TODO: add INSERT OR REPLACE
-	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO TickMetric VALUES (?,?,?,?,?)")
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO TickMetric VALUES (?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -380,6 +397,11 @@ func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMe
 			return err
 		}
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -388,7 +410,13 @@ func dbAddLocations(ctx context.Context, newLocations []emd.Location) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
-	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT INTO Location VALUES (?,?,?,?,?,?,?)")
+	tx, err := dbWrite.BeginTx(timeoutCtx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO Location VALUES (?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -400,6 +428,11 @@ func dbAddLocations(ctx context.Context, newLocations []emd.Location) error {
 			return err
 		}
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -408,7 +441,13 @@ func dbSetActiveMarkets(ctx context.Context, markets []emd.HistoryMarket, now ti
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
-	stmt, err := dbWrite.PrepareContext(timeoutCtx, "INSERT OR REPLACE INTO ActiveMarket VALUES (?,?,?)")
+	tx, err := dbWrite.BeginTx(timeoutCtx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT OR REPLACE INTO ActiveMarket VALUES (?,?,?)")
 	if err != nil {
 		return err
 	}
@@ -420,6 +459,11 @@ func dbSetActiveMarkets(ctx context.Context, markets []emd.HistoryMarket, now ti
 		if err != nil {
 			return err
 		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
 	}
 	return nil
 }
