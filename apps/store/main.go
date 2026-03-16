@@ -56,7 +56,7 @@ func main() {
 	signal.Notify(exitCh, syscall.SIGINT, syscall.SIGTERM)
 
 	// Starting wrokers
-  orderDumpCh := make(chan orderDump, 4)
+	orderDumpCh := make(chan orderDump, 4)
 	var mainWg sync.WaitGroup
 	mainWg.Add(1)
 	go func() {

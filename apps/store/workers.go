@@ -13,15 +13,15 @@ import (
 )
 
 type orderDump struct {
-  time time.Time
-  orders []emd.Order
+	time   time.Time
+	orders []emd.Order
 }
 
 // BUG: Sometimes orderWorker takes around a minute to stop when `ctx` is
 // canceled. I don't know why.
 func orderWorker(
 	ctx context.Context,
-  ordersDumpCh chan<- orderDump,
+	ordersDumpCh chan<- orderDump,
 	secrets *emd.ApiSecrets,
 ) {
 	expiration := time.Now()
@@ -41,7 +41,7 @@ func orderWorker(
 			continue
 		}
 
-    now = time.Now()
+		now = time.Now()
 		log.Printf("Order Worker: orders download start")
 		orders, err := emd.DownloadOrderDump(ctx)
 		if err != nil {
@@ -62,12 +62,12 @@ func orderWorker(
 		expiration = expiration.Add(OrderFetchingPeriod)
 		log.Printf("Order Worker: orders download end")
 
-    ordersDumpCh <- orderDump{now, orders}
+		ordersDumpCh <- orderDump{now, orders}
 
 		activeMarkets := getActiveMarkets(orders)
 		err = dbSetActiveMarkets(ctx, activeMarkets, now)
 		if err != nil {
-			log.Printf("Order Worker Error: dbAddActiveMarkets: %v", err)
+			log.Printf("Order Worker Error: dbSetActiveMarkets: %v", err)
 			continue
 		}
 
@@ -99,25 +99,25 @@ func orderWorker(
 }
 
 func tickMetricWorker(
-  ctx context.Context,
-  ordersDumpCh <-chan orderDump,
+	ctx context.Context,
+	ordersDumpCh <-chan orderDump,
 ) {
-  oldOrderDump := <-ordersDumpCh
+	oldOrderDump := <-ordersDumpCh
 
-  for {
-    var newOrderDump orderDump
-    select {
-    case newOrderDump = <-ordersDumpCh:
-    case <-ctx.Done():
-      return
-    }
+	for {
+		var newOrderDump orderDump
+		select {
+		case newOrderDump = <-ordersDumpCh:
+		case <-ctx.Done():
+			return
+		}
 
-    tickMetrics := getTickMeitrcs(oldOrderDump.orders, newOrderDump.orders)
-    err := dbAddTickMetrics(ctx, newOrderDump.time, tickMetrics)
+		tickMetrics := getTickMeitrcs(oldOrderDump.orders, newOrderDump.orders)
+		err := dbAddTickMetrics(ctx, newOrderDump.time, tickMetrics)
 		if err != nil {
 			log.Printf("TickMetric Worker Error: dbAddTickMetrics: %v", err)
 		}
-  }
+	}
 }
 
 func historyWorker(ctx context.Context) {
