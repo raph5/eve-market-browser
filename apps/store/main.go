@@ -66,7 +66,7 @@ func main() {
 		cancel()
 	}()
 	if working {
-		mainWg.Add(2)
+		mainWg.Add(3)
 		go func() {
 			orderWorker(ctx, orderDumpCh, &secrets)
 			log.Print("Order Worker: stopped")
