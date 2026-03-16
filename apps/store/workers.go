@@ -226,6 +226,7 @@ func historyWorker(ctx context.Context) {
 		}
 
 		expiration = expiration.Add(24 * time.Hour)
+		log.Printf("DEBUG: expiration: %v", expiration)
 	}
 }
 
