@@ -172,7 +172,7 @@
       }
     }
   }
-  &[aria-selected=true], &[data-selected=true] {
+  &[data-selected=true] {
     background-color: $primary-1;
 
     .market-item__button {

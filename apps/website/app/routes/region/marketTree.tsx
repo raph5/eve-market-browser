@@ -454,7 +454,7 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
 
   return (
     <TreeView.Root
-      style={{ display: display ? undefined : 'none'}}
+      style={{ display: display ? undefined : 'none' }}
       value={treeValue}
       onValueChange={setTreeValue}
       className={classNames(classNames, 'market-tree__tree')}
