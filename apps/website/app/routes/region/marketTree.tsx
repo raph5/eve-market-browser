@@ -42,6 +42,7 @@ interface MarketRarityGroupProps {
 
 interface MarketItemProps {
   type: Type
+  setRefs: boolean
 }
 
 interface MarketResultProps {
@@ -133,6 +134,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
       if (g.parentId == null) break;
       g = getMarketGroup(marketGroups, g.parentId);
     }
+    setSearch("")
     onTreeValueChange(new Set(treeValue))
     setTimeout(() => animateBlink(`group:${groupId}`), 0)
   }
@@ -145,6 +147,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
           if (g.parentId == null) break;
           g = getMarketGroup(marketGroups, g.parentId);
         }
+        setSearch("")
         onTreeValueChange(new Set(treeValue))
         if (blink) {
           setTimeout(() => animateBlink(`type:${typeId}`), 0)
@@ -236,19 +239,19 @@ function MarketGroup({ group }: MarketGroupProps) {
         ))}
 
         {rarityGroupCount == 1 && rarityGroups.flat().map(type => (
-          <MarketItem type={type} key={type.id} />
+          <MarketItem setRefs={true} type={type} key={type.id} />
         ))}
 
         {rarityGroupCount > 1 && rarityGroups[0] && rarityGroups[0].map(type => (
-          <MarketItem type={type} key={type.id} />
+          <MarketItem setRefs={true} type={type} key={type.id} />
         ))}
         {rarityGroupCount > 1 && rarityGroups[1] && rarityGroups[1].map(type => (
-          <MarketItem type={type} key={type.id} />
+          <MarketItem setRefs={true} type={type} key={type.id} />
         ))}
         {rarityGroupCount > 1 && rarityGroups.map((rarityGroup, rarity) => (
           rarity != 0 && rarity != 1 && (
             <MarketRarityGroup group={group} rarity={rarity} key={rarity}>
-              {rarityGroup.map(type => <MarketItem type={type} key={type.id} />)}
+              {rarityGroup.map(type => <MarketItem setRefs={true} type={type} key={type.id} />)}
             </MarketRarityGroup>
           )
         ))}
@@ -473,7 +476,7 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
           </TreeView.Trigger>
           <TreeView.Content className="market-group__content">
             {group.types.map(t => (
-              <MarketItem type={t} key={t.id} />
+              <MarketItem setRefs={false} type={t} key={t.id} />
             ))}
           </TreeView.Content>
         </TreeView.Group>
