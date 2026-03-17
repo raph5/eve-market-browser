@@ -49,5 +49,9 @@
     box-shadow: 0 1px 0 lighten($bg, 15),
       inset 0 1px 0 lighten($bg, 3),
       0 0 3px #0004;
+
+    @media (max-width: $mobile-width) {
+      display: none;
+    }
   }
 }

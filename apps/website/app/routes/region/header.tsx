@@ -90,7 +90,7 @@ function LoginButton() {
   }
 
   function updateAnimation() {
-    if (glow.current && button.current) {
+    if (state.current.running && glow.current && button.current) {
       const box = button.current.getBoundingClientRect()
       const x = (state.current.mouseX - box.x) * 540 / box.width - 100
       glow.current.setAttribute("x", x.toString())
@@ -100,8 +100,9 @@ function LoginButton() {
   }
 
   useEffect(() => {
-    requestAnimationFrame(updateAnimation)
+    state.current.running = true
     document.body.addEventListener("mousemove", handleBodyMouseMove)
+    requestAnimationFrame(updateAnimation)
 
     return () => {
       state.current.running = false
@@ -150,7 +151,7 @@ function LoginButton() {
         </g>
         <g>
           <path d="M2.191 2.5A7.965 7.965 0 00.584 5h173.352v85h2.5V5h362.98a7.966 7.966 0 00-1.607-2.5z" fill="url(#l)"></path>
-          <rect ref={glow} x="0" y="0" width="200px" height="90px" mask="url(#pf-svg-soo-mask)" fill="url(#pf-svg-sso-animation-gradient)" />
+          <rect ref={glow} x="-200px" y="0" width="200px" height="90px" mask="url(#pf-svg-soo-mask)" fill="url(#pf-svg-sso-animation-gradient)" />
         </g>
         <g>
           <path d="M8 0h524c4.432 0 8 3.568 8 8v74c0 4.432-3.568 8-8 8H8c-4.432 0-8-3.568-8-8V8c0-4.432 3.568-8 8-8z" fill="url(#m)"></path>
