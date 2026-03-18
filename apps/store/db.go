@@ -365,7 +365,7 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 	return nil
 }
 
-func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMetric) error {
+func dbAddTickMetricMap(ctx context.Context, _time time.Time, tickMetricMap map[market]metric) error {
 	dbWrite := ctx.Value("dbWrite").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
@@ -384,8 +384,8 @@ func dbAddTickMetrics(ctx context.Context, _time time.Time, tickMetrics []tickMe
 	}
 	defer stmt.Close()
 
-	for _, t := range tickMetrics {
-		_, err := stmt.ExecContext(timeoutCtx, t.typeId, timeUnix, t.locationId, t.average, t.volume)
+	for m := range tickMetricMap {
+		_, err := stmt.ExecContext(timeoutCtx, m.typeId, timeUnix, m.locationId, tickMetricMap[m].average, tickMetricMap[m].volume)
 		if err != nil {
 			return err
 		}

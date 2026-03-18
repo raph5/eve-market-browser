@@ -112,6 +112,8 @@ func tickMetricWorker(
 	ordersDumpCh <-chan orderDump,
 ) {
 	oldOrderDump := <-ordersDumpCh
+	tickMetricMap := make(map[market]metric)
+	hour := getHour(time.Now())
 
 	for {
 		var newOrderDump orderDump
@@ -121,11 +123,15 @@ func tickMetricWorker(
 			return
 		}
 
-		tickMetrics := getTickMeitrcs(oldOrderDump.orders, newOrderDump.orders)
-		err := dbAddTickMetrics(ctx, newOrderDump.time, tickMetrics)
-		if err != nil {
-			log.Printf("TickMetric Worker Error: dbAddTickMetrics: %v", err)
+		nowHour := getHour(time.Now())
+		if !hour.Equal(nowHour) {
+			err := dbAddTickMetricMap(ctx, newOrderDump.time, tickMetricMap)
+			if err != nil {
+				log.Printf("TickMetric Worker Error: dbAddTickMetrics: %v", err)
+			}
 		}
+
+		updateTickMeitrcMap(tickMetricMap, oldOrderDump.orders, newOrderDump.orders)
 	}
 }
 
@@ -331,11 +337,18 @@ func victoriaMetricsWorker(ctx context.Context) {
 }
 
 func getElevenFifteenTomorrow(now time.Time) time.Time {
-	return time.Date(now.Year(), now.Month(), now.Day()+1, 11, 15, 0, 0, now.Location())
+	utc := now.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day()+1, 11, 15, 0, 0, utc.Location())
 }
 
 func getYesterday(now time.Time) time.Time {
-	return time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, now.Location())
+	utc := now.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day()-1, 0, 0, 0, 0, utc.Location())
+}
+
+func getHour(now time.Time) time.Time {
+	utc := now.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day(), utc.Hour(), 0, 0, 0, utc.Location())
 }
 
 func getActiveMarkets(orders []emd.Order) []emd.HistoryMarket {

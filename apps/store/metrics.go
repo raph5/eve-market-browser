@@ -11,17 +11,17 @@ type tickMetric struct {
 	volume     uint64
 }
 
-func getTickMeitrcs(oldOrders []emd.Order, newOrders []emd.Order) []tickMetric {
-	type metric struct {
-		average float64
-		volume  uint64
-	}
-	type market struct {
-		typeId     uint64
-		locationId uint64
-	}
-	tickMetricMap := make(map[market]metric)
+type metric struct {
+	average float64
+	volume  uint64
+}
 
+type market struct {
+	typeId     uint64
+	locationId uint64
+}
+
+func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order, newOrders []emd.Order) {
 	type orderFingerPrint struct {
 		orderId     uint64
 		locationId  uint64
@@ -82,16 +82,4 @@ func getTickMeitrcs(oldOrders []emd.Order, newOrders []emd.Order) []tickMetric {
 			}
 		}
 	}
-
-	tickMetrics := make([]tickMetric, 0, len(tickMetricMap))
-	for market := range tickMetricMap {
-		tickMetrics = append(tickMetrics, tickMetric{
-			typeId:     market.typeId,
-			locationId: market.locationId,
-			average:    tickMetricMap[market].average,
-			volume:     tickMetricMap[market].volume,
-		})
-	}
-
-	return tickMetrics
 }
