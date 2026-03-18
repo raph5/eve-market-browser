@@ -93,7 +93,9 @@ function LoginButton() {
     if (state.current.running && glow.current && button.current) {
       const box = button.current.getBoundingClientRect()
       const x = (state.current.mouseX - box.x) * 540 / box.width - 100
-      glow.current.setAttribute("x", x.toString())
+      if (Number.isFinite(x)) {
+        glow.current.setAttribute("x", x.toString())
+      }
     }
 
     requestAnimationFrame(updateAnimation)

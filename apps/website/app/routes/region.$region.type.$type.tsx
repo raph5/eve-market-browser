@@ -93,7 +93,7 @@ export default function Type() {
   const regionOutletContext = useOutletContext<RegionContext>()
   const { marketGroups, types, regions } = regionOutletContext
   const loaderData = useLoaderData<typeof loader>()
-  const { typeId, regionId, blueprints } = loaderData
+  const { typeId, regionId, blueprints, dayMetrics } = loaderData
 
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
@@ -114,6 +114,11 @@ export default function Type() {
   }, [location])
 
   const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
+  
+  const buyPriceHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.average), [dayMetrics])
+  const sellPriceHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.average), [dayMetrics])
+  const buyVolumeHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.volume), [dayMetrics])
+  const sellVolumeHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.volume), [dayMetrics])
 
   // To avoid hydration errors
   useEffect(() => {
@@ -142,7 +147,7 @@ export default function Type() {
           <span className="item-header__breadcrumbs">
             {breadcrumbs.map((bc, index) => (<span key={bc.id}>
               {index > 0 && ' / '}
-              <button key={bc.id} onClick={() => marketTree.openGroup(bc.id)}>{bc.name}</button>
+              <button onClick={() => marketTree.openGroup(bc.id)}>{bc.name}</button>
             </span>))}
           </span>
           <div className="item-header__name-box">
@@ -179,6 +184,29 @@ export default function Type() {
             ]}
             value={regionId.toString()}
             onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
+        </div>
+        <div className="item-header__metrics">
+          {dayMetrics.length >= 7 ? <>
+            <span>
+              <span>Buy/Sell Price&nbsp;</span>
+              <MiniGraph isk={true} data={buyPriceHistory} />
+              <span>&thinsp;/&thinsp;</span>
+              <MiniGraph isk={false} data={buyVolumeHistory} />
+            </span>
+            {/* TODO: Don't display volume is volume is often 0 */}
+            <span>
+              <span>Buy/Sell Volume&nbsp;</span>
+              <MiniGraph isk={true} data={buyPriceHistory} />
+              <span>&thinsp;/&thinsp;</span>
+              <MiniGraph isk={false} data={buyVolumeHistory} />
+            </span>
+            <span>
+              <span>Trading Volume&nbsp;</span>
+              <MiniGraph isk={true} data={buyPriceHistory} />
+            </span>
+          </> : (
+            <span className="item-header__metrics-error">not enough history data to compute metrics for this item</span>
+          )}
         </div>
       </div>
       <div className="item-body">
@@ -358,6 +386,51 @@ function ShowInfo({typeId, regionId, blueprints, types}: ShowInfoProps) {
   );
 }
 
+interface MiniGraphProps {
+  data: number[]
+  isk: boolean
+}
+
+function MiniGraph({ data, isk }: MiniGraphProps) {
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const normalized = data.map(x => (x) / (max))
+  const color = getMiniGraphColor(data)
+
+  const value = isk ? formatPrice(data[data.length-1]) : formatVolume(data[data.length-1])
+  const ratio = formatRatio(data[data.length-1] / data[0])
+
+  let stroke = "";
+  let fill = "";
+  for (let i = 0; i < data.length; ++i) {
+    const x = 2 + 26 / (data.length-1) * i;
+    const y = 2 + 14 - normalized[i] * 14;
+    if (i == 0) {
+      stroke += `M${x} ${y}`
+      fill += `M${x} ${y}`
+    } else {
+      stroke += ` L${x} ${y}`
+      fill += ` L${x} ${y}`
+    }
+  }
+  fill += ` L28 18`
+  fill += ` L2 18`
+
+  return (
+    <span className="mini-graph">
+      <div className="mini-graph__hitbox" />
+      <span className="mini-graph__value" style={{color}}>{value}</span>
+      <span className="mini-graph__ratio" style={{color}}>{ratio}</span>
+      <span className="mini-graph__graph">
+        <svg viewBox="0 0 30 20" width="30px" height="20px">
+          <path d={stroke} fill="#00000000" stroke={color} stroke-width="1.8" stroke-linejoin="bevel" />
+          <path d={fill} fill={color + '44'} />
+        </svg>
+      </span>
+    </span>
+  )
+}
+
 function computeBreadcrumbs(marketGroups: MarketGroup[], typeId: number): MarketGroup[] {
   const bc: MarketGroup[] = []
 
@@ -426,13 +499,71 @@ function formatNumber(n: number): React.ReactNode {
     precision += 1;
     [integral, fractional] = n.toFixed(precision).split('.')
   }
+  let i = 0;
   let out: (React.ReactElement|string)[] = []
   while (integral.length > 0) {
-    if (out.length > 0) out.unshift(<>&thinsp;</>)
-    out.unshift(integral.slice(-3))
+    if (out.length > 0) out.unshift(<span key={i++}>&thinsp;</span>)
+    out.unshift(<span key={i++}>{integral.slice(-3)}</span>)
     integral = integral.slice(0, -3)
   }
-  out.push('.')
-  out.push(fractional)
+  out.push(<span key={i++}>.</span>)
+  out.push(<span key={i++}>{fractional}</span>)
   return out
+}
+
+function formatPrice(price: number) {
+  if(price < 1e2) {
+    return price.toFixed(2)
+  }
+  if(price < 1e4) {
+    return (price / 1e3).toFixed(2) + 'k'
+  }
+  if(price < 1e8) {
+    return (price / 1e6).toFixed(2) + 'M'
+  }
+  if(price < 1e11) {
+    return (price / 1e9).toFixed(2) + 'B'
+  }
+  return (price / 1e12).toFixed(2) + 'T'
+}
+
+function formatVolume(price: number) {
+  if(price < 1e5) {
+    return price.toFixed(0)
+  }
+  if(price < 1e8) {
+    return (price / 1e3).toFixed(0) + 'k'
+  }
+  if(price < 1e11) {
+    return (price / 1e6).toFixed(0) + 'M'
+  }
+  if(price < 1e14) {
+    return (price / 1e9).toFixed(0) + 'B'
+  }
+  return (price / 1e12).toFixed(0) + 'T'
+}
+
+function formatRatio(ratio: number) {
+  const sign = ratio-1 >= 0 ? '+' : ''
+  if (!Number.isFinite(ratio)) {
+    return sign + 'Inf'
+  } else {
+    return sign + (ratio * 100 - 100).toFixed(0) + '%'
+  }
+}
+
+function getMiniGraphColor(data: number[]) {
+  const green = "#34A96E"
+  const red = "#E64F4F"
+  const gray = "#D0CFCF"
+  const threshold = 0.9
+
+  const x = data[data.length-1] / data[0]
+  if (x < threshold) {
+    return red
+  } else if (x > 1/threshold) {
+    return green
+  } else {
+    return gray
+  }
 }
