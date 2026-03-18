@@ -58,10 +58,16 @@ func main() {
 	// Starting wrokers
 	orderDumpCh := make(chan orderDump, 4)
 	var mainWg sync.WaitGroup
-	mainWg.Add(1)
+	mainWg.Add(2)
 	go func() {
 		apiWorker(ctx, socketPath)
 		log.Print("Api Worker: stopped")
+		mainWg.Done()
+		cancel()
+	}()
+	go func() {
+		victoriaMetricsWorker(ctx)
+		log.Print("VictoriaMetrics Worker: stopped")
 		mainWg.Done()
 		cancel()
 	}()

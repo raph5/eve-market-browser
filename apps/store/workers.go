@@ -9,7 +9,13 @@ import (
 	"slices"
 	"time"
 
+	"github.com/VictoriaMetrics/metrics"
 	emd "github.com/raph5/eve-market-dump"
+)
+
+var (
+	orderStatus   = metrics.NewCounter("store_order_status_info")
+	historyStatus = metrics.NewCounter("store_history_status_info")
 )
 
 type orderDump struct {
@@ -33,11 +39,16 @@ func orderWorker(
 		now := time.Now()
 		timeToWait := expiration.Sub(now)
 		if timeToWait > 0 {
+			orderStatus.Set(1)
 			log.Print("Order Worker: up to date")
 
-			sleepWithContext(ctx, timeToWait)
+			err := sleepWithContext(ctx, timeToWait)
+			if err != nil {
+				orderStatus.Set(0)
+			}
 			continue
 		}
+		orderStatus.Set(0)
 
 		now = time.Now()
 		log.Printf("Order Worker: orders download start")
@@ -192,11 +203,16 @@ func historyWorker(ctx context.Context) {
 		now := time.Now()
 		timeToWait := expiration.Sub(now)
 		if timeToWait > 0 {
+			historyStatus.Set(1)
 			log.Print("History Worker: up to date")
 
-			sleepWithContext(ctx, timeToWait)
+			err := sleepWithContext(ctx, timeToWait)
+			if err == nil {
+				historyStatus.Set(0)
+			}
 			continue
 		}
+		historyStatus.Set(0)
 
 		// here we assume that every market is up to date at 11:15 as stated at
 		// https://developers.eveonline.com/api-explorer#/operations/GetMarketsRegionIdHistory
@@ -276,6 +292,41 @@ func apiWorker(ctx context.Context, socketPath string) {
 	err = server.Shutdown(shutdownCtx)
 	if err != nil {
 		log.Printf("Api Worker Error: %v", err)
+	}
+}
+
+func victoriaMetricsWorker(ctx context.Context) {
+	errCh := make(chan error)
+	mux := http.NewServeMux()
+	server := &http.Server{
+		Addr:    ":2112",
+		Handler: mux,
+	}
+
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, req *http.Request) {
+		metrics.WritePrometheus(w, true)
+	})
+
+	go func() {
+		log.Printf("VictoriaMetrics Worker: listening on port %s", server.Addr)
+		err := server.ListenAndServe()
+		if err != nil {
+			errCh <- err
+			return
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case err := <-errCh:
+		log.Printf("VictoriaMetrics Worker Error: %v", err)
+	}
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	err := server.Shutdown(shutdownCtx)
+	if err != nil {
+		log.Printf("VictoriaMetrics Worker Error: %v", err)
 	}
 }
 
