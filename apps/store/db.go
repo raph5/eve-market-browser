@@ -59,7 +59,7 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     Volume INTEGER,
     Average REAL,
     Highest REAL,
-    Lowest REAL,
+    Lowest REAL
     -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
     -- production this increase bd size by ~30% due to internal sqlite indexes
     -- PRIMARY KEY (Date, TypeId, RegionId)
@@ -71,7 +71,7 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     Time INTEGER,  -- Epoch Seconds
     LocationId INTEGER,
     Average REAL,
-    Volume INTEGER,
+    Volume INTEGER
     -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
     -- production this increase bd size by ~30% due to internal sqlite indexes
     -- PRIMARY KEY (Time, TypeId, LocationId)
@@ -93,7 +93,7 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
   CREATE TABLE IF NOT EXISTS ActiveMarket (
     TypeId INTEGER,
     RegionId INTEGER,
-    LastActivity INTEGER,  -- Epoch Seconds
+    LastActivity INTEGER  -- Epoch Seconds
     -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
     -- production this increase bd size by ~30% due to internal sqlite indexes
     -- PRIMARY KEY (TypeId, RegionId)
