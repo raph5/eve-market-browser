@@ -16,7 +16,6 @@ import (
 // we fetch all orders every OrderFetchingPeriod
 const OrderFetchingPeriod = 10 * time.Minute
 
-// TODO: Add victoria metrics
 func main() {
 	// Init logger
 	log.SetFlags(log.LstdFlags)

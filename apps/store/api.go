@@ -25,6 +25,48 @@ type apiDayMetric struct {
 	DonchianBottom float64 `json:"donchianBottom"`
 }
 
+func createVolumeHandler(ctx context.Context) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		timeoutCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+		defer cancel()
+
+		typeIds := make([]uint64, 0)
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&typeIds)
+		if err != nil {
+			http.Error(w, `Bad request: body is not a list of type ids`, 400)
+			return
+		}
+
+		volumeMap := make(map[uint64]float64)
+		lastMonth := getLastMonth(time.Now())
+		for _, typeId := range typeIds {
+			dayMetrics, err := dbGetDayMetricsForTypeStartingFromDate(timeoutCtx, typeId, lastMonth)
+			if err != nil {
+				log.Printf("Internal server error: dbGetDayMetricsForTypeStartingFromDate: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
+			volumeMap[typeId] = computeVolume(dayMetrics)
+		}
+
+		marshaled, err := json.Marshal(volumeMap)
+		if err != nil {
+			log.Printf("Internal server error: json.Marshal: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(marshaled)
+		if err != nil {
+			log.Printf("Internal server error: w.Write: %v", err)
+			http.Error(w, "Internal server error", 500)
+			return
+		}
+	}
+}
+
 func createOrderHandler(ctx context.Context) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -136,11 +178,21 @@ func createDayMetricHandler(ctx context.Context) http.HandlerFunc {
 			return
 		}
 
-		dayMetrics, err := dbGetDayMetricsForTypeAndRegion(timeoutCtx, typeId, regionId)
-		if err != nil {
-			log.Printf("Internal server error: dbGetDayMetricsForTypeAndRegion: %v", err)
-			http.Error(w, "Internal server error", 500)
-			return
+		var dayMetrics []dbDayMetric
+		if typeId == 44992 {
+			dayMetrics, err = dbGetDayMetricsForTypeAndRegion(timeoutCtx, typeId, 0)
+			if err != nil {
+				log.Printf("Internal server error: dbGetDayMetricsForType: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
+		} else {
+			dayMetrics, err = dbGetDayMetricsForTypeAndRegion(timeoutCtx, typeId, regionId)
+			if err != nil {
+				log.Printf("Internal server error: dbGetDayMetricsForTypeAndRegion: %v", err)
+				http.Error(w, "Internal server error", 500)
+				return
+			}
 		}
 		apiDayMetrics := computeApiDayMetrics(dayMetrics)
 
@@ -253,4 +305,17 @@ func computeApiDayMetrics(dayMetrics []dbDayMetric) []apiDayMetric {
 	}
 
 	return apiDayMetrics
+}
+
+func computeVolume(dayMetrics []dbDayMetric) float64 {
+	var volume float64
+	for _, d := range dayMetrics {
+		volume += float64(d.Volume) * d.Average
+	}
+	return volume
+}
+
+func getLastMonth(now time.Time) time.Time {
+	utc := now.UTC()
+	return time.Date(utc.Year(), utc.Month()-1, utc.Day(), 0, 0, 0, 0, utc.Location())
 }

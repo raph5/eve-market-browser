@@ -225,6 +225,37 @@ ORDER BY Date`
 	return dayMetric, nil
 }
 
+func dbGetDayMetricsForTypeStartingFromDate(ctx context.Context, typeId uint64, date time.Time) ([]dbDayMetric, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	dayMetric := make([]dbDayMetric, 0, 512)
+
+	query := `SELECT Date, OrderCount, Volume, Average, Highest, Lowest FROM DayMetric
+WHERE TypeId = ? AND Date >= ?
+ORDER BY Date`
+	rows, err := dbRead.QueryContext(timeoutCtx, query, typeId, date.Unix())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var day dbDayMetric
+		err := rows.Scan(&day.Date, &day.OrderCount, &day.Volume, &day.Average, &day.Highest, &day.Lowest)
+		if err != nil {
+			return nil, err
+		}
+		dayMetric = append(dayMetric, day)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return dayMetric, nil
+}
+
 func dbGetDayMetricsLastDate(ctx context.Context) (time.Time, error) {
 	dbRead := ctx.Value("dbRead").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
@@ -345,7 +376,6 @@ func dbAddDayMetrics(ctx context.Context, date time.Time, dayMetrics []emd.Histo
 	defer tx.Rollback()
 
 	dateUnix := date.Unix()
-	// TODO: add INSERT OR REPLACE
 	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO DayMetric VALUES (?,?,?,?,?,?,?,?)")
 	if err != nil {
 		return err
@@ -378,7 +408,6 @@ func dbAddTickMetricMap(ctx context.Context, _time time.Time, tickMetricMap map[
 	defer tx.Rollback()
 
 	timeUnix := _time.Unix()
-	// TODO: add INSERT OR REPLACE
 	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO TickMetric VALUES (?,?,?,?,?,?)")
 	if err != nil {
 		return err
