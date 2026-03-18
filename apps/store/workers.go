@@ -119,7 +119,7 @@ func tickMetricWorker(
 	}
 
 	tickMetricMap := make(map[market]metric)
-	hour := getHour(time.Now())
+	hour := getHour(oldOrderDump.time)
 
 	for {
 		var newOrderDump orderDump
@@ -129,15 +129,18 @@ func tickMetricWorker(
 			return
 		}
 
-		nowHour := getHour(time.Now())
-		if !hour.Equal(nowHour) {
-			err := dbAddTickMetricMap(ctx, newOrderDump.time, tickMetricMap)
+		newHour := getHour(newOrderDump.time)
+		if !hour.Equal(newHour) {
+			err := dbAddTickMetricMap(ctx, hour, tickMetricMap)
 			if err != nil {
 				log.Printf("TickMetric Worker Error: dbAddTickMetrics: %v", err)
 			}
+			hour = newHour
+			clear(tickMetricMap)
 		}
 
 		updateTickMeitrcMap(tickMetricMap, oldOrderDump.orders, newOrderDump.orders)
+		oldOrderDump = newOrderDump
 	}
 }
 
