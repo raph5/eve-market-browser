@@ -28,12 +28,18 @@ export interface NavigationProps {
 const Navigation = forwardRef<NavigationRef, NavigationProps>(({ types, marketGroups }, ref) => {
   const quickbar = useContext(QuickbarContext)
   const tabsRef = useRef<TabRef>(null)
+  const hasLoaded = useRef(false)
   const marketTreeRef = useRef<MarketTreeRef>(null)
   const [marketTreeValue, setMarketTreeValue] = useState<Set<string>>(new Set())
   const [quickbarTreeValue, setQuickbarTreeValue] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    tabsRef.current?.blink('quickbar')
+    setTimeout(() => hasLoaded.current = true, 200)
+  }, [])
+  useEffect(() => {
+    if (hasLoaded.current) {
+      tabsRef.current?.blink('quickbar')
+    }
   }, [quickbar.state])
 
   const tabs = [
