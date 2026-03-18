@@ -510,7 +510,7 @@ func dbReplaceOrders(ctx context.Context, orders []emd.Order) error {
 
 func dbGetTimeRecord(ctx context.Context, key string) (time.Time, error) {
 	dbRead := ctx.Value("dbRead").(*sql.DB)
-	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
 	var val uint64
@@ -523,7 +523,7 @@ func dbGetTimeRecord(ctx context.Context, key string) (time.Time, error) {
 
 func dbSetTimeRecord(ctx context.Context, key string, val time.Time) error {
 	dbWrite := ctx.Value("dbWrite").(*sql.DB)
-	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
 	_, err := dbWrite.ExecContext(timeoutCtx, "INSERT OR REPLACE INTO TimeRecord VALUES (?,?)", key, val.Unix())
