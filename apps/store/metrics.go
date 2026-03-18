@@ -4,13 +4,6 @@ import (
 	emd "github.com/raph5/eve-market-dump"
 )
 
-type tickMetric struct {
-	typeId     uint64
-	locationId uint64
-	average    float64
-	volume     uint64
-}
-
 type metric struct {
 	average float64
 	volume  uint64
@@ -19,6 +12,7 @@ type metric struct {
 type market struct {
 	typeId     uint64
 	locationId uint64
+	isBuyOrder bool
 }
 
 func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order, newOrders []emd.Order) {
@@ -48,7 +42,7 @@ func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order,
 		}
 		newO, ok := newOrderByFingerPrint[fingerPrint]
 		if ok && newO.VolumeRemain < o.VolumeRemain { // order used
-			market := market{o.TypeId, o.LocationId}
+			market := market{o.TypeId, o.LocationId, o.IsBuyOrder}
 			volume := o.VolumeRemain - newO.VolumeRemain
 			var price float64
 			if o.IsBuyOrder {
@@ -68,7 +62,7 @@ func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order,
 				tickMetricMap[market] = metric{price, volume}
 			}
 		} else if !ok { // order complited
-			market := market{o.TypeId, o.LocationId}
+			market := market{o.TypeId, o.LocationId, o.IsBuyOrder}
 
 			tickMetric, ok := tickMetricMap[market]
 			if ok {

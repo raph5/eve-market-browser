@@ -71,7 +71,8 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     Time INTEGER,  -- Epoch Seconds
     LocationId INTEGER,
     Average REAL,
-    Volume INTEGER
+    Volume INTEGER,
+    IsBuyOrder INTEGER
     -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
     -- production this increase bd size by ~30% due to internal sqlite indexes
     -- PRIMARY KEY (Time, TypeId, LocationId)
@@ -378,14 +379,14 @@ func dbAddTickMetricMap(ctx context.Context, _time time.Time, tickMetricMap map[
 
 	timeUnix := _time.Unix()
 	// TODO: add INSERT OR REPLACE
-	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO TickMetric VALUES (?,?,?,?,?)")
+	stmt, err := tx.PrepareContext(timeoutCtx, "INSERT INTO TickMetric VALUES (?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for m := range tickMetricMap {
-		_, err := stmt.ExecContext(timeoutCtx, m.typeId, timeUnix, m.locationId, tickMetricMap[m].average, tickMetricMap[m].volume)
+		_, err := stmt.ExecContext(timeoutCtx, m.typeId, timeUnix, m.locationId, tickMetricMap[m].average, tickMetricMap[m].volume, m.isBuyOrder)
 		if err != nil {
 			return err
 		}
