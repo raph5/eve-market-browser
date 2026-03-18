@@ -111,15 +111,18 @@ func tickMetricWorker(
 	ctx context.Context,
 	ordersDumpCh <-chan orderDump,
 ) {
+<<<<<<< HEAD
+	oldOrderDump := <-ordersDumpCh
+	tickMetricMap := make(map[market]metric)
+	hour := getHour(time.Now())
+=======
 	var oldOrderDump orderDump
 	select {
 	case oldOrderDump = <-ordersDumpCh:
 	case <-ctx.Done():
 		return
 	}
-
-	tickMetricMap := make(map[market]metric)
-	hour := getHour(time.Now())
+>>>>>>> test
 
 	for {
 		var newOrderDump orderDump
