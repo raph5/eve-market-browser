@@ -1,4 +1,4 @@
-import { Blueprint, esiStore } from "@app/esiStore.server";
+import { Blueprint, DayMetric, esiStore, OrderDump } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { blueprintIconSrc, typeIconSrc } from "@components/eveIcon";
@@ -23,6 +23,16 @@ import nanoWhiteIcon from "@assets/nano-white.png"
 import bulkheadsIcon from "@assets/bulkheads.png"
 import cargoIcon from "@assets/cargo.png"
 import { usePath } from "@app/hooks/usePath";
+
+export interface TypeContext extends RegionContext {
+  typeId: number
+  typeName: string
+  regionId: number
+  regionName: string
+  blueprints: Blueprint[]
+  orderDump: OrderDump
+  dayMetrics: DayMetric[]
+}
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if(!data || !data.regionName || !data.typeName) {
@@ -62,14 +72,29 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   const blueprints = await esiStore.blueprints
 
-  return json(
-    { typeId, typeName, regionId, regionName, blueprints },
-  )
+  // orders
+  const orderDump = await esiStore.getOrderDump(typeId, regionId)
+
+  // day metrics
+  const dayMetrics = await esiStore.getDayMetic(typeId, regionId)
+
+  return json({
+    typeId,
+    typeName,
+    regionId,
+    regionName,
+    blueprints,
+    orderDump,
+    dayMetrics,
+  })
 }
 
 export default function Type() {
-  const { marketGroups, types, regions } = useOutletContext<RegionContext>()
-  const { typeId, regionId, blueprints } = useLoaderData<typeof loader>()
+  const regionOutletContext = useOutletContext<RegionContext>()
+  const { marketGroups, types, regions } = regionOutletContext
+  const loaderData = useLoaderData<typeof loader>()
+  const { typeId, regionId, blueprints } = loaderData
+
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
   const [inQuickbar, setInQuickbar] = useState(false)
@@ -97,6 +122,17 @@ export default function Type() {
 
   const dataTabState = (matches.at(-1)?.id == "routes/region.$region.type.$type._index") ? "active" : ""
   const historyTabState = (matches.at(-1)?.id == "routes/region.$region.type.$type.history") ? "active" : ""
+
+  const typeOutletContext: TypeContext = {
+    ...regionOutletContext,
+    typeId: loaderData.typeId,
+    typeName: loaderData.typeName,
+    regionId: loaderData.regionId,
+    regionName: loaderData.regionName,
+    blueprints: loaderData.blueprints,
+    orderDump: loaderData.orderDump,
+    dayMetrics: loaderData.dayMetrics,
+  }
 
   return (
     <div className="item-page">
@@ -156,7 +192,7 @@ export default function Type() {
             </Link>
           </div>
           <div className="tabs__content item-body__tab">
-            <Outlet />
+            <Outlet context={typeOutletContext} />
           </div>
         </div>
       </div>

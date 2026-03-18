@@ -2,8 +2,8 @@ import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import * as Table from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
-import { json, useLoaderData, useRouteError } from "@remix-run/react"
-import { numberSort, stringSort } from "@app/utils"
+import { json, useLoaderData, useOutletContext, useRouteError } from "@remix-run/react"
+import { TypeContext } from "./region.$region.type.$type"
 
 const DAY = 60*60*24
 const HOUR = 60*60
@@ -72,19 +72,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const orderDump = await esiStore.getOrderDump(typeId, regionId)
   const now = Date.now() / 1000
 
-  return json({
-    typeId,
-    regionId,
-    orderDump,
-    now
-  })
+  return json({ typeId, regionId, now })
 }
 
 export default function MarketData() {
-  const { orderDump, now } = useLoaderData<typeof loader>()
+  const { orderDump } = useOutletContext<TypeContext>()
+  const { now } = useLoaderData<typeof loader>()
   const sellOrder = orderDump.order.filter(o => !o.IsBuyOrder)
   const buyOrder = orderDump.order.filter(o => o.IsBuyOrder)
 

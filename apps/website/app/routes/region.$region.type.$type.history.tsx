@@ -1,9 +1,10 @@
-import { DayMetric, esiStore } from "@app/esiStore.server"
+import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
-import { json, useLoaderData, useRouteError } from "@remix-run/react"
+import { json, useOutletContext, useRouteError } from "@remix-run/react"
 import { useEffect, useRef } from "react"
+import { TypeContext } from "./region.$region.type.$type"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
@@ -25,17 +26,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  const dayMetrics: DayMetric[] = await esiStore.getDayMetic(typeId, regionId)
-
-  return json({
-    typeId,
-    regionId,
-    dayMetrics
-  })
+  return json({ typeId, regionId })
 }
 
 export default function PriceHistory() {
-  const { dayMetrics } = useLoaderData<typeof loader>()
+  const { dayMetrics } = useOutletContext<TypeContext>()
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
