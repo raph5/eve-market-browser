@@ -60,20 +60,9 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     Average REAL,
     Highest REAL,
     Lowest REAL,
-    PRIMARY KEY (Date, TypeId, RegionId)
-  );
-  CREATE INDEX IF NOT EXISTS DayMetricTypeRegionIndex ON DayMetric (TypeId, RegionId);
-
-  CREATE TABLE IF NOT EXISTS DayMetric (
-    TypeId INTEGER,
-    RegionId INTEGER,
-    Date INTEGER,  -- Epoch Seconds
-    OrderCount INTEGER,
-    Volume INTEGER,
-    Average REAL,
-    Highest REAL,
-    Lowest REAL,
-    PRIMARY KEY (Date, TypeId, RegionId)
+    -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
+    -- production this increase bd size by ~30% due to internal sqlite indexes
+    -- PRIMARY KEY (Date, TypeId, RegionId)
   );
   CREATE INDEX IF NOT EXISTS DayMetricTypeRegionIndex ON DayMetric (TypeId, RegionId);
 
@@ -83,7 +72,9 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     LocationId INTEGER,
     Average REAL,
     Volume INTEGER,
-    PRIMARY KEY (Time, TypeId, LocationId)
+    -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
+    -- production this increase bd size by ~30% due to internal sqlite indexes
+    -- PRIMARY KEY (Time, TypeId, LocationId)
   );
   CREATE INDEX IF NOT EXISTS TickMetricTypeRegionIndex ON TickMetric (TypeId, LocationId);
 
@@ -103,7 +94,9 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     TypeId INTEGER,
     RegionId INTEGER,
     LastActivity INTEGER,  -- Epoch Seconds
-    PRIMARY KEY (TypeId, RegionId)
+    -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
+    -- production this increase bd size by ~30% due to internal sqlite indexes
+    -- PRIMARY KEY (TypeId, RegionId)
   );
 
   CREATE TABLE IF NOT EXISTS TimeRecord (
