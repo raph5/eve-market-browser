@@ -95,9 +95,7 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
     TypeId INTEGER,
     RegionId INTEGER,
     LastActivity INTEGER  -- Epoch Seconds
-    -- Adding a PRIMARY KEY is good for developpement to catch bugs. But in
-    -- production this increase bd size by ~30% due to internal sqlite indexes
-    -- PRIMARY KEY (TypeId, RegionId)
+    PRIMARY KEY (TypeId, RegionId)
   );
 
   CREATE TABLE IF NOT EXISTS TimeRecord (
