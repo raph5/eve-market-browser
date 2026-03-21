@@ -94,7 +94,7 @@ func dbInit(dbPath string) (*sql.DB, *sql.DB, error) {
   CREATE TABLE IF NOT EXISTS ActiveMarket (
     TypeId INTEGER,
     RegionId INTEGER,
-    LastActivity INTEGER  -- Epoch Seconds
+    LastActivity INTEGER,  -- Epoch Seconds
     PRIMARY KEY (TypeId, RegionId)
   );
 
