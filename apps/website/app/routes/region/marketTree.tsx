@@ -32,22 +32,20 @@ export interface MarketTreeProps extends Omit<React.HTMLAttributes<HTMLUListElem
 
 interface MarketGroupProps {
   group: EsiMarketGroup
+  index: number
 }
 
 interface MarketRarityGroupProps {
   children: React.ReactNode
   group: EsiMarketGroup
   rarity: number
+  index: number
 }
 
 interface MarketItemProps {
   type: Type
   setRefs: boolean
-}
-
-interface MarketResultProps {
-  type: Type
-  focused: boolean
+  index: number
 }
 
 interface MarketTreeContextType {
@@ -185,8 +183,8 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
               className={classNames(classNames, 'market-tree__tree')}
               {...props}
             >
-              {rootGroups.map(group => (
-                <MarketGroup group={group} key={group.id} />
+              {rootGroups.map((group, index) => (
+                <MarketGroup index={index} group={group} key={group.id} />
               ))}
             </TreeView.Root>
 
@@ -203,7 +201,7 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   )
 })
 
-function MarketGroup({ group }: MarketGroupProps) {
+function MarketGroup({ group, index }: MarketGroupProps) {
   const { types, marketGroups } = useContext(MarketTreeContext)
   const refs = useContext(RefsContext);
   refs[`group:${group.id}`] = useRef<HTMLDivElement>(null);
@@ -222,8 +220,10 @@ function MarketGroup({ group }: MarketGroupProps) {
     }
   }
 
+  let childIndex = 0
+
   return (
-    <TreeView.Group value={`group:${group.id}`} className="market-group">
+    <TreeView.Group index={index} value={`group:${group.id}`} className="market-group">
       <TreeView.Trigger
         ref={refs[`group:${group.id}`] as React.RefObject<HTMLDivElement>}
         className="market-group__trigger"
@@ -235,23 +235,23 @@ function MarketGroup({ group }: MarketGroupProps) {
       <TreeView.Content className="market-group__content">
 
         {group.childsId.map(groupId => (
-          <MarketGroup group={getMarketGroup(marketGroups, groupId)} key={groupId} />
+          <MarketGroup index={childIndex++} group={getMarketGroup(marketGroups, groupId)} key={groupId} />
         ))}
 
         {rarityGroupCount == 1 && rarityGroups.flat().map(type => (
-          <MarketItem setRefs={true} type={type} key={type.id} />
+          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} />
         ))}
 
         {rarityGroupCount > 1 && rarityGroups[0] && rarityGroups[0].map(type => (
-          <MarketItem setRefs={true} type={type} key={type.id} />
+          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} />
         ))}
         {rarityGroupCount > 1 && rarityGroups[1] && rarityGroups[1].map(type => (
-          <MarketItem setRefs={true} type={type} key={type.id} />
+          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} />
         ))}
         {rarityGroupCount > 1 && rarityGroups.map((rarityGroup, rarity) => (
           rarity != 0 && rarity != 1 && (
-            <MarketRarityGroup group={group} rarity={rarity} key={rarity}>
-              {rarityGroup.map(type => <MarketItem setRefs={true} type={type} key={type.id} />)}
+            <MarketRarityGroup index={childIndex++} group={group} rarity={rarity} key={rarity}>
+              {rarityGroup.map((type, index) => <MarketItem index={index} setRefs={true} type={type} key={type.id} />)}
             </MarketRarityGroup>
           )
         ))}
@@ -261,12 +261,12 @@ function MarketGroup({ group }: MarketGroupProps) {
   )
 }
 
-function MarketRarityGroup({ rarity, group, children }: MarketRarityGroupProps) {
+function MarketRarityGroup({ rarity, group, children, index }: MarketRarityGroupProps) {
   const name = getRarityName(rarity)
   const iconSrc = getRarityIcon(rarity)
 
   return (
-    <TreeView.Group value={`group:${group.id}:meta:${name}`} className="market-group market-group--meta">
+    <TreeView.Group index={index} value={`group:${group.id}:meta:${name}`} className="market-group market-group--meta">
       <TreeView.Trigger className="market-group__trigger">
         <img src={triangleRightIcon} className="market-group_triangle" />
         <EveIcon src={iconSrc} alt={`${name} icon`} className="market-group__icon" />
@@ -279,7 +279,7 @@ function MarketRarityGroup({ rarity, group, children }: MarketRarityGroupProps) 
   )
 }
 
-function MarketItem({ type }: MarketItemProps) {
+function MarketItem({ type, index }: MarketItemProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = usePath()
@@ -305,6 +305,7 @@ function MarketItem({ type }: MarketItemProps) {
         <TreeView.Item
           ref={refs[`type:${type.id}`] as React.RefObject<HTMLLIElement>}
           value={`type:${type.id}`}
+          index={index}
           onKeyDown={handleKeyDown}
           className="market-item"
           data-selected={typeId == type.id.toString()}
@@ -323,60 +324,6 @@ function MarketItem({ type }: MarketItemProps) {
             </button>
           )}
         </TreeView.Item>
-      </ContextMenu.Trigger>
-      <ContextMenu.Portal>
-        <ContextMenu.Content className="context-menu">
-
-          {inQuickbar ? (
-            <ContextMenu.Item onClick={() => quickbar.removeItem(type.id)} className="context-menu__item">
-              Remove from quickbar
-            </ContextMenu.Item>
-          ) : (
-            <ContextMenu.Item onClick={() => quickbar.addItem(type.id)} className="context-menu__item">
-              Add to quickbar
-            </ContextMenu.Item>
-          )}
-
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
-    </ContextMenu.Root>
-  )
-}
-
-function MarketResult({ type, focused }: MarketResultProps) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const path = usePath()
-  const quickbar = useContext(QuickbarContext)
-  const inQuickbar = useMemo(() => quickbar.has(type.id), [type.id, quickbar.state])
-  const [linkHref, setLinkHref] = useState(path.setTypeId(type.id))
-
-  function handleKeyDown(event: React.KeyboardEvent) {
-    if (event.key == 'Enter') {
-      navigate(path.setTypeId(type.id))
-    }
-  }
-
-  // NOTE: The cost of the useEffect may be big
-  useEffect(() => setLinkHref(path.setTypeId(type.id)), [location])
-
-  return (
-    <ContextMenu.Root>
-      <ContextMenu.Trigger asChild>
-        <li onKeyDown={handleKeyDown} className="market-item" data-in-quickbar={inQuickbar} data-focused={focused}>
-          <Link to={linkHref} tabIndex={-1} className="market-item__link">
-            {type.name}
-          </Link>
-          {inQuickbar ? (
-            <button onClick={e => { quickbar.removeItem(type.id); e.stopPropagation() }} className="market-item__button" title="Remove from quickbar">
-              <img src={unpinIcon} className="market-item__button-icon" />
-            </button>
-          ) : (
-            <button onClick={e => { quickbar.addItem(type.id); e.stopPropagation() }} className="market-item__button" title="Add to quickbar">
-              <img src={pinIcon} className="market-item__button-icon" />
-            </button>
-          )}
-        </li>
       </ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content className="context-menu">
@@ -444,9 +391,20 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
       } else {
         groups[groupIndex].types.push(type)
       }
-      groups.sort((a, b) => a.name.localeCompare(b.name))
     }
-    return groups
+
+    const groupsMinLength: Record<string, number> = {}
+    for (const g of groups) {
+      let minLength = g.types[0].name.length
+      for (const t of g.types) {
+        if (t.name.length < minLength) {
+          minLength = t.name.length
+        }
+      }
+      groupsMinLength[g.id] = minLength
+    }
+
+    return groups.sort((a, b) => groupsMinLength[a.id] - groupsMinLength[b.id])
   }, [results])
 
   useImperativeHandle(ref, () => ({
@@ -465,6 +423,7 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
       {groups.map((group, index) => (
         <TreeView.Group
           ref={index == 0 ? treeRef : undefined}
+          index={index}
           key={group.id}
           value={`group:${group.id}`}
           className="market-group"
@@ -475,8 +434,8 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
             <span className="market-group__label">{group.name}</span>
           </TreeView.Trigger>
           <TreeView.Content className="market-group__content">
-            {group.types.map(t => (
-              <MarketItem setRefs={false} type={t} key={t.id} />
+            {group.types.map((t, index) => (
+              <MarketItem index={index} setRefs={false} type={t} key={t.id} />
             ))}
           </TreeView.Content>
         </TreeView.Group>

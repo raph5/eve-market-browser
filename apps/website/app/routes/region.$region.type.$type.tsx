@@ -392,7 +392,6 @@ interface MiniGraphProps {
 }
 
 function MiniGraph({ data, isk }: MiniGraphProps) {
-  const min = Math.min(...data)
   const max = Math.max(...data)
   const normalized = data.map(x => (x) / (max))
   const color = getMiniGraphColor(data)

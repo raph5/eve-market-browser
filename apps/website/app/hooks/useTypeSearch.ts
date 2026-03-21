@@ -13,8 +13,8 @@ export function useTypeSearch(types: Type[]): useTypeSearchHook {
   function _setSearch(s: string) {
     setSearch(s)
 
-    if (s.length >= 2 && worker.current) {
-      worker.current.postMessage({ query: search, list: names })
+    if (s.length >= 3 && worker.current) {
+      worker.current.postMessage({ query: s, list: names })
     } else {
       setResults([])
     }

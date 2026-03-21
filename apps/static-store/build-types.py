@@ -32,6 +32,8 @@ for line in type_file:
         })
 type_file.close()
 
+# TODO: Request types trading volume
+
 type_list_key = lambda x : x["name"]
 out = sorted(type_list, key=type_list_key)
 json.dump(out, sys.stdout, separators=(',', ':'))

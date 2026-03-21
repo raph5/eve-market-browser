@@ -28,10 +28,12 @@ export interface QuickbarProps {
 
 interface QuickbarFolderPorps {
   folderId: string
+  index: number
 }
 
 interface QuickbarItemProps {
   typeId: number
+  index: number
 }
 
 interface QuickbarDataTransfer {
@@ -123,12 +125,12 @@ export function Quickbar({ types, treeValue, onTreeValueChange }: QuickbarProps)
             ref={rootRef}
           >
 
-            {quickbar.state.__root__.childFolders.sort(stringSort()).map(folderId => (
-              <QuickbarFolder folderId={folderId} key={folderId} />
+            {quickbar.state.__root__.childFolders.sort(stringSort()).map((folderId, index) => (
+              <QuickbarFolder folderId={folderId} index={index} key={folderId} />
             ))}
 
-            {quickbar.state.__root__.types.sort(stringSort(t => getType(types, t).name)).map(typeId => (
-              <QuickbarItem typeId={typeId} key={typeId} />
+            {quickbar.state.__root__.types.sort(stringSort(t => getType(types, t).name)).map((typeId, index) => (
+              <QuickbarItem typeId={typeId} index={index} key={typeId} />
             ))}
 
           </TreeView.Root>
@@ -138,7 +140,7 @@ export function Quickbar({ types, treeValue, onTreeValueChange }: QuickbarProps)
   )
 }
 
-function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
+function QuickbarFolder({ folderId, index }: QuickbarFolderPorps) {
   const quickbar = useContext(QuickbarContext)
   const { treeValue, onTreeValueChange } = useContext(QuickbarComponentContext)
   const folderName = useRef(quickbar.state[folderId].name)
@@ -195,6 +197,7 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
   return (
     <TreeView.Group
       value={`folder:${folderId}`}
+      index={index}
       className="quickbar-folder"
       draggable="true"
       onDrop={drop}
@@ -273,12 +276,12 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
       </Dialog.Root>
       <TreeView.Content className="quickbar-folder__content">
 
-        {quickbar.state[folderId].childFolders.sort(stringSort()).map(folderId => (
-          <QuickbarFolder folderId={folderId} key={folderId} />
+        {quickbar.state[folderId].childFolders.sort(stringSort()).map((folderId, index) => (
+          <QuickbarFolder folderId={folderId} index={index} key={folderId} />
         ))}
 
-        {quickbar.state[folderId].types.map(typeId => (
-          <QuickbarItem typeId={typeId} key={typeId} />
+        {quickbar.state[folderId].types.map((typeId, index) => (
+          <QuickbarItem typeId={typeId} index={index} key={typeId} />
         ))}
 
       </TreeView.Content>
@@ -286,7 +289,7 @@ function QuickbarFolder({ folderId }: QuickbarFolderPorps) {
   )
 }
 
-function QuickbarItem({ typeId }: QuickbarItemProps) {
+function QuickbarItem({ typeId, index }: QuickbarItemProps) {
   const { types } = useContext(QuickbarComponentContext)
   const quickbar = useContext(QuickbarContext)
   const navigate = useNavigate()
@@ -328,6 +331,7 @@ function QuickbarItem({ typeId }: QuickbarItemProps) {
       <ContextMenu.Trigger asChild>
         <TreeView.Item
           value={`item:${type.id}`}
+          index={index}
           className="quickbar-item"
           draggable="true"
           onDragStart={dragStart}

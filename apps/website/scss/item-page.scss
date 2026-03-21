@@ -281,10 +281,10 @@
 }
 
 @media (max-width: $mobile-width) {
-  // TODO: Check if thats relvent
-  .market-data .table {
+  .market-data__table {
     max-height: 70vh;
     min-height: 20vh;
+    overflow: auto;
   }
 
   .price-history {
@@ -295,7 +295,6 @@
 .security {
   font-weight: bold;
   font-size: 14px;
-  // TODO: fix size
   line-height: 16px;
   color: #892860;
   margin-right: 6px;

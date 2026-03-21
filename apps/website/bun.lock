@@ -23,7 +23,7 @@
         "isbot": "^4.4.0",
         "morgan": "^1.10.1",
         "react": "^18.3.1",
-        "react-composable-treeview": "^1.0.17",
+        "react-composable-treeview": "^1.1.1",
         "react-dom": "^18.3.1",
         "react-icons": "^5.5.0",
       },
@@ -1046,7 +1046,7 @@
 
     "react": ["react@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="],
 
-    "react-composable-treeview": ["react-composable-treeview@1.0.17", "", { "peerDependencies": { "react": "^18.2.0" } }, "sha512-DQMull7oDT/SGDN/8IzlYj6nY6Z/S2KySUm1dhn1RS3inRF1l0zI3D+8MFG7OD/L8Cu91evUYVR9oesWI2X++w=="],
+    "react-composable-treeview": ["react-composable-treeview@1.1.1", "", { "peerDependencies": { "react": "^18.2.0" } }, "sha512-U4o24Dl0aehoxjC4X79DxViDduW2/K/u+nIA6KcNksV9ykUOUHfzflm1SINnQ1i2Ui1GqAKDNv/1rS8sJKxvgA=="],
 
     "react-dom": ["react-dom@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0", "scheduler": "^0.23.2" }, "peerDependencies": { "react": "^18.3.1" } }, "sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw=="],
 

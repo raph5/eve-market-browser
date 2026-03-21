@@ -16,11 +16,13 @@ version_number=$(curl -s $version_url | jq .buildNumber)
 
 sde_url=https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-$version_number-jsonl.zip
 # sde_zip=/tmp/eve-online-static-data-$version_number-jsonl.zip
+# TODO: remove
 sde_zip=/Users/raphaelguyader/Downloads/eve-online-static-data-3156467-jsonl.zip
 sde_path=/tmp/eve-online-static-data-$version_number-jsonl
 
 rm -rf $sde_path
 mkdir -p $sde_path
+# TODO: put back
 # curl -s $sde_url > $sde_zip
 unzip -q $sde_zip -d $sde_path
 [[ -f "$sde_path/types.jsonl" ]] || { echo "types.jsonl is missing from SDE" >&2; exit 1; }
