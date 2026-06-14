@@ -34,6 +34,9 @@ func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order,
 	}
 
 	for _, o := range oldOrders {
+		if o.VolumeRemain == 0 {
+			continue
+		}
 		fingerPrint := orderFingerPrint{
 			orderId:     o.OrderId,
 			locationId:  o.LocationId,
@@ -56,7 +59,7 @@ func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order,
 				tickMetricMap[market] = metric{
 					average: (tickMetric.average*float64(tickMetric.volume) + price*float64(volume)) /
 						float64(tickMetric.volume+volume),
-					volume: volume,
+					volume: tickMetric.volume + volume,
 				}
 			} else {
 				tickMetricMap[market] = metric{price, volume}
@@ -69,7 +72,7 @@ func updateTickMeitrcMap(tickMetricMap map[market]metric, oldOrders []emd.Order,
 				tickMetricMap[market] = metric{
 					average: (tickMetric.average*float64(tickMetric.volume) + o.Price*float64(o.VolumeRemain)) /
 						float64(tickMetric.volume+o.VolumeRemain),
-					volume: o.VolumeRemain,
+					volume: tickMetric.volume + o.VolumeRemain,
 				}
 			} else {
 				tickMetricMap[market] = metric{o.Price, o.VolumeRemain}
