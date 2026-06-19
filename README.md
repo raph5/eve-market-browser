@@ -37,8 +37,7 @@ Build remix app `npm run build`
 
 ## TODO
 
-- Delete dir apps/website/app/esiStore
-- Add client side error boudaries
+- Investigate why the search query "skill" make the website freeze
 
 - Improve search experience
 - Test quickbar exports
