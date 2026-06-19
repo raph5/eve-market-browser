@@ -5,7 +5,7 @@ import json
 
 assert len(sys.argv) == 2
 
-thera_id = 31000005
+thera_id = 11000031
 jovian_ids = [10000004, 10000017, 10000019]
 hub_ids = [10000002, 10000043, 10000030, 10000032, 10000042]
 hub_data = []

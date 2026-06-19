@@ -173,7 +173,10 @@ export default function Type() {
             placeholder="Select a region"
             items={[
               {key: '0', name: "All Regions"},
-              ...regions.map(({ id, name }) => ({ key: id.toString(), name }))
+              ...regions.map(({ id, name }) => ({
+                key: id.toString(),
+                name: name == "G-R00031" ? "G-R00031 (Thera)" : name,
+              }))
             ]}
             value={regionId.toString()}
             onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
