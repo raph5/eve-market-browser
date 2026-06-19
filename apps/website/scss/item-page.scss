@@ -78,7 +78,7 @@
     flex-wrap: wrap;
     font-size: 14px;
     white-space: nowrap;
-    color: $font-color-secondary;
+    // color: $font-color-secondary;
   }
   &__metrics-error {
     color: $font-color-light;
@@ -353,6 +353,10 @@
     margin-bottom: 8px;
     gap: 8px;
     font-size: 16px;
+  }
+  &__banner-icon {
+    width: 64px;
+    height: 64px;
   }
 
   &__tab-root {

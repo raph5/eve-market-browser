@@ -71,6 +71,11 @@
     margin: 0;
     padding: 0;
   }
+  &__message {
+    margin: 100px auto 0 auto;
+    color: $font-color-light;
+    text-align: center;
+  }
 }
 
 .market-tree__tree, .market-group__content, .market-item {

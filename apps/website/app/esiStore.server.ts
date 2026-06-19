@@ -69,6 +69,15 @@ export interface DayMetric {
   donchianBottom: number
 }
 
+export interface PreviewMetric {
+	Date: number
+	BuyAverage: number
+	BuyVolume: number
+	SellAverage: number
+	SellVolume: number
+	TradeVolume: number
+}
+
 export interface Blueprint {
   product: {
     typeId: number
@@ -133,6 +142,12 @@ class EsiStore {
   async getDayMetic(typeId: number, regionId: number): Promise<DayMetric[]> {
     return unixSocketFetch(socketPath, `/day-metric?region=${regionId}&type=${typeId}`)
       .then(res => JSON.parse(res))
+  }
+
+  async getPreviewMetrics(typeId: number, regionId: number): Promise<PreviewMetric[]> {
+    return unixSocketFetch(socketPath, `/preview-metric?region=${regionId}&type=${typeId}`)
+      .then(res => JSON.parse(res))
+      .catch(() => [])
   }
   
 }

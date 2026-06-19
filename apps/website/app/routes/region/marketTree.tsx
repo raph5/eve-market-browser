@@ -440,6 +440,9 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
           </TreeView.Content>
         </TreeView.Group>
       ))}
+      {groups.length == 0 &&
+        <p className="market-tree__message">Nothing found</p>
+      }
     </TreeView.Root>
   )
 })

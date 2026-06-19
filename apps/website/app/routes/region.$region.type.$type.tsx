@@ -31,7 +31,6 @@ export interface TypeContext extends RegionContext {
   regionName: string
   blueprints: Blueprint[]
   orderDump: OrderDump
-  dayMetrics: DayMetric[]
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -74,9 +73,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   // orders
   const orderDump = await esiStore.getOrderDump(typeId, regionId)
-
-  // day metrics
-  const dayMetrics = await esiStore.getDayMetic(typeId, regionId)
+  
+  // preview metrics
+  const previewMetrics = await esiStore.getPreviewMetrics(typeId, regionId)
 
   return json({
     typeId,
@@ -85,7 +84,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     regionName,
     blueprints,
     orderDump,
-    dayMetrics,
+    previewMetrics,
   })
 }
 
@@ -93,7 +92,7 @@ export default function Type() {
   const regionOutletContext = useOutletContext<RegionContext>()
   const { marketGroups, types, regions } = regionOutletContext
   const loaderData = useLoaderData<typeof loader>()
-  const { typeId, regionId, blueprints, dayMetrics } = loaderData
+  const { typeId, regionId, blueprints, previewMetrics } = loaderData
 
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
@@ -114,11 +113,6 @@ export default function Type() {
   }, [location])
 
   const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
-  
-  const buyPriceHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.average), [dayMetrics])
-  const sellPriceHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.average), [dayMetrics])
-  const buyVolumeHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.volume), [dayMetrics])
-  const sellVolumeHistory = useMemo(() => dayMetrics.slice(-7).map(m => m.volume), [dayMetrics])
 
   // To avoid hydration errors
   useEffect(() => {
@@ -136,7 +130,6 @@ export default function Type() {
     regionName: loaderData.regionName,
     blueprints: loaderData.blueprints,
     orderDump: loaderData.orderDump,
-    dayMetrics: loaderData.dayMetrics,
   }
 
   return (
@@ -186,23 +179,23 @@ export default function Type() {
             onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
         </div>
         <div className="item-header__metrics">
-          {dayMetrics.length >= 7 ? <>
+          {previewMetrics.length == 7 ? <>
             <span>
               <span>Buy/Sell Price&nbsp;</span>
-              <MiniGraph isk={true} data={buyPriceHistory} />
+              <MiniGraph isk={true} data={previewMetrics.map(m => m.BuyAverage)} />
               <span>&thinsp;/&thinsp;</span>
-              <MiniGraph isk={false} data={buyVolumeHistory} />
+              <MiniGraph isk={false} data={previewMetrics.map(m => m.SellAverage)} />
             </span>
             {/* TODO: Don't display volume is volume is often 0 */}
             <span>
               <span>Buy/Sell Volume&nbsp;</span>
-              <MiniGraph isk={true} data={buyPriceHistory} />
+              <MiniGraph isk={true} data={previewMetrics.map(m => m.BuyVolume)} />
               <span>&thinsp;/&thinsp;</span>
-              <MiniGraph isk={false} data={buyVolumeHistory} />
+              <MiniGraph isk={false} data={previewMetrics.map(m => m.SellVolume)} />
             </span>
             <span>
               <span>Trading Volume&nbsp;</span>
-              <MiniGraph isk={true} data={buyPriceHistory} />
+              <MiniGraph isk={true} data={previewMetrics.map(m => m.TradeVolume)} />
             </span>
           </> : (
             <span className="item-header__metrics-error">not enough history data to compute metrics for this item</span>
@@ -423,7 +416,7 @@ function MiniGraph({ data, isk }: MiniGraphProps) {
       <span className="mini-graph__graph">
         <svg viewBox="0 0 30 20" width="30px" height="20px">
           <path d={stroke} fill="#00000000" stroke={color} stroke-width="1.8" stroke-linejoin="bevel" />
-          <path d={fill} fill={color + '44'} />
+          <path d={fill} fill={color + '22'} />
         </svg>
       </span>
     </span>
