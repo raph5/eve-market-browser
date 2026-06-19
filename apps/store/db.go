@@ -10,6 +10,13 @@ import (
 	emd "github.com/raph5/eve-market-dump"
 )
 
+type dbTickMetric struct {
+	Time       uint64
+	Average    float64
+	Volume     uint64
+	IsBuyOrder bool
+}
+
 type dbDayMetric struct {
 	Date       uint64
 	Average    float64
@@ -254,6 +261,37 @@ ORDER BY Date`
 	return dayMetric, nil
 }
 
+func dbGetDayMetricsForTypeAndRegionStartingFromDate(ctx context.Context, typeId uint64, regionId uint64, date time.Time) ([]dbDayMetric, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	dayMetric := make([]dbDayMetric, 0, 512)
+
+	query := `SELECT Date, OrderCount, Volume, Average, Highest, Lowest FROM DayMetric
+WHERE TypeId = ? AND RegionId = ? AND Date >= ?
+ORDER BY Date`
+	rows, err := dbRead.QueryContext(timeoutCtx, query, typeId, regionId, date.Unix())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var day dbDayMetric
+		err := rows.Scan(&day.Date, &day.OrderCount, &day.Volume, &day.Average, &day.Highest, &day.Lowest)
+		if err != nil {
+			return nil, err
+		}
+		dayMetric = append(dayMetric, day)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return dayMetric, nil
+}
+
 func dbGetDayMetricsLastDate(ctx context.Context) (time.Time, error) {
 	dbRead := ctx.Value("dbRead").(*sql.DB)
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
@@ -306,6 +344,76 @@ func dbGetOrdersForType(ctx context.Context, typeId uint64) ([]emd.Order, error)
 		return nil, err
 	}
 	return orders, nil
+}
+
+func dbGetTickMetricsForTypeStartingFromDate(ctx context.Context, typeId uint64, date time.Time) ([]dbTickMetric, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	tickMetric := make([]dbTickMetric, 0, 512)
+
+	query := `SELECT Time, Average, Volume, IsBuyOrder FROM TickMetric
+WHERE TypeId = ? AND Time >= ?
+ORDER BY Time`
+	rows, err := dbRead.QueryContext(timeoutCtx, query, typeId, date.Unix())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tick dbTickMetric
+		err := rows.Scan(&tick.Time, &tick.Average, &tick.Volume, &tick.IsBuyOrder)
+		if err != nil {
+			return nil, err
+		}
+		tickMetric = append(tickMetric, tick)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return tickMetric, nil
+}
+
+func dbGetTickMetricsForTypeAndRegionStartingFromDate(ctx context.Context, typeId uint64, regionId uint64, date time.Time) ([]dbTickMetric, error) {
+	dbRead := ctx.Value("dbRead").(*sql.DB)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	tickMetric := make([]dbTickMetric, 0, 512)
+
+	query := `SELECT Time, Average, Volume, IsBuyOrder FROM TickMetric
+WHERE TypeId = ? AND Time >= ? AND (
+	LocationId IN (
+		SELECT Id FROM Location WHERE RegionId = ?
+	)
+	OR
+	LocationId IN (
+		` + getSqlNpcStationListForRegion(regionId) + `
+	)
+)
+ORDER BY Time`
+	rows, err := dbRead.QueryContext(timeoutCtx, query, typeId, date.Unix(), regionId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tick dbTickMetric
+		err := rows.Scan(&tick.Time, &tick.Average, &tick.Volume, &tick.IsBuyOrder)
+		if err != nil {
+			return nil, err
+		}
+		tickMetric = append(tickMetric, tick)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return tickMetric, nil
 }
 
 func dbGetOrdersForTypeAndRegion(ctx context.Context, typeId uint64, regionId uint64) ([]emd.Order, error) {

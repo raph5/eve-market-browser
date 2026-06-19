@@ -261,6 +261,7 @@ func apiWorker(ctx context.Context, socketPath string) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/order", createOrderHandler(ctx))
 	mux.HandleFunc("/day-metric", createDayMetricHandler(ctx))
+	mux.HandleFunc("/preview-metric", createPreviewMetricHandler(ctx))
 	mux.HandleFunc("/volume", createVolumeHandler(ctx))
 
 	_, err := os.Stat(socketPath)

@@ -20,26 +20,26 @@ type system struct {
 
 //go:embed data/systems.csv
 var csvSystems []byte
-var systems []system
+var systemMap map[uint64]system
 
 func init() {
 	var err error
-	systems, err = readSystemSvg()
+	systemMap, err = readSystemCsv()
 	if err != nil {
-		log.Panicf("readSystemSvg: %v", err)
+		log.Panicf("readSystemCsv: %v", err)
 	}
 }
 
 func getSystemById(id uint64) (system, error) {
-	for i := range systems {
-		if systems[i].id == id {
-			return systems[i], nil
-		}
+	s, ok := systemMap[id]
+	if ok {
+		return s, nil
+	} else {
+		return system{}, errors.New("Unknown solar system, You should renew data/systemscsv")
 	}
-	return system{}, errors.New("Unknown solar system, You should renew data/systemscsv")
 }
 
-func readSystemSvg() ([]system, error) {
+func readSystemCsv() (map[uint64]system, error) {
 	r := csv.NewReader(bytes.NewReader(csvSystems))
 	record, err := r.Read()
 	if err != nil {
@@ -49,7 +49,7 @@ func readSystemSvg() ([]system, error) {
 		return nil, fmt.Errorf("invalid system csv header %v", record)
 	}
 
-	systemSlice := make([]system, 0, 9000)
+	_systemMap := make(map[uint64]system, 9000)
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
@@ -72,13 +72,13 @@ func readSystemSvg() ([]system, error) {
 			return nil, fmt.Errorf("security in not a valid float32: %w", err)
 		}
 
-		systemSlice = append(systemSlice, system{
+		_systemMap[id] = system{
 			id:       id,
 			regionId: regionId,
 			name:     record[2],
 			security: float32(security),
-		})
+		}
 	}
 
-	return systemSlice, nil
+	return _systemMap, nil
 }
