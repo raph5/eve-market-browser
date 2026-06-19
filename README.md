@@ -37,17 +37,10 @@ Build remix app `npm run build`
 
 ## TODO
 
-- Investigate why the search query "skill" make the website freeze
-
-- Improve search experience
-- Test quickbar exports
-- Find a way to reduce the rate of database locks
 - Document this installation procedure better
-- Add thera
 - Add player owned private structures
 - Add filters
-- Add security status
-- Add a flashing dot signalling whether or not orders are up to date
+- Add a support me button
 
 ## Ports
 
