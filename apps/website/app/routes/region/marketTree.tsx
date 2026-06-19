@@ -7,7 +7,7 @@ import { createContext } from "react"
 import { Link, useLocation, useNavigate, useParams } from "@remix-run/react"
 import { useTypeSearch } from "@hooks/useTypeSearch"
 import { SearchBar } from "@components/searchBar"
-import QuickbarContext from "@contexts/quickbarContext"
+import QuickbarContext, { QuickbarContextType } from "@contexts/quickbarContext"
 import { stringSort } from "@app/utils"
 import * as ContextMenu from "@radix-ui/react-context-menu"
 import triangleRightIcon from "@assets/triangle-right.png"
@@ -46,6 +46,8 @@ interface MarketItemProps {
   type: Type
   setRefs: boolean
   index: number
+  quickbar: QuickbarContextType
+  currentTypeId: string
 }
 
 interface MarketTreeContextType {
@@ -81,7 +83,9 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   const searchResultsRef = useRef<SearchResultsRef>(null);
   const displaySearch = search.length > 2
 
-  const rootGroups = marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
+  const rootGroups = useMemo(() => (
+    marketGroups.filter(g => g.parentId == null).sort(stringSort(g => g.name))
+  ), [marketGroups])
   const regionId = params.region as string
   const typeId = params.type as string
 
@@ -122,7 +126,11 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
   }
 
   function collapseTree() {
-    onTreeValueChange(new Set())
+    if (displaySearch) {
+      searchResultsRef.current?.collapse()
+    } else {
+      onTreeValueChange(new Set())
+    }
   }
 
   function openGroup(groupId: number) {
@@ -202,7 +210,8 @@ export const MarketTree = forwardRef<MarketTreeRef, MarketTreeProps>(({
 })
 
 function MarketGroup({ group, index }: MarketGroupProps) {
-  const { types, marketGroups } = useContext(MarketTreeContext)
+  const quickbar = useContext(QuickbarContext)
+  const { typeId, types, marketGroups } = useContext(MarketTreeContext)
   const refs = useContext(RefsContext);
   refs[`group:${group.id}`] = useRef<HTMLDivElement>(null);
 
@@ -239,19 +248,19 @@ function MarketGroup({ group, index }: MarketGroupProps) {
         ))}
 
         {rarityGroupCount == 1 && rarityGroups.flat().map(type => (
-          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} />
+          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} quickbar={quickbar} currentTypeId={typeId} />
         ))}
 
         {rarityGroupCount > 1 && rarityGroups[0] && rarityGroups[0].map(type => (
-          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} />
+          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} quickbar={quickbar} currentTypeId={typeId} />
         ))}
         {rarityGroupCount > 1 && rarityGroups[1] && rarityGroups[1].map(type => (
-          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} />
+          <MarketItem index={childIndex++} setRefs={true} type={type} key={type.id} quickbar={quickbar} currentTypeId={typeId} />
         ))}
         {rarityGroupCount > 1 && rarityGroups.map((rarityGroup, rarity) => (
           rarity != 0 && rarity != 1 && (
             <MarketRarityGroup index={childIndex++} group={group} rarity={rarity} key={rarity}>
-              {rarityGroup.map((type, index) => <MarketItem index={index} setRefs={true} type={type} key={type.id} />)}
+              {rarityGroup.map((type, index) => <MarketItem index={index} setRefs={true} type={type} key={type.id} quickbar={quickbar} currentTypeId={typeId} />)}
             </MarketRarityGroup>
           )
         ))}
@@ -279,14 +288,10 @@ function MarketRarityGroup({ rarity, group, children, index }: MarketRarityGroup
   )
 }
 
-function MarketItem({ type, index }: MarketItemProps) {
-  const location = useLocation()
+function MarketItem({ type, index, quickbar, currentTypeId }: MarketItemProps) {
   const navigate = useNavigate()
   const path = usePath()
-  const quickbar = useContext(QuickbarContext)
-  const { typeId } = useContext(MarketTreeContext)
-  const inQuickbar = useMemo(() => quickbar.has(type.id), [type, quickbar.state])
-  const [linkHref, setLinkHref] = useState(path.setTypeId(type.id))
+  const inQuickbar = quickbar.has(type.id)
   const refs = useContext(RefsContext);
   refs[`type:${type.id}`] = useRef(null);
 
@@ -295,9 +300,6 @@ function MarketItem({ type, index }: MarketItemProps) {
       navigate(path.setTypeId(type.id))
     }
   }
-
-  // NOTE: The cost of the useEffect may be big
-  useEffect(() => setLinkHref(path.setTypeId(type.id)), [location])
 
   return (
     <ContextMenu.Root>
@@ -308,10 +310,10 @@ function MarketItem({ type, index }: MarketItemProps) {
           index={index}
           onKeyDown={handleKeyDown}
           className="market-item"
-          data-selected={typeId == type.id.toString()}
+          data-selected={currentTypeId == type.id.toString()}
           data-in-quickbar={inQuickbar}
         >
-          <Link to={linkHref} tabIndex={-1} className="market-item__link">
+          <Link to={path.setTypeId(type.id)} tabIndex={-1} className="market-item__link">
             {type.name}
           </Link>
           {inQuickbar ? (
@@ -346,6 +348,7 @@ function MarketItem({ type, index }: MarketItemProps) {
 
 interface SearchResultsRef {
   focus: () => void
+  collapse: () => void
 }
 
 interface SearchResultsProps {
@@ -359,6 +362,9 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
   marketGroups,
   display,
 }, ref) => {
+  const quickbar = useContext(QuickbarContext)
+  const { typeId } = useContext(MarketTreeContext)
+
   interface ResultGroup {
     types: Type[]
     id: number
@@ -404,13 +410,25 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
       groupsMinLength[g.id] = minLength
     }
 
+    // PERF: this save react to have to load a huge tree by default
+    for (const g of groups) {
+      if (g.types.length > 200 && treeValue.has(`group:${g.id}`)) {
+        const newTreeValue = new Set(treeValue)
+        newTreeValue.delete(`group:${g.id}`)
+        setTreeValue(newTreeValue)
+      }
+    }
+
     return groups.sort((a, b) => groupsMinLength[a.id] - groupsMinLength[b.id])
   }, [results])
 
   useImperativeHandle(ref, () => ({
     focus() {
       treeRef.current?.focus()
-    }
+    },
+    collapse() {
+      setTreeValue(new Set())
+    },
   }));
 
   return (
@@ -435,7 +453,7 @@ const SearchResults = forwardRef<SearchResultsRef, SearchResultsProps>(({
           </TreeView.Trigger>
           <TreeView.Content className="market-group__content">
             {group.types.map((t, index) => (
-              <MarketItem index={index} setRefs={false} type={t} key={t.id} />
+              <MarketItem index={index} setRefs={false} type={t} key={t.id} quickbar={quickbar} currentTypeId={typeId} />
             ))}
           </TreeView.Content>
         </TreeView.Group>

@@ -1,7 +1,7 @@
 import { useQuickbarHook } from "@hooks/useQuickbar"
 import { createContext } from "react"
 
-interface QuickbarContextType extends useQuickbarHook {}
+export interface QuickbarContextType extends useQuickbarHook {}
 
 const QuickbarContext = createContext<QuickbarContextType>({
   state: {},
