@@ -11,19 +11,26 @@ import (
 	"strings"
 )
 
+type station struct {
+	id       uint64
+	regionId uint64
+	name     string
+}
+
 //go:embed data/stations.csv
 var csvStations []byte
 var regionToNpcStationSlice map[uint64][]uint64
+var stationMap map[uint64]station
 
 func init() {
 	var err error
-	regionToNpcStationSlice, err = readStationCsv()
+	regionToNpcStationSlice, stationMap, err = readStationCsv()
 	if err != nil {
 		log.Panicf("readStationCsv: %v", err)
 	}
 }
 
-func getSqlNpcStationListForRegion(regionId uint64) string {
+func getSqlNpcStationIdListForRegion(regionId uint64) string {
 	stationSlice := regionToNpcStationSlice[regionId]
 
 	var b strings.Builder
@@ -36,37 +43,44 @@ func getSqlNpcStationListForRegion(regionId uint64) string {
 	return b.String()
 }
 
-func readStationCsv() (map[uint64][]uint64, error) {
+func readStationCsv() (map[uint64][]uint64, map[uint64]station, error) {
 	r := csv.NewReader(bytes.NewReader(csvStations))
 	record, err := r.Read()
 	if err != nil {
-		return nil, fmt.Errorf("reader error: %w", err)
+		return nil, nil, fmt.Errorf("reader error: %w", err)
 	}
-	if record[0] != "regionID" || record[1] != "npcStationID" {
-		return nil, fmt.Errorf("invalid system csv header %v", record)
+	if record[0] != "npcStationID" || record[1] != "npcStationName" || record[2] != "regionID" {
+		return nil, nil, fmt.Errorf("invalid system csv header %v", record)
 	}
 
 	_regionToNpcStationSlice := make(map[uint64][]uint64)
+	_stationMap := make(map[uint64]station)
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("record read: %w", err)
+			return nil, nil, fmt.Errorf("record read: %w", err)
 		}
 
-		regionId, err := strconv.ParseUint(record[0], 10, 64)
+		npcStationId, err := strconv.ParseUint(record[0], 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("regionId in not a valid uint64: %w", err)
+			return nil, nil, fmt.Errorf("npcStationId in not a valid uint64: %w", err)
 		}
-		npcStationId, err := strconv.ParseUint(record[1], 10, 64)
+		npcStationName := record[1]
+		regionId, err := strconv.ParseUint(record[2], 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("npcStationId in not a valid uint64: %w", err)
+			return nil, nil, fmt.Errorf("regionId in not a valid uint64: %w", err)
 		}
 
 		_regionToNpcStationSlice[regionId] = append(_regionToNpcStationSlice[regionId], npcStationId)
+		_stationMap[npcStationId] = station{
+			id: npcStationId,
+			regionId: regionId,
+			name: npcStationName,
+		}
 	}
 
-	return _regionToNpcStationSlice, nil
+	return _regionToNpcStationSlice, _stationMap, nil
 }
