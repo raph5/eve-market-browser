@@ -224,18 +224,19 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		now := time.Now()
-		today := getToday(now)
+		today := getTodayMarketDay(now)
 		lastWeek := getLastWeek(today).AddDate(0, 0, 1)
+		lastWeekAtEleven := lastWeek.Add(11 * time.Hour)
 		var tickMetrics []dbTickMetric
 		if typeId == 44992 || regionId == 0 {
-			tickMetrics, err = dbGetTickMetricsForTypeStartingFromDate(timeoutCtx, typeId, lastWeek)
+			tickMetrics, err = dbGetTickMetricsForTypeStartingFromDate(timeoutCtx, typeId, lastWeekAtEleven)
 			if err != nil {
 				log.Printf("Internal server error: dbGetTickMetricsForTypeStartingFromDate: %v", err)
 				http.Error(w, "Internal server error", 500)
 				return
 			}
 		} else {
-			tickMetrics, err = dbGetTickMetricsForTypeAndRegionStartingFromDate(timeoutCtx, typeId, regionId, lastWeek)
+			tickMetrics, err = dbGetTickMetricsForTypeAndRegionStartingFromDate(timeoutCtx, typeId, regionId, lastWeekAtEleven)
 			if err != nil {
 				log.Printf("Internal server error: dbGetTickMetricsForTypeAndRegionStartingFromDate: %v", err)
 				http.Error(w, "Internal server error", 500)
@@ -464,21 +465,6 @@ func computeApiDayMetrics(dayMetrics []dbDayMetric) []apiDayMetric {
 	return apiDayMetrics
 }
 
-func getDayMetricsForDate(dayMetrics []dbDayMetric, date time.Time) []dbDayMetric {
-	if !date.Equal(getToday(date)) {
-		panic("date is not a valid date")
-	}
-
-	dayMetricsOfTheDay := make([]dbDayMetric, 0, len(dayMetrics))
-	for _, d := range dayMetrics {
-		if date.Equal(time.Unix(int64(d.Date), 0)) {
-			dayMetricsOfTheDay = append(dayMetricsOfTheDay, d)
-		}
-	}
-
-	return dayMetricsOfTheDay
-}
-
 func getTickMetricsForDate(tickMetrics []dbTickMetric, date time.Time) []dbTickMetric {
 	if !date.Equal(getToday(date)) {
 		panic("date is not a valid date")
@@ -486,8 +472,7 @@ func getTickMetricsForDate(tickMetrics []dbTickMetric, date time.Time) []dbTickM
 
 	tickMetricsOfTheDay := make([]dbTickMetric, 0, len(tickMetrics))
 	for _, d := range tickMetrics {
-		timeMinusElevenHours := time.Unix(int64(d.Time), 0).Add(-11 * time.Hour)
-		if date.Equal(getToday(timeMinusElevenHours)) {
+		if date.Equal(getTodayMarketDay(time.Unix(int64(d.Time), 0))) {
 			tickMetricsOfTheDay = append(tickMetricsOfTheDay, d)
 		}
 	}
@@ -553,5 +538,10 @@ func getLastWeek(now time.Time) time.Time {
 
 func getToday(now time.Time) time.Time {
 	utc := now.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func getTodayMarketDay(now time.Time) time.Time {
+	utc := now.UTC().Add(-11 * time.Hour)
 	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
 }
