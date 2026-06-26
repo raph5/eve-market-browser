@@ -111,33 +111,69 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 			}
 		}
 
-		locationIds := make([]uint64, 0, 128)
-		locationSystem := make([]uint64, 0, 128)
+		locationIds := make([]uint64, 0, 182)
+		locationSystems := make([]uint64, 0, 182)
+		playerStructureIds := make([]uint64, 0, 128)
 		for i := range orders {
 			if !slices.Contains(locationIds, orders[i].LocationId) {
 				locationIds = append(locationIds, orders[i].LocationId)
-				locationSystem = append(locationSystem, orders[i].SystemId)
+				locationSystems = append(locationSystems, orders[i].SystemId)
+			}
+			if isPlayerStructure(orders[i].LocationId) && !slices.Contains(playerStructureIds, orders[i].LocationId) {
+				playerStructureIds = append(playerStructureIds, orders[i].LocationId)
 			}
 		}
-		locationMap, err := dbGetLocationMapForIds(timeoutCtx, locationIds)
+
+		playerStructureMap, err := dbGetLocationMapForIds(timeoutCtx, playerStructureIds)
 		if err != nil {
-			log.Printf("Internal server error: dbGetLocationMap: %v", err)
+			log.Printf("Internal server error: dbGetLocationMapForIds: %v", err)
 			http.Error(w, "Internal server error", 500)
 			return
 		}
-		for i := range locationIds {
-			if _, ok := locationMap[locationIds[i]]; !ok {
-				s, ok := systemMap[locationSystem[i]]
-				if !ok {
-					log.Printf("Unknown solar system %d, You should renew data/systems.csv", locationSystem[i])
-				}
 
-				locationMap[locationIds[i]] = emd.Location{
-					Id:       locationIds[i],
-					Name:     s.name + " - Unknown Player Structure",
-					SystemId: s.id,
-					Security: s.security,
-					RegionId: s.regionId,
+		locationMap := make(map[uint64]emd.Location, len(locationIds))
+		for i := range locationIds {
+			if isPlayerStructure(locationIds[i]) {
+				playerStructure, playerStructureOk := playerStructureMap[locationIds[i]]
+				if playerStructureOk {
+					locationMap[locationIds[i]] = playerStructure
+				} else {
+					s, systemOk := systemMap[locationSystems[i]]
+					if !systemOk {
+						log.Printf("Unknown solar system %d, You should renew data/systems.csv", locationSystems[i])
+					}
+
+					locationMap[locationIds[i]] = emd.Location{
+						Id:       locationIds[i],
+						SystemId: s.id,
+						RegionId: s.regionId,
+						Security: s.security,
+						Name:     s.name + " - Unknown Player Structure",
+					}
+				}
+			} else {
+				npcStation, npcStationOk := stationMap[locationIds[i]]
+				if npcStationOk {
+					locationMap[locationIds[i]] = emd.Location{
+						Id: npcStation.id,
+						SystemId: npcStation.systemId,
+						RegionId: npcStation.regionId,
+						Security: npcStation.security,
+						Name: npcStation.name,
+					}
+				} else {
+					s, systemOk := systemMap[locationSystems[i]]
+					if !systemOk {
+						log.Printf("Unknown solar system %d, You should renew data/systems.csv", locationSystems[i])
+					}
+
+					locationMap[locationIds[i]] = emd.Location{
+						Id:       locationIds[i],
+						SystemId: s.id,
+						RegionId: s.regionId,
+						Security: s.security,
+						Name:     s.name + " - Unknown NPC Station",
+					}
 				}
 			}
 		}
@@ -187,20 +223,14 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 			return
 		}
 
-		today := getToday(time.Now())
+		now := time.Now()
+		today := getToday(now)
 		lastWeek := getLastWeek(today).AddDate(0, 0, 1)
-		var dayMetrics []dbDayMetric
 		var tickMetrics []dbTickMetric
 		if typeId == 44992 || regionId == 0 {
 			tickMetrics, err = dbGetTickMetricsForTypeStartingFromDate(timeoutCtx, typeId, lastWeek)
 			if err != nil {
 				log.Printf("Internal server error: dbGetTickMetricsForTypeStartingFromDate: %v", err)
-				http.Error(w, "Internal server error", 500)
-				return
-			}
-			dayMetrics, err = dbGetDayMetricsForTypeStartingFromDate(timeoutCtx, typeId, lastWeek)
-			if err != nil {
-				log.Printf("Internal server error: dbGetDayMetricsForTypeStartingFromDate: %v", err)
 				http.Error(w, "Internal server error", 500)
 				return
 			}
@@ -211,17 +241,11 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 				http.Error(w, "Internal server error", 500)
 				return
 			}
-			dayMetrics, err = dbGetDayMetricsForTypeAndRegionStartingFromDate(timeoutCtx, typeId, regionId, lastWeek)
-			if err != nil {
-				log.Printf("Internal server error: dbGetDayMetricsForTypeAndRegionStartingFromDate: %v", err)
-				http.Error(w, "Internal server error", 500)
-				return
-			}
 		}
 
-		tickMetricsOfTheDay := getTickMetricsForDate(tickMetrics, lastWeek)
-		dayMetricsOfTheDay := getDayMetricsForDate(dayMetrics, lastWeek)
-		if len(tickMetricsOfTheDay) == 0 || len(dayMetricsOfTheDay) == 0 {
+		tickMetricsOfLastWeek := getTickMetricsForDate(tickMetrics, lastWeek)
+		tickMetricsOfToday := getTickMetricsForDate(tickMetrics, today)
+		if len(tickMetricsOfLastWeek) == 0 || len(tickMetricsOfToday) == 0 {
 			w.Header().Set("Content-Type", "application/json")
 			_, err = w.Write([]byte("[]"))
 			if err != nil {
@@ -233,8 +257,8 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		previewMetrics := make([]previewMetric, 0, 7)
-		tradingVolume := computeTradingVolume(dayMetricsOfTheDay)
-		buyVolume, sellVolume, buyPrice, sellPrice := computeBuySellVolumeAndBuySellPrice(tickMetricsOfTheDay)
+		tradingVolume := computeTradingVolume(tickMetricsOfLastWeek)
+		buyVolume, sellVolume, buyPrice, sellPrice := computeBuySellVolumeAndBuySellPrice(tickMetricsOfLastWeek)
 		previewMetrics = append(previewMetrics, previewMetric{
 			Date:        uint64(lastWeek.Unix()),
 			BuyVolume:   buyVolume,
@@ -244,14 +268,13 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 			TradeVolume: tradingVolume,
 		})
 
-		for d := lastWeek.AddDate(0, 0, 1); d.Before(today) || d.Equal(today); d = d.AddDate(0, 0, 1) {
-			tickMetricsOfTheDay = getTickMetricsForDate(tickMetrics, lastWeek)
-			dayMetricsOfTheDay = getDayMetricsForDate(dayMetrics, lastWeek)
+		for d := lastWeek.AddDate(0, 0, 1); d.Before(today); d = d.AddDate(0, 0, 1) {
+			tickMetricsOfTheDay := getTickMetricsForDate(tickMetrics, d)
 
-			tradingVolume = computeTradingVolume(dayMetricsOfTheDay)
-			buyVolume, sellVolume, buyPrice, sellPrice = computeBuySellVolumeAndBuySellPrice(tickMetricsOfTheDay)
+			tradingVolume := computeTradingVolume(tickMetricsOfTheDay)
+			buyVolume, sellVolume, buyPrice, sellPrice := computeBuySellVolumeAndBuySellPrice(tickMetricsOfTheDay)
 			previewMetrics = append(previewMetrics, previewMetric{
-				Date:        uint64(lastWeek.Unix()),
+				Date:        uint64(d.Unix()),
 				BuyVolume:   buyVolume,
 				SellVolume:  sellVolume,
 				BuyAverage:  buyPrice,
@@ -259,6 +282,18 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 				TradeVolume: tradingVolume,
 			})
 		}
+
+		todayComplition := getDayComplition(now)
+		tradingVolume = computeTradingVolume(tickMetricsOfToday)
+		buyVolume, sellVolume, buyPrice, sellPrice = computeBuySellVolumeAndBuySellPrice(tickMetricsOfToday)
+		previewMetrics = append(previewMetrics, previewMetric{
+			Date:        uint64(today.Unix()),
+			BuyVolume:   uint64(float64(buyVolume) / todayComplition),
+			SellVolume:  uint64(float64(sellVolume) / todayComplition),
+			BuyAverage:  buyPrice,
+			SellAverage: sellPrice,
+			TradeVolume: tradingVolume / todayComplition,
+		})
 
 		marshaled, err := json.Marshal(previewMetrics)
 		if err != nil {
@@ -348,8 +383,14 @@ func computeApiDayMetrics(dayMetrics []dbDayMetric) []apiDayMetric {
 			panic("messed up date order")
 		}
 
-		if time.Unix(int64(dayMetrics[j+1].Date), 0).Equal(d) {
-			j++
+		dayMetricDate := time.Unix(int64(dayMetrics[j+1].Date), 0)
+		for dayMetricDate.Before(d) {
+			j += 1
+			dayMetricDate = time.Unix(int64(dayMetrics[j+1].Date), 0)
+		}
+
+		if dayMetricDate.Equal(d) {
+			j += 1
 			apiDayMetrics[i].Volume = dayMetrics[j].Volume
 			apiDayMetrics[i].Date = dayMetrics[j].Date
 			apiDayMetrics[i].Lowest = dayMetrics[j].Lowest
@@ -445,7 +486,8 @@ func getTickMetricsForDate(tickMetrics []dbTickMetric, date time.Time) []dbTickM
 
 	tickMetricsOfTheDay := make([]dbTickMetric, 0, len(tickMetrics))
 	for _, d := range tickMetrics {
-		if date.Equal(getToday(time.Unix(int64(d.Time), 0))) {
+		timeMinusElevenHours := time.Unix(int64(d.Time), 0).Add(-11 * time.Hour)
+		if date.Equal(getToday(timeMinusElevenHours)) {
 			tickMetricsOfTheDay = append(tickMetricsOfTheDay, d)
 		}
 	}
@@ -453,10 +495,16 @@ func getTickMetricsForDate(tickMetrics []dbTickMetric, date time.Time) []dbTickM
 	return tickMetricsOfTheDay
 }
 
-func computeTradingVolume(dayMetrics []dbDayMetric) float64 {
+func getDayComplition(now time.Time) float64 {
+	nowMinusElevenHours := now.Add(-11 * time.Hour)
+	durationSinceEleven := nowMinusElevenHours.Sub(getToday(nowMinusElevenHours))
+	return float64(durationSinceEleven.Seconds()) / (60 * 60 * 24)
+}
+
+func computeTradingVolume(tickMetrics []dbTickMetric) float64 {
 	var tradingVolume float64
-	for _, d := range dayMetrics {
-		tradingVolume += float64(d.Volume) * d.Average
+	for _, t := range tickMetrics {
+		tradingVolume += float64(t.Volume) * t.Average
 	}
 	return tradingVolume
 }
@@ -486,6 +534,11 @@ func computeVolume(dayMetrics []dbDayMetric) float64 {
 		volume += float64(d.Volume) * d.Average
 	}
 	return volume
+}
+
+func isPlayerStructure(id uint64) bool {
+	// see https://docs.esi.evetech.net/docs/asset_location_id.html
+	return id > 64000000
 }
 
 func getLastMonth(now time.Time) time.Time {

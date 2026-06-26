@@ -390,7 +390,7 @@ WHERE TypeId = ? AND Time >= ? AND (
 	)
 	OR
 	LocationId IN (
-		` + getSqlNpcStationListForRegion(regionId) + `
+		` + getSqlNpcStationIdListForRegion(regionId) + `
 	)
 )
 ORDER BY Time`

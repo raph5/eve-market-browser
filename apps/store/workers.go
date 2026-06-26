@@ -208,6 +208,8 @@ func historyWorker(ctx context.Context) {
 		log.Printf("History Worker Error: dbGetDayMetricsLastDate: %v", err)
 		return
 	}
+	// BUG: The current implementation was observed to fetch twice the starting
+	// date
 	expiration := getElevenFifteenTomorrow(lastDayMetricInDB)
 
 	for {

@@ -3,3 +3,4 @@ data.db
 data.db-shm
 data.db-wal
 .zed
+__debug_bin*
