@@ -14,6 +14,7 @@ import { esiFetch } from "@app/esiFetch";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Tab, TabsRoot } from "@components/tabs";
 import { Select } from "@components/select";
+import { usePath } from "@app/hooks/usePath";
 import targetIcon from "@assets/target.png"
 import infoIcon from "@assets/info-transparent.png"
 import showInfoIcon from "@assets/info.png"
@@ -22,7 +23,8 @@ import nanoIcon from "@assets/nano.png"
 import nanoWhiteIcon from "@assets/nano-white.png"
 import bulkheadsIcon from "@assets/bulkheads.png"
 import cargoIcon from "@assets/cargo.png"
-import { usePath } from "@app/hooks/usePath";
+import questionMarkIcon from "@assets/question-mark.png"
+import classNames from "classnames";
 
 export interface TypeContext extends RegionContext {
   typeId: number
@@ -30,7 +32,6 @@ export interface TypeContext extends RegionContext {
   regionId: number
   regionName: string
   blueprints: Blueprint[]
-  orderDump: OrderDump
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -70,9 +71,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   const blueprints = await esiStore.blueprints
-
-  // orders
-  const orderDump = await esiStore.getOrderDump(typeId, regionId)
   
   // preview metrics
   const previewMetrics = await esiStore.getPreviewMetrics(typeId, regionId)
@@ -83,7 +81,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     regionId,
     regionName,
     blueprints,
-    orderDump,
     previewMetrics,
   })
 }
@@ -129,7 +126,6 @@ export default function Type() {
     regionId: loaderData.regionId,
     regionName: loaderData.regionName,
     blueprints: loaderData.blueprints,
-    orderDump: loaderData.orderDump,
   }
 
   return (
@@ -184,21 +180,27 @@ export default function Type() {
         <div className="item-header__metrics">
           {previewMetrics.length == 7 ? <>
             <span>
-              <span>Buy/Sell Price&nbsp;</span>
+              <span>Buy Price&nbsp;</span>
               <MiniGraph isk={true} data={previewMetrics.map(m => m.BuyAverage)} />
-              <span>&thinsp;/&thinsp;</span>
-              <MiniGraph isk={false} data={previewMetrics.map(m => m.SellAverage)} />
             </span>
-            {/* TODO: Don't display volume is volume is often 0 */}
             <span>
-              <span>Buy/Sell Volume&nbsp;</span>
-              <MiniGraph isk={true} data={previewMetrics.map(m => m.BuyVolume)} />
-              <span>&thinsp;/&thinsp;</span>
+              <span>Sell Price&nbsp;</span>
+              <MiniGraph isk={true} data={previewMetrics.map(m => m.SellAverage)} />
+            </span>
+            <span>
+              <span>Buy Volume&nbsp;</span>
+              <MiniGraph isk={false} data={previewMetrics.map(m => m.BuyVolume)} />
+            </span>
+            <span>
+              <span>Sell Volume&nbsp;</span>
               <MiniGraph isk={false} data={previewMetrics.map(m => m.SellVolume)} />
             </span>
             <span>
               <span>Trading Volume&nbsp;</span>
               <MiniGraph isk={true} data={previewMetrics.map(m => m.TradeVolume)} />
+            </span>
+            <span>
+              <MiniGraphTooltip />
             </span>
           </> : (
             <span className="item-header__metrics-error">not enough history data to compute metrics for this item</span>
@@ -418,11 +420,31 @@ function MiniGraph({ data, isk }: MiniGraphProps) {
       <span className="mini-graph__ratio" style={{color}}>{ratio}</span>
       <span className="mini-graph__graph">
         <svg viewBox="0 0 30 20" width="30px" height="20px">
-          <path d={stroke} fill="#00000000" stroke={color} stroke-width="1.8" stroke-linejoin="bevel" />
+          <path d={stroke} fill="#00000000" stroke={color} strokeWidth="1.8" strokeLinejoin="bevel" />
           <path d={fill} fill={color + '22'} />
         </svg>
       </span>
     </span>
+  )
+}
+
+function MiniGraphTooltip() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={classNames("question-mark", isOpen && "question-mark--open")}>
+      <div className="question-mark__hitbox" onClick={() => setIsOpen(!isOpen)}/>
+      <img className="question-mark__icon" src={questionMarkIcon} alt="question mark icon" />
+      <div className="question-mark__tooltip">
+        Item metrics are calculated from observed market order movements. The
+        value shown represents the current metric for today. The mini chart
+        illustrates how the metric has changed over the past week. When you
+        hover over the chart, the displayed delta shows the difference between
+        the metric's value at the beginning of the week and its value today.
+        See <a target="_blank" href="https://github.com/raph5/eve-market-browser/tree/main/apps/store">github</a> for
+        implementation details.
+      </div>
+    </div>
   )
 }
 

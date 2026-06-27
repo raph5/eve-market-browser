@@ -74,12 +74,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   const now = Date.now() / 1000
 
-  return json({ typeId, regionId, now })
+  // orders
+  const orderDump = await esiStore.getOrderDump(typeId, regionId)
+
+  return json({ typeId, regionId, now, orderDump })
 }
 
 export default function MarketData() {
-  const { orderDump } = useOutletContext<TypeContext>()
-  const { now } = useLoaderData<typeof loader>()
+  const { now, orderDump } = useLoaderData<typeof loader>()
   const sellOrder = orderDump.order.filter(o => !o.IsBuyOrder)
   const buyOrder = orderDump.order.filter(o => o.IsBuyOrder)
 

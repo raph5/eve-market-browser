@@ -73,6 +73,7 @@
   &__metrics {
     grid-area: metrics;
     display: flex;
+    // row-gap: 8px;
     column-gap: 16px;
     justify-content: flex-end;
     flex-wrap: wrap;
@@ -130,6 +131,57 @@
     width: 100%;
     height: 100%;
     overflow-y: auto;
+  }
+}
+
+.question-mark {
+  background: #2b2d30;
+  border-radius: 1000px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+
+  &__hitbox {
+    position: absolute;
+    top: -6px;
+    bottom: -8px;
+    left: -6px;
+    right: -6px;
+    z-index: 20;
+    cursor: pointer;
+    user-select: none;
+  }
+  &__icon {
+    height: 9px;
+    opacity: 0.65;
+  }
+  &__tooltip {
+    visibility: hidden;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    padding: 8px 12px;
+    border: solid 1px $border-1;
+    background: $background-1;
+    color: $font-color-paragraph;
+    width: 360px;
+    white-space: normal;
+    z-index: 30;
+    box-shadow: 0 0 4px black;
+  }
+
+  &:hover, &--open {
+    background: #48494D;
+
+    &__icon {
+      opacity: 1;
+    }
+  }
+  &--open &__tooltip {
+    visibility: visible;
   }
 }
 
@@ -456,7 +508,7 @@
     bottom: -24px;
     left: -6px;
     right: -6px;
-    z-index: 1000;
+    z-index: 10;
   }
   &__hitbox:hover ~ &__ratio {
     visibility: visible;

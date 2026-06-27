@@ -2,7 +2,7 @@ import "@scss/header.scss"
 import { useEffect, useRef, useState } from "react";
 import { Link, useMatches } from "@remix-run/react";
 import logo from "@assets/logo.png"
-import patreonLogo from "@assets/patreon.svg"
+import magicButtonImage from "@assets/magic-button.png"
 
 export interface HeaderProps {
 }
@@ -38,9 +38,15 @@ export default function Header({}: HeaderProps) {
           </li>
         </ul>
 
+        <a className="header__magic-button">
+          <img src={magicButtonImage} alt="magic button" height="32px" />
+        </a>
+
+        {/* 
         <button className="header__login">
           <LoginButton />
         </button>
+        */}
       </header>
 
       <header className="header header--mobile">

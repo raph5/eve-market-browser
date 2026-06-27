@@ -127,6 +127,12 @@
       height: 100%;
     }
   }
+  &__magic-button {
+    margin-left: auto;
+    height: 32px;
+    filter: drop-shadow(0 0 2px #111);
+    cursor: pointer;
+  }
 }
 
 @media (max-width: $mobile-width) {
