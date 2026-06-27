@@ -224,8 +224,8 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		now := time.Now().UTC()
-		// if we are between 11 and 13 pm it makes not much sens to display todays volume and prices
-		if now.Hour() >= 11 && now.Hour() < 13 {
+		// if we are between 11 and 15 pm it makes not much sens to display todays volume and prices
+		if now.Hour() >= 11 && now.Hour() < 15 {
 			now = time.Date(now.Year(), now.Month(), now.Day(), 10, 59, 0, 0, time.UTC)
 		}
 
