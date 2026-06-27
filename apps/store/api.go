@@ -308,8 +308,8 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 			firstBuyAverageIdx := -1
 			for i := range previewMetrics {
 				if previewMetrics[i].BuyAverage > 0 {
-					firstBuyAverage := previewMetrics[i].BuyAverage
-					firstBuyAverageIdx := i
+					firstBuyAverage = previewMetrics[i].BuyAverage
+					firstBuyAverageIdx = i
 					break
 				}
 			}
@@ -325,8 +325,8 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 			firstSellAverageIdx := -1
 			for i := range previewMetrics {
 				if previewMetrics[i].SellAverage > 0 {
-					firstSellAverage := previewMetrics[i].SellAverage
-					firstSellAverageIdx := i
+					firstSellAverage = previewMetrics[i].SellAverage
+					firstSellAverageIdx = i
 					break
 				}
 			}
