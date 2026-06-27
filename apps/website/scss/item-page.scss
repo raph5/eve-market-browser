@@ -183,6 +183,10 @@
   &--open &__tooltip {
     visibility: visible;
   }
+
+  @media (max-width: 900px) {
+    display: none;
+  }
 }
 
 .item-skeleton {
