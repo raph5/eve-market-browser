@@ -37,10 +37,10 @@ Build remix app `npm run build`
 
 ## TODO
 
+- Optimize page load
 - Document this installation procedure better
 - Add player owned private structures
 - Add filters
-- Add a support me button
 
 ## Ports
 
