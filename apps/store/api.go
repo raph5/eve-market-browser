@@ -155,11 +155,11 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 				npcStation, npcStationOk := stationMap[locationIds[i]]
 				if npcStationOk {
 					locationMap[locationIds[i]] = emd.Location{
-						Id: npcStation.id,
+						Id:       npcStation.id,
 						SystemId: npcStation.systemId,
 						RegionId: npcStation.regionId,
 						Security: npcStation.security,
-						Name: npcStation.name,
+						Name:     npcStation.name,
 					}
 				} else {
 					s, systemOk := systemMap[locationSystems[i]]
@@ -249,9 +249,8 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 			}
 		}
 
-		tickMetricsOfLastWeek := getTickMetricsForDate(tickMetrics, lastWeek)
-		tickMetricsOfToday := getTickMetricsForDate(tickMetrics, today)
-		if len(tickMetricsOfLastWeek) == 0 || len(tickMetricsOfToday) == 0 {
+		sellOrderCount, buyOrderCount := getBuySellOrderTickCount(tickMetrics)
+		if sellOrderCount < 20 || buyOrderCount < 20 {
 			w.Header().Set("Content-Type", "application/json")
 			_, err = w.Write([]byte("[]"))
 			if err != nil {
@@ -263,6 +262,7 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		previewMetrics := make([]previewMetric, 0, 7)
+		tickMetricsOfLastWeek := getTickMetricsForDate(tickMetrics, lastWeek)
 		tradingVolume := computeTradingVolume(tickMetricsOfLastWeek)
 		buyVolume, sellVolume, buyPrice, sellPrice := computeBuySellVolumeAndBuySellPrice(tickMetricsOfLastWeek)
 		previewMetrics = append(previewMetrics, previewMetric{
@@ -290,6 +290,7 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		todayComplition := getDayComplition(now)
+		tickMetricsOfToday := getTickMetricsForDate(tickMetrics, today)
 		tradingVolume = computeTradingVolume(tickMetricsOfToday)
 		buyVolume, sellVolume, buyPrice, sellPrice = computeBuySellVolumeAndBuySellPrice(tickMetricsOfToday)
 		previewMetrics = append(previewMetrics, previewMetric{
@@ -300,6 +301,50 @@ func createPreviewMetricHandler(ctx context.Context) http.HandlerFunc {
 			SellAverage: sellPrice,
 			TradeVolume: tradingVolume / todayComplition,
 		})
+
+		// remove zeros
+		if previewMetrics[0].BuyAverage == 0 {
+			firstBuyAverage := float64(0)
+			firstBuyAverageIdx := -1
+			for i := range previewMetrics {
+				if previewMetrics[i].BuyAverage > 0 {
+					firstBuyAverage := previewMetrics[i].BuyAverage
+					firstBuyAverageIdx := i
+					break
+				}
+			}
+			if firstBuyAverageIdx == -1 {
+				log.Printf("Assertion failed: firstBuyAverageIdx should be positive be cause of the check at line 253")
+			}
+			for i := range firstBuyAverageIdx {
+				previewMetrics[i].BuyAverage = firstBuyAverage
+			}
+		}
+		if previewMetrics[0].SellAverage == 0 {
+			firstSellAverage := float64(0)
+			firstSellAverageIdx := -1
+			for i := range previewMetrics {
+				if previewMetrics[i].SellAverage > 0 {
+					firstSellAverage := previewMetrics[i].SellAverage
+					firstSellAverageIdx := i
+					break
+				}
+			}
+			if firstSellAverageIdx == -1 {
+				log.Printf("Assertion failed: firstSellAverageIdx should be positive be cause of the check at line 253")
+			}
+			for i := range firstSellAverageIdx {
+				previewMetrics[i].SellAverage = firstSellAverage
+			}
+		}
+		for i := 1; i < len(previewMetrics); i++ {
+			if previewMetrics[i].BuyAverage == 0 {
+				previewMetrics[i].BuyAverage = previewMetrics[i-1].BuyAverage
+			}
+			if previewMetrics[i].SellAverage == 0 {
+				previewMetrics[i].SellAverage = previewMetrics[i-1].SellAverage
+			}
+		}
 
 		marshaled, err := json.Marshal(previewMetrics)
 		if err != nil {
@@ -489,6 +534,19 @@ func getDayComplition(now time.Time) float64 {
 	nowMinusElevenHours := now.Add(-11 * time.Hour)
 	durationSinceEleven := nowMinusElevenHours.Sub(getToday(nowMinusElevenHours))
 	return float64(durationSinceEleven.Seconds()) / (60 * 60 * 24)
+}
+
+func getBuySellOrderTickCount(
+	tickMetrics []dbTickMetric,
+) (sellCount int, buyCount int) {
+	for _, t := range tickMetrics {
+		if t.IsBuyOrder {
+			buyCount += 1
+		} else {
+			sellCount += 1
+		}
+	}
+	return sellCount, buyCount
 }
 
 func computeTradingVolume(tickMetrics []dbTickMetric) float64 {
