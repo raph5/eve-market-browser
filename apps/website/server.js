@@ -4,7 +4,7 @@
 
 import { createRequestHandler } from "@remix-run/express";
 import { installGlobals } from "@remix-run/node";
-// import compression from "compression";
+import compression from "compression";
 import express from "express";
 import morgan from "morgan";
 
@@ -16,13 +16,9 @@ const remixHandler = createRequestHandler({
 });
 
 const app = express();
-
-// NOTE: for streaming responses
-// app.use(compression());
-
+app.use(compression());
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
 app.disable("x-powered-by");
-
 // everything else (like favicon.ico) is cached for an hour. You may want to be
 // more aggressive with this caching.
 app.use(express.static("build/client", { maxAge: "1h" }));
