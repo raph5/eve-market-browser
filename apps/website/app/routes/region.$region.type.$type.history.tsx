@@ -1,9 +1,9 @@
-import { esiStore } from "@app/esiStore.server"
+import { DayMetric, esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
-import { json, useLoaderData, useOutletContext, useRouteError } from "@remix-run/react"
-import { useEffect, useRef } from "react"
+import { Await, defer, json, useLoaderData, useRouteError } from "@remix-run/react"
+import { Suspense, useEffect, useRef } from "react"
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
@@ -26,31 +26,55 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   // day metrics
-  const dayMetrics = await esiStore.getDayMetic(typeId, regionId)
+  const dayMetricsPromise = Promise.race([
+    esiStore.getDayMetic(typeId, regionId),
+    new Promise<DayMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 10_000)),
+  ])
 
-  return json({ typeId, regionId, dayMetrics })
+  return defer({ typeId, regionId, dayMetricsPromise })
 }
 
 export default function PriceHistory() {
-  const { dayMetrics } = useLoaderData<typeof loader>()
+  const { dayMetricsPromise } = useLoaderData<typeof loader>()
+
+  return <Suspense fallback={
+    <div className="price-history__fallback">
+      <p>Loading...</p>
+    </div>
+  }>
+    <Await resolve={dayMetricsPromise} errorElement={
+      <div className="price-history__fallback">
+        <p>No history data available</p>
+      </div>
+    }>
+      {(dayMetrics) => dayMetrics.length < 2 ? (
+        <div className="price-history__fallback">
+          <p>No history data available</p>
+        </div>
+      ) : (
+        <GraphComponent dayMetrics={dayMetrics} />
+      )}
+    </Await>
+  </Suspense>
+}
+
+interface GraphComponentProps {
+  dayMetrics: DayMetric[]
+}
+
+function GraphComponent({dayMetrics}: GraphComponentProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if(dayMetrics.length >= 2) {
-      if(containerRef.current == null) {
-        console.error("cant initialize price history graph")
-        return
-      }
-      const graph = new Graph(dayMetrics, containerRef.current)
-      return graph.destroy.bind(graph)
+    if(containerRef.current == null) {
+      console.error("cant initialize price history graph")
+      return
     }
+    const graph = new Graph(dayMetrics, containerRef.current)
+    return graph.destroy.bind(graph)
   }, [dayMetrics])
 
-  return dayMetrics.length < 2 ? (
-    <div className="price-history__fallback">
-      <p>No history data available</p>
-    </div>
-  ) : (
+  return (
     <div className="price-history">
       <div className="price-history__legend">
         <div className="price-history__label">

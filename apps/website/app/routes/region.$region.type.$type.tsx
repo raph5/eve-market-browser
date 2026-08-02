@@ -1,10 +1,10 @@
-import { Blueprint, DayMetric, esiStore, OrderDump } from "@app/esiStore.server";
+import { Blueprint, DayMetric, esiStore, OrderDump, PreviewMetric } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
+import { Await, defer, Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { blueprintIconSrc, typeIconSrc } from "@components/eveIcon";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "./region/route";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
@@ -73,15 +73,18 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const blueprints = await esiStore.blueprints
   
   // preview metrics
-  const previewMetrics = await esiStore.getPreviewMetrics(typeId, regionId)
+  const previewMetricsPromise = Promise.race([
+    esiStore.getPreviewMetrics(typeId, regionId),
+    new Promise<PreviewMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 10_000)),
+  ])
 
-  return json({
+  return defer({
     typeId,
     typeName,
     regionId,
     regionName,
     blueprints,
-    previewMetrics,
+    previewMetricsPromise,
   })
 }
 
@@ -89,7 +92,7 @@ export default function Type() {
   const regionOutletContext = useOutletContext<RegionContext>()
   const { marketGroups, types, regions } = regionOutletContext
   const loaderData = useLoaderData<typeof loader>()
-  const { typeId, regionId, blueprints, previewMetrics } = loaderData
+  const { typeId, regionId, blueprints, previewMetricsPromise } = loaderData
 
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
@@ -177,35 +180,15 @@ export default function Type() {
             value={regionId.toString()}
             onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
         </div>
-        <div className="item-header__metrics">
-          {previewMetrics.length == 7 ? <>
-            <span>
-              <span>Buy Price&nbsp;</span>
-              <MiniGraph isk={true} data={previewMetrics.map(m => m.BuyAverage)} />
-            </span>
-            <span>
-              <span>Sell Price&nbsp;</span>
-              <MiniGraph isk={true} data={previewMetrics.map(m => m.SellAverage)} />
-            </span>
-            <span>
-              <span>Buy Volume&nbsp;</span>
-              <MiniGraph isk={false} data={previewMetrics.map(m => m.BuyVolume)} />
-            </span>
-            <span>
-              <span>Sell Volume&nbsp;</span>
-              <MiniGraph isk={false} data={previewMetrics.map(m => m.SellVolume)} />
-            </span>
-            <span>
-              <span>Trading Volume&nbsp;</span>
-              <MiniGraph isk={true} data={previewMetrics.map(m => m.TradeVolume)} />
-            </span>
-            <span>
-              <MiniGraphTooltip />
-            </span>
-          </> : (
-            <span className="item-header__metrics-error">not enough history data to compute metrics for this item</span>
-          )}
-        </div>
+        <Suspense fallback={
+          <div className="item-header__metrics"><span className="item-header__metrics-error">Loading...</span></div>
+        }>
+          <Await resolve={previewMetricsPromise} errorElement={
+            <div className="item-header__metrics"><span className="item-header__metrics-error">Failed to load metrics</span></div>
+          }>
+            {(metrics) => <PreviewMetrics metrics={metrics} />}
+          </Await>
+        </Suspense>
       </div>
       <div className="item-body">
         <div className="tabs item-body__tabs">
@@ -229,6 +212,44 @@ export default function Type() {
 export function ErrorBoundary() {
   const error = useRouteError()  
   return <ErrorMessage error={error} />
+}
+
+interface PreviewMetricsProps {
+  metrics: PreviewMetric[]
+}
+
+function PreviewMetrics({metrics}: PreviewMetricsProps) {
+  return (
+    <div className="item-header__metrics">
+      {metrics.length == 7 ? <>
+        <span>
+          <span>Buy Price&nbsp;</span>
+          <MiniGraph isk={true} data={metrics.map(m => m.BuyAverage)} />
+        </span>
+        <span>
+          <span>Sell Price&nbsp;</span>
+          <MiniGraph isk={true} data={metrics.map(m => m.SellAverage)} />
+        </span>
+        <span>
+          <span>Buy Volume&nbsp;</span>
+          <MiniGraph isk={false} data={metrics.map(m => m.BuyVolume)} />
+        </span>
+        <span>
+          <span>Sell Volume&nbsp;</span>
+          <MiniGraph isk={false} data={metrics.map(m => m.SellVolume)} />
+        </span>
+        <span>
+          <span>Trading Volume&nbsp;</span>
+          <MiniGraph isk={true} data={metrics.map(m => m.TradeVolume)} />
+        </span>
+        <span>
+          <MiniGraphTooltip />
+        </span>
+      </> : (
+        <span className="item-header__metrics-error">Not enough history data to compute metrics for this item</span>
+      )}
+    </div>
+  )
 }
 
 interface TypeData {
