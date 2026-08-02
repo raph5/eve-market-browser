@@ -1,4 +1,4 @@
-import { Blueprint, DayMetric, esiStore, OrderDump, PreviewMetric } from "@app/esiStore.server";
+import { Blueprint, esiStore, PreviewMetric } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
 import { Await, defer, Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { blueprintIconSrc, typeIconSrc } from "@components/eveIcon";
@@ -75,7 +75,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // preview metrics
   const previewMetricsPromise = Promise.race([
     esiStore.getPreviewMetrics(typeId, regionId),
-    new Promise<PreviewMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 10_000)),
+    new Promise<PreviewMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 15_000)),
   ])
 
   return defer({

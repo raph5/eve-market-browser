@@ -13,7 +13,7 @@ import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
-const ABORT_DELAY = 11_000;
+const ABORT_DELAY = 16_000;
 
 export default function handleRequest(
   request: Request,

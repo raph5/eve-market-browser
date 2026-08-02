@@ -28,7 +28,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // day metrics
   const dayMetricsPromise = Promise.race([
     esiStore.getDayMetic(typeId, regionId),
-    new Promise<DayMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 10_000)),
+    new Promise<DayMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 15_000)),
   ])
 
   return defer({ typeId, regionId, dayMetricsPromise })
