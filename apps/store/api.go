@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"slices"
@@ -179,7 +181,7 @@ func createOrderHandler(ctx context.Context) http.HandlerFunc {
 		}
 
 		validity, err := dbGetTimeRecord(timeoutCtx, "OrdersValidity")
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			log.Printf("Internal server error: dbGetTimeRecord: %v", err)
 			http.Error(w, "Internal server error", 500)
 			return

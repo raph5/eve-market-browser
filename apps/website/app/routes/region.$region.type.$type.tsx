@@ -1,10 +1,10 @@
-import { Blueprint, DayMetric, esiStore, OrderDump, PreviewMetric } from "@app/esiStore.server";
+import { Blueprint, esiStore, PreviewMetric } from "@app/esiStore.server";
 import { MetaFunction, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Await, defer, Link, Outlet, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
+import { Link, Outlet, useFetcher, useLoaderData, useLocation, useMatches, useNavigate, useOutletContext, useRouteError } from "@remix-run/react";
 import EveIcon, { blueprintIconSrc, typeIconSrc } from "@components/eveIcon";
 import { ErrorMessage } from "@components/errorMessage";
 import { RegionContext } from "./region/route";
-import { Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import QuickbarContext from "@contexts/quickbarContext";
 import "@scss/item-page.scss"
@@ -15,6 +15,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Tab, TabsRoot } from "@components/tabs";
 import { Select } from "@components/select";
 import { usePath } from "@app/hooks/usePath";
+import type { loader as previewMetricLoader } from "./resource.preview-metric";
 import targetIcon from "@assets/target.png"
 import infoIcon from "@assets/info-transparent.png"
 import showInfoIcon from "@assets/info.png"
@@ -25,6 +26,7 @@ import bulkheadsIcon from "@assets/bulkheads.png"
 import cargoIcon from "@assets/cargo.png"
 import questionMarkIcon from "@assets/question-mark.png"
 import classNames from "classnames";
+import { preview } from "vite";
 
 export interface TypeContext extends RegionContext {
   typeId: number
@@ -72,19 +74,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   const blueprints = await esiStore.blueprints
   
-  // preview metrics
-  const previewMetricsPromise = Promise.race([
-    esiStore.getPreviewMetrics(typeId, regionId),
-    new Promise<PreviewMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 10_000)),
-  ])
-
-  return defer({
+  return json({
     typeId,
     typeName,
     regionId,
     regionName,
     blueprints,
-    previewMetricsPromise,
   })
 }
 
@@ -92,7 +87,8 @@ export default function Type() {
   const regionOutletContext = useOutletContext<RegionContext>()
   const { marketGroups, types, regions } = regionOutletContext
   const loaderData = useLoaderData<typeof loader>()
-  const { typeId, regionId, blueprints, previewMetricsPromise } = loaderData
+  const { typeId, regionId, blueprints } = loaderData
+  const previewMetricsFetcher = useFetcher<typeof previewMetricLoader>()
 
   const quickbar = useContext(QuickbarContext)
   const marketTree = useContext(MarketTreeContext)
@@ -103,6 +99,12 @@ export default function Type() {
   const navigate = useNavigate()
   const path = usePath()
 
+  const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
+  
+  useEffect(() => {
+    previewMetricsFetcher.load(`/resource/preview-metric?type=${typeId}&region=${regionId}`)
+  }, [typeId, regionId])
+
   useEffect(() => {
     // @ts-ignore
     if (!window.asPageLoaded) {
@@ -111,8 +113,6 @@ export default function Type() {
       setTimeout(() => marketTree.openType(typeId, false), 20)
     }
   }, [location])
-
-  const breadcrumbs = useMemo(() => computeBreadcrumbs(marketGroups, typeId), [marketGroups, typeId])
 
   // To avoid hydration errors
   useEffect(() => {
@@ -180,15 +180,9 @@ export default function Type() {
             value={regionId.toString()}
             onValueChange={(regionId) => navigate(path.setRegionId(regionId))} />
         </div>
-        <Suspense fallback={
-          <div className="item-header__metrics"><span className="item-header__metrics-error">Loading...</span></div>
-        }>
-          <Await resolve={previewMetricsPromise} errorElement={
-            <div className="item-header__metrics"><span className="item-header__metrics-error">Failed to load metrics</span></div>
-          }>
-            {(metrics) => <PreviewMetrics metrics={metrics} />}
-          </Await>
-        </Suspense>
+        {previewMetricsFetcher.state == "idle" && previewMetricsFetcher.data
+          ? <PreviewMetrics metrics={previewMetricsFetcher.data} />
+          : <div className="item-header__metrics"><span className="item-header__metrics-error">Loading...</span></div>}
       </div>
       <div className="item-body">
         <div className="tabs item-body__tabs">

@@ -2,8 +2,9 @@ import { DayMetric, esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import { Graph } from "@app/priceHistory"
 import { LoaderFunctionArgs } from "@remix-run/node"
-import { Await, defer, json, useLoaderData, useRouteError } from "@remix-run/react"
-import { Suspense, useEffect, useRef } from "react"
+import { json, useFetcher, useLoaderData, useRouteError } from "@remix-run/react"
+import { useEffect, useRef } from "react"
+import type { loader as dayMetricLoader } from "./resource.day-metric";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if(!params.type || !params.region) {
@@ -25,37 +26,36 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw json("Type or Region Not Found", { status: 404 })
   }
 
-  // day metrics
-  const dayMetricsPromise = Promise.race([
-    esiStore.getDayMetic(typeId, regionId),
-    new Promise<DayMetric[]>((_, rej) => setTimeout(() => rej(new Error('Timeout')), 10_000)),
-  ])
-
-  return defer({ typeId, regionId, dayMetricsPromise })
+  return json({ typeId, regionId })
 }
 
 export default function PriceHistory() {
-  const { dayMetricsPromise } = useLoaderData<typeof loader>()
+  const { typeId, regionId } = useLoaderData<typeof loader>()
+  const dayMetricsFetcher = useFetcher<typeof dayMetricLoader>()
 
-  return <Suspense fallback={
-    <div className="price-history__fallback">
-      <p>Loading...</p>
-    </div>
-  }>
-    <Await resolve={dayMetricsPromise} errorElement={
-      <div className="price-history__fallback">
-        <p>No history data available</p>
-      </div>
-    }>
-      {(dayMetrics) => dayMetrics.length < 2 ? (
+  useEffect(() => {
+    dayMetricsFetcher.load(`/resource/day-metric?type=${typeId}&region=${regionId}`)
+  }, [typeId, regionId])
+
+  if (dayMetricsFetcher.state == "idle" && dayMetricsFetcher.data) {
+    if (dayMetricsFetcher.data.length < 2) {
+      return (
         <div className="price-history__fallback">
           <p>No history data available</p>
         </div>
-      ) : (
-        <GraphComponent dayMetrics={dayMetrics} />
-      )}
-    </Await>
-  </Suspense>
+      );
+    } else {
+      return (
+        <GraphComponent dayMetrics={dayMetricsFetcher.data} />
+      );
+    }
+  } else {
+    return (
+      <div className="price-history__fallback">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 }
 
 interface GraphComponentProps {

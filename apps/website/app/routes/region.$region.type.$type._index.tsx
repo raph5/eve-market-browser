@@ -2,8 +2,7 @@ import { esiStore } from "@app/esiStore.server"
 import { ErrorMessage } from "@components/errorMessage"
 import * as Table from "@components/table"
 import { LoaderFunctionArgs } from "@remix-run/node"
-import { json, useLoaderData, useOutletContext, useRouteError } from "@remix-run/react"
-import { TypeContext } from "./region.$region.type.$type"
+import { json, useLoaderData, useRouteError } from "@remix-run/react"
 
 const DAY = 60*60*24
 const HOUR = 60*60
