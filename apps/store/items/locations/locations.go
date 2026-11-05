@@ -109,7 +109,7 @@ func populateStation(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reader error: %w", err)
 	}
-	if record[0] != "stationID" && record[1] != "security" && record[8] != "solarSystemID" && record[11] != "stationName" {
+	if record[0] != "stationID" && record[1] != "security" && record[2] != "solarSystemID" && record[3] != "stationName" {
 		return errors.New("invalid station csv header")
 	}
 
@@ -147,11 +147,11 @@ func populateStation(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		systemId, err := strconv.Atoi(record[8])
+		systemId, err := strconv.Atoi(record[2])
 		if err != nil {
 			return err
 		}
-		name := record[11]
+		name := record[3]
 		security, err := strconv.ParseFloat(record[1], 32)
 		if err != nil {
 			return err

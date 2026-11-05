@@ -31,7 +31,7 @@ func Init() error {
 	if err != nil {
 		return fmt.Errorf("reader error: %w", err)
 	}
-	if record[2] != "solarSystemID" && record[3] != "solarSystemName" && record[21] != "security" {
+	if record[0] != "solarSystemID" && record[1] != "solarSystemName" && record[2] != "security" {
 		return errors.New("invalid station csv header")
 	}
 
@@ -44,15 +44,15 @@ func Init() error {
 			return err
 		}
 
-		id, err := strconv.Atoi(record[2])
+		id, err := strconv.Atoi(record[0])
 		if err != nil {
 			return err
 		}
 		if id < 0 || id > math.MaxInt32 {
 			return fmt.Errorf("id %d out of range", id)
 		}
-		name := record[3]
-		security, err := strconv.ParseFloat(record[21], 32)
+		name := record[1]
+		security, err := strconv.ParseFloat(record[2], 32)
 		if err != nil {
 			return err
 		}
