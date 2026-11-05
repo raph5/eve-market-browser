@@ -69,6 +69,7 @@ var Regions = [...]int{
 	10000068,
 	10000006,
 	10001000, // zarzakh
+	10001004, // exordium
 	11000031, // thera
 	19000001, // global plex market
 }
